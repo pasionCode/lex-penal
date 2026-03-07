@@ -84,9 +84,9 @@ se define al implementar `AuthService`.
 ### Variables de entorno de autenticación
 
 ```env
-JWT_SECRET=<secreto_fuerte_generado>
+Variable de entorno `JWT_SECRET`: definir un valor robusto fuera del repositorio.
 JWT_EXPIRY=8h
-SESSION_COOKIE_SECRET=<secreto_diferente_al_jwt>
+Variable de entorno `SESSION_COOKIE_SECRET`: definir un valor distinto e independiente fuera del repositorio.
 ```
 
 Estas variables **nunca se incluyen en el repositorio**. Viven

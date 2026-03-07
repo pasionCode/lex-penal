@@ -48,7 +48,7 @@ El sistema usa un esquema híbrido con dos mecanismos diferenciados:
 | Contexto | Mecanismo | Uso |
 |---|---|---|
 | Next.js middleware y SSR | Cookie HttpOnly | Protección de rutas, validación inicial de sesión, rehidratación |
-| Client Components → backend | `Authorization: Bearer {token}` | Todas las llamadas operativas desde el cliente |
+| Client Components → backend | `Authorization: Bearer <JWT_DE_EJEMPLO>` | Todas las llamadas operativas desde el cliente |
 
 El backend valida el mecanismo correcto según la ruta.
 Las rutas operativas (`/api/v1/*`) requieren Bearer token en el header.
@@ -115,7 +115,7 @@ de sesión en la respuesta.
 **Respuesta `200`**
 ```json
 {
-  "token_acceso": "eyJ...",
+  "token_acceso": "<JWT_DE_EJEMPLO>",
   "usuario": {
     "id": "uuid",
     "nombre": "Nombre Apellido",
