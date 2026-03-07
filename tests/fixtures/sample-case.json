@@ -1,0 +1,8 @@
+﻿{
+  "title": "Caso muestra",
+  "client_name": "Cliente muestra",
+  "risk_level": "medium",
+  "facts": {
+    "summary": "Caso de prueba para fixtures y smoke tests."
+  }
+}
