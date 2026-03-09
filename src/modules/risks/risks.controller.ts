@@ -17,7 +17,7 @@ export class RisksController {
   }
 
   @Put()
-  replace(@Param('caseId') _caseId: string, @Body() _dto: UpdateFactsDto): Promise<unknown> {
+  replace(@Param('caseId') _caseId: string, @Body() _dto: UpdateRisksDto): Promise<unknown> {
     throw new Error('not implemented');
   }
 }

@@ -20,7 +20,7 @@ export class EvidenceController {
   }
 
   @Put()
-  replace(@Param('caseId') _caseId: string, @Body() _dto: UpdateFactsDto): Promise<unknown> {
+  replace(@Param('caseId') _caseId: string, @Body() _dto: UpdateEvidenceDto): Promise<unknown> {
     throw new Error('not implemented');
   }
 }

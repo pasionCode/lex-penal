@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AnthropicAdapter } from '../../infrastructure/ai/providers/anthropic.adapter';
-import { IAContextBuilder } from './context-builders/ai-context-builder';
+import { AIContextBuilder } from './context-builders/ai-context-builder';
 import { AIRequestLogRepository } from './logging/ai-request-log.repository';
 
 /**
@@ -17,7 +17,7 @@ import { AIRequestLogRepository } from './logging/ai-request-log.repository';
 @Injectable()
 export class AIService {
   constructor(
-    private readonly contextBuilder: IAContextBuilder,
+    private readonly contextBuilder: AIContextBuilder,
     private readonly provider: AnthropicAdapter,
     private readonly logRepository: AIRequestLogRepository,
   ) {}

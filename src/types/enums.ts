@@ -108,6 +108,27 @@ export enum ResultadoAuditoria {
   RECHAZADO = 'rechazado',
 }
 
+export enum CategoriaDocumento {
+  ACUSACION = 'acusacion',
+  DEFENSA = 'defensa',
+  CLIENTE = 'cliente',
+  ACTUACION = 'actuacion',
+  INFORME = 'informe',
+  EVIDENCIA = 'evidencia',
+  ANEXO = 'anexo',
+  OTRO = 'otro',
+}
+
+export enum TipoEvento {
+  TRANSICION_ESTADO = 'transicion_estado',
+  INFORME_GENERADO = 'informe_generado',
+  REVISION_SUPERVISOR = 'revision_supervisor',
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  ELIMINACION_CASO = 'eliminacion_caso',
+  IA_QUERY = 'ia_query',
+}
+
 /**
  * Valores canónicos del campo herramienta en POST /api/v1/ai/query.
  * Coinciden exactamente con los subrecursos del contrato API (kebab-case).

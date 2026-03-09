@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from './prisma.service';
 
 /**
@@ -9,7 +9,7 @@ import { PrismaService } from './prisma.service';
  */
 export async function withTransaction<T>(
   prisma: PrismaService,
-  fn: (tx: PrismaClient) => Promise<T>,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
-  return prisma.$transaction((tx) => fn(tx));
+  return prisma.$transaction((tx: Prisma.TransactionClient) => fn(tx));
 }

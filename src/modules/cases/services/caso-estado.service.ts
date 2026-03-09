@@ -31,8 +31,9 @@ import {
   UnprocessableEntityException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
-import { EstadoCaso, PerfilUsuario, TipoEvento, ResultadoAuditoria } from '../../types/enums';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { EstadoCaso, PerfilUsuario, TipoEvento, ResultadoAuditoria } from '../../../types/enums';
 import {
   TRANSICIONES_VALIDAS,
   PERMISOS_TRANSICION,
@@ -156,7 +157,7 @@ export class CasoEstadoService {
     }
 
     // 5-7. Ejecutar transición en transacción
-    const casoActualizado = await this.prisma.$transaction(async (tx) => {
+    const casoActualizado = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 5a. Si es borrador→en_analisis: generar estructura base (R08)
       if (
         estadoActual === EstadoCaso.BORRADOR &&
@@ -589,7 +590,7 @@ export class CasoEstadoService {
    * @param resultado - 'aprobado' | 'devuelto'
    */
   private async persistirRevisionSupervisor(
-    tx: any,
+    tx: Prisma.TransactionClient,
     casoId: string,
     supervisorId: string,
     observaciones: string,
@@ -648,7 +649,7 @@ export class CasoEstadoService {
    * - conclusion_operativa (registro vacío)
    */
   private async generarEstructuraBase(
-    tx: any, // PrismaTransaction
+    tx: Prisma.TransactionClient,
     casoId: string,
     usuarioId: string,
   ): Promise<void> {

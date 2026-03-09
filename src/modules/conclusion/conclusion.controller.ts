@@ -20,7 +20,7 @@ export class ConclusionController {
   }
 
   @Put()
-  update(@Param('caseId') _id: string, @Body() _dto: UpdateClientBriefingDto): Promise<unknown> {
+  update(@Param('caseId') _id: string, @Body() _dto: UpdateConclusionDto): Promise<unknown> {
     throw new Error('not implemented');
   }
 }
