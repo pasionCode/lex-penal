@@ -40,7 +40,7 @@ import {
   ESTADOS_ESCRITURA_BLOQUEADA,
   BLOQUES_CHECKLIST_U008,
   claveTransicion,
-} from './caso-estado.constants';
+} from '../constants/caso-estado.constants';
 
 // ============================================================================
 // INTERFACES
@@ -279,7 +279,7 @@ export class CasoEstadoService {
     const transicionesValidas = TRANSICIONES_VALIDAS[estadoActual] || [];
 
     // Filtrar por permisos del perfil
-    return transicionesValidas.filter((destino) => {
+    return transicionesValidas.filter((destino: EstadoCaso) => {
       const clave = claveTransicion(estadoActual, destino);
       const perfilesPermitidos = PERMISOS_TRANSICION[clave] || [];
       return perfilesPermitidos.includes(perfilUsuario);
