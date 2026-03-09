@@ -1,0 +1,758 @@
+// =============================================================================
+// SCHEMA PRISMA — LEX_PENAL
+// =============================================================================
+// Fuente canónica: docs/03_datos/MODELO_DATOS_v3.md
+// Generado: 2026-03-08
+// Commit base: c3a3d3e
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum PerfilUsuario {
+  estudiante
+  supervisor
+  administrador
+}
+
+enum SituacionLibertad {
+  libre
+  detenido
+}
+
+enum EstadoCaso {
+  borrador
+  en_analisis
+  pendiente_revision
+  devuelto
+  aprobado_supervisor
+  listo_para_cliente
+  cerrado
+}
+
+enum EstadoHecho {
+  acreditado
+  referido
+  discutido
+}
+
+enum IncidenciaJuridica {
+  tipicidad
+  antijuridicidad
+  culpabilidad
+  procedimiento
+}
+
+enum TipoPrueba {
+  testimonial
+  documental
+  pericial
+  real
+  otro
+}
+
+enum EvaluacionProbatoria {
+  ok
+  cuestionable
+  deficiente
+}
+
+enum Probabilidad {
+  alta
+  media
+  baja
+}
+
+enum Impacto {
+  alto
+  medio
+  bajo
+}
+
+enum Prioridad {
+  critica
+  alta
+  media
+  baja
+}
+
+enum EstadoMitigacion {
+  pendiente
+  en_curso
+  mitigado
+  aceptado
+}
+
+enum ResultadoRevision {
+  aprobado
+  devuelto
+}
+
+enum CategoriaDocumento {
+  acusacion
+  defensa
+  cliente
+  actuacion
+  informe
+  evidencia
+  anexo
+  otro
+}
+
+enum TipoInforme {
+  resumen_ejecutivo
+  conclusion_operativa
+  control_calidad
+  riesgos
+  cronologico
+  revision_supervisor
+  agenda_vencimientos
+}
+
+enum FormatoInforme {
+  pdf
+  docx
+}
+
+enum EstadoLlamadaIA {
+  exitosa
+  fallida
+  timeout
+}
+
+enum ResultadoAuditoria {
+  exitoso
+  rechazado
+}
+
+enum TipoEvento {
+  transicion_estado
+  informe_generado
+  revision_supervisor
+  login
+  logout
+  eliminacion_caso
+  ia_query
+}
+
+enum HerramientaIA {
+  basic_info
+  facts
+  evidence
+  risks
+  strategy
+  client_briefing
+  checklist
+  conclusion
+}
+
+// =============================================================================
+// 1. USUARIOS
+// =============================================================================
+
+model Usuario {
+  id              String    @id @default(uuid()) @db.Uuid
+  nombre          String    @db.VarChar(120)
+  email           String    @unique @db.VarChar(255)
+  password_hash   String    @db.VarChar(255)
+  perfil          PerfilUsuario
+  activo          Boolean   @default(true)
+  creado_en       DateTime  @default(now())
+  actualizado_en  DateTime  @updatedAt
+  creado_por      String?   @db.Uuid
+
+  // Relaciones
+  creador                   Usuario?  @relation("UsuarioCreador", fields: [creado_por], references: [id])
+  usuarios_creados          Usuario[] @relation("UsuarioCreador")
+  
+  // Relaciones como responsable/creador en otras entidades
+  casos_responsable         Caso[]    @relation("CasoResponsable")
+  casos_creados             Caso[]    @relation("CasoCreador")
+  casos_actualizados        Caso[]    @relation("CasoActualizador")
+  casos_cambio_estado       Caso[]    @relation("CasoCambioEstado")
+  
+  clientes_creados          Cliente[]  @relation("ClienteCreador")
+  clientes_actualizados     Cliente[]  @relation("ClienteActualizador")
+  
+  hechos_creados            Hecho[]    @relation("HechoCreador")
+  hechos_actualizados       Hecho[]    @relation("HechoActualizador")
+  
+  linea_tiempo_creados      LineaTiempo[] @relation("LineaTiempoCreador")
+  
+  pruebas_creadas           Prueba[]   @relation("PruebaCreador")
+  pruebas_actualizadas      Prueba[]   @relation("PruebaActualizador")
+  
+  riesgos_creados           Riesgo[]   @relation("RiesgoCreador")
+  riesgos_actualizados      Riesgo[]   @relation("RiesgoActualizador")
+  riesgos_responsable       Riesgo[]   @relation("RiesgoResponsable")
+  
+  estrategias_creadas       Estrategia[] @relation("EstrategiaCreador")
+  estrategias_actualizadas  Estrategia[] @relation("EstrategiaActualizador")
+  
+  actuaciones_creadas       Actuacion[]  @relation("ActuacionCreador")
+  actuaciones_actualizadas  Actuacion[]  @relation("ActuacionActualizador")
+  actuaciones_responsable   Actuacion[]  @relation("ActuacionResponsable")
+  
+  explicaciones_creadas     ExplicacionCliente[] @relation("ExplicacionCreador")
+  explicaciones_actualizadas ExplicacionCliente[] @relation("ExplicacionActualizador")
+  
+  checklist_items_marcados  ChecklistItem[] @relation("ChecklistItemMarcador")
+  
+  conclusiones_creadas      ConclusionOperativa[] @relation("ConclusionCreador")
+  conclusiones_actualizadas ConclusionOperativa[] @relation("ConclusionActualizador")
+  
+  revisiones_supervisor     RevisionSupervisor[] @relation("RevisionSupervisor")
+  revisiones_creadas        RevisionSupervisor[] @relation("RevisionCreador")
+  
+  documentos_subidos        Documento[] @relation("DocumentoSubidor")
+  
+  informes_generados        InformeGenerado[] @relation("InformeGenerador")
+  
+  ai_requests               AIRequestLog[] @relation("AIRequestUsuario")
+  
+  eventos_auditoria         EventoAuditoria[] @relation("EventoUsuario")
+
+  @@map("usuarios")
+}
+
+// =============================================================================
+// 2. CLIENTES
+// =============================================================================
+
+model Cliente {
+  id                 String    @id @default(uuid()) @db.Uuid
+  nombre             String    @db.VarChar(120)
+  documento          String    @db.VarChar(30)
+  tipo_documento     String    @db.VarChar(20)
+  contacto           String?
+  situacion_libertad SituacionLibertad
+  lugar_detencion    String?   @db.VarChar(200)
+  creado_en          DateTime  @default(now())
+  actualizado_en     DateTime  @updatedAt
+  creado_por         String    @db.Uuid
+  actualizado_por    String?   @db.Uuid
+
+  // Relaciones
+  creador       Usuario  @relation("ClienteCreador", fields: [creado_por], references: [id])
+  actualizador  Usuario? @relation("ClienteActualizador", fields: [actualizado_por], references: [id])
+  casos         Caso[]
+
+  @@unique([tipo_documento, documento])
+  @@map("clientes")
+}
+
+// =============================================================================
+// 3. CASOS
+// =============================================================================
+
+model Caso {
+  id                          String      @id @default(uuid()) @db.Uuid
+  cliente_id                  String      @db.Uuid
+  responsable_id              String      @db.Uuid
+  radicado                    String      @unique @db.VarChar(80)
+  despacho                    String?     @db.VarChar(200)
+  fecha_apertura              DateTime?   @db.Date
+  delito_imputado             String      @db.VarChar(300)
+  agravantes                  String?
+  regimen_procesal            String      @db.VarChar(100)
+  etapa_procesal              String      @db.VarChar(100)
+  proxima_actuacion           String?
+  fecha_proxima_actuacion     DateTime?   @db.Date
+  responsable_proxima_actuacion String?   @db.VarChar(120)
+  observaciones               String?
+  estado_actual               EstadoCaso  @default(borrador)
+  estado_anterior             EstadoCaso?
+  fecha_cambio_estado         DateTime?
+  usuario_cambio_estado       String?     @db.Uuid
+  creado_en                   DateTime    @default(now())
+  actualizado_en              DateTime    @updatedAt
+  creado_por                  String      @db.Uuid
+  actualizado_por             String?     @db.Uuid
+
+  // Relaciones
+  cliente              Cliente   @relation(fields: [cliente_id], references: [id])
+  responsable          Usuario   @relation("CasoResponsable", fields: [responsable_id], references: [id])
+  creador              Usuario   @relation("CasoCreador", fields: [creado_por], references: [id])
+  actualizador         Usuario?  @relation("CasoActualizador", fields: [actualizado_por], references: [id])
+  usuario_transicion   Usuario?  @relation("CasoCambioEstado", fields: [usuario_cambio_estado], references: [id])
+  
+  // Entidades hijas
+  hechos               Hecho[]
+  linea_tiempo         LineaTiempo[]
+  pruebas              Prueba[]
+  riesgos              Riesgo[]
+  estrategia           Estrategia?
+  actuaciones          Actuacion[]
+  explicacion_cliente  ExplicacionCliente?
+  checklist_bloques    ChecklistBloque[]
+  checklist_items      ChecklistItem[]
+  conclusion_operativa ConclusionOperativa?
+  revisiones           RevisionSupervisor[]
+  documentos           Documento[]
+  informes_generados   InformeGenerado[]
+  ai_request_logs      AIRequestLog[]
+  eventos_auditoria    EventoAuditoria[]
+
+  @@index([cliente_id])
+  @@index([responsable_id])
+  @@index([estado_actual])
+  @@map("casos")
+}
+
+// =============================================================================
+// 4. HECHOS
+// =============================================================================
+
+model Hecho {
+  id                  String             @id @default(uuid()) @db.Uuid
+  caso_id             String             @db.Uuid
+  orden               Int
+  descripcion         String
+  estado_hecho        EstadoHecho
+  fuente              String?
+  incidencia_juridica IncidenciaJuridica?
+  creado_en           DateTime           @default(now())
+  actualizado_en      DateTime           @updatedAt
+  creado_por          String             @db.Uuid
+  actualizado_por     String?            @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  creador      Usuario  @relation("HechoCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("HechoActualizador", fields: [actualizado_por], references: [id])
+  pruebas      Prueba[]
+
+  @@unique([caso_id, orden])
+  @@index([caso_id])
+  @@map("hechos")
+}
+
+// =============================================================================
+// 5. LINEA_TIEMPO
+// =============================================================================
+
+model LineaTiempo {
+  id           String   @id @default(uuid()) @db.Uuid
+  caso_id      String   @db.Uuid
+  fecha_evento DateTime @db.Date
+  descripcion  String
+  orden        Int
+  creado_en    DateTime @default(now())
+  creado_por   String   @db.Uuid
+
+  // Relaciones
+  caso    Caso    @relation(fields: [caso_id], references: [id])
+  creador Usuario @relation("LineaTiempoCreador", fields: [creado_por], references: [id])
+
+  // Nota: entidad append-only (MODELO_DATOS_v3 — Principio 2)
+  // No tiene actualizado_en ni actualizado_por
+
+  @@unique([caso_id, orden])
+  @@index([caso_id])
+  @@map("linea_tiempo")
+}
+
+// =============================================================================
+// 6. PRUEBAS
+// =============================================================================
+
+model Prueba {
+  id                       String              @id @default(uuid()) @db.Uuid
+  caso_id                  String              @db.Uuid
+  hecho_id                 String?             @db.Uuid
+  hecho_descripcion_libre  String?
+  descripcion              String
+  tipo_prueba              TipoPrueba
+  licitud                  EvaluacionProbatoria
+  legalidad                EvaluacionProbatoria
+  suficiencia              EvaluacionProbatoria
+  credibilidad             EvaluacionProbatoria
+  posicion_defensiva       String?
+  creado_en                DateTime            @default(now())
+  actualizado_en           DateTime            @updatedAt
+  creado_por               String              @db.Uuid
+  actualizado_por          String?             @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  hecho        Hecho?   @relation(fields: [hecho_id], references: [id])
+  creador      Usuario  @relation("PruebaCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("PruebaActualizador", fields: [actualizado_por], references: [id])
+
+  // Nota: validación de integridad cruzada (hecho_id debe pertenecer al mismo caso)
+  // se hace en HerramientaService, no en BD
+
+  @@index([caso_id])
+  @@index([hecho_id])
+  @@map("pruebas")
+}
+
+// =============================================================================
+// 7. RIESGOS
+// =============================================================================
+
+model Riesgo {
+  id                    String          @id @default(uuid()) @db.Uuid
+  caso_id               String          @db.Uuid
+  descripcion           String
+  probabilidad          Probabilidad
+  impacto               Impacto
+  prioridad             Prioridad
+  estrategia_mitigacion String?
+  estado_mitigacion     EstadoMitigacion @default(pendiente)
+  plazo_accion          DateTime?       @db.Date
+  responsable_id        String?         @db.Uuid
+  creado_en             DateTime        @default(now())
+  actualizado_en        DateTime        @updatedAt
+  creado_por            String          @db.Uuid
+  actualizado_por       String?         @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  responsable  Usuario? @relation("RiesgoResponsable", fields: [responsable_id], references: [id])
+  creador      Usuario  @relation("RiesgoCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("RiesgoActualizador", fields: [actualizado_por], references: [id])
+
+  @@index([caso_id])
+  @@index([prioridad])
+  @@index([estado_mitigacion])
+  @@index([responsable_id])
+  @@map("riesgos")
+}
+
+// =============================================================================
+// 8. ESTRATEGIA
+// =============================================================================
+
+model Estrategia {
+  id                   String   @id @default(uuid()) @db.Uuid
+  caso_id              String   @unique @db.Uuid
+  linea_principal      String?
+  fundamento_juridico  String?
+  fundamento_probatorio String?
+  linea_subsidiaria    String?
+  posicion_allanamiento String?
+  posicion_preacuerdo  String?
+  posicion_juicio      String?
+  creado_en            DateTime @default(now())
+  actualizado_en       DateTime @updatedAt
+  creado_por           String   @db.Uuid
+  actualizado_por      String?  @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  creador      Usuario  @relation("EstrategiaCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("EstrategiaActualizador", fields: [actualizado_por], references: [id])
+
+  @@map("estrategia")
+}
+
+// =============================================================================
+// 9. ACTUACIONES
+// =============================================================================
+
+model Actuacion {
+  id                  String    @id @default(uuid()) @db.Uuid
+  caso_id             String    @db.Uuid
+  descripcion         String
+  fecha               DateTime? @db.Date
+  responsable_id      String?   @db.Uuid
+  responsable_externo String?   @db.VarChar(120)
+  completada          Boolean   @default(false)
+  creado_en           DateTime  @default(now())
+  actualizado_en      DateTime  @updatedAt
+  creado_por          String    @db.Uuid
+  actualizado_por     String?   @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  responsable  Usuario? @relation("ActuacionResponsable", fields: [responsable_id], references: [id])
+  creador      Usuario  @relation("ActuacionCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("ActuacionActualizador", fields: [actualizado_por], references: [id])
+
+  @@index([caso_id])
+  @@index([fecha])
+  @@index([responsable_id])
+  @@map("actuaciones")
+}
+
+// =============================================================================
+// 10. EXPLICACION_CLIENTE
+// =============================================================================
+
+model ExplicacionCliente {
+  id                   String    @id @default(uuid()) @db.Uuid
+  caso_id              String    @unique @db.Uuid
+  delito_explicado     String?
+  riesgos_informados   String?
+  panorama_probatorio  String?
+  beneficios_informados String?
+  opciones_explicadas  String?
+  recomendacion        String?
+  decision_cliente     String?
+  fecha_explicacion    DateTime? @db.Date
+  creado_en            DateTime  @default(now())
+  actualizado_en       DateTime  @updatedAt
+  creado_por           String    @db.Uuid
+  actualizado_por      String?   @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  creador      Usuario  @relation("ExplicacionCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("ExplicacionActualizador", fields: [actualizado_por], references: [id])
+
+  @@map("explicacion_cliente")
+}
+
+// =============================================================================
+// 11. CHECKLIST_BLOQUES
+// =============================================================================
+
+model ChecklistBloque {
+  id            String   @id @default(uuid()) @db.Uuid
+  caso_id       String   @db.Uuid
+  codigo_bloque String   @db.VarChar(10)
+  nombre_bloque String   @db.VarChar(120)
+  critico       Boolean  @default(true)
+  completado    Boolean  @default(false)
+  creado_en     DateTime @default(now())
+
+  // Relaciones
+  caso  Caso            @relation(fields: [caso_id], references: [id])
+  items ChecklistItem[]
+
+  @@unique([caso_id, codigo_bloque])
+  @@index([caso_id])
+  @@map("checklist_bloques")
+}
+
+// =============================================================================
+// 12. CHECKLIST_ITEMS
+// =============================================================================
+
+model ChecklistItem {
+  id          String    @id @default(uuid()) @db.Uuid
+  bloque_id   String    @db.Uuid
+  caso_id     String    @db.Uuid
+  codigo_item String    @db.VarChar(10)
+  descripcion String
+  marcado     Boolean   @default(false)
+  marcado_en  DateTime?
+  marcado_por String?   @db.Uuid
+
+  // Relaciones
+  bloque  ChecklistBloque @relation(fields: [bloque_id], references: [id])
+  caso    Caso            @relation(fields: [caso_id], references: [id])
+  marcador Usuario?       @relation("ChecklistItemMarcador", fields: [marcado_por], references: [id])
+
+  @@unique([bloque_id, codigo_item])
+  @@index([bloque_id])
+  @@index([caso_id])
+  @@map("checklist_items")
+}
+
+// =============================================================================
+// 13. CONCLUSION_OPERATIVA
+// =============================================================================
+
+model ConclusionOperativa {
+  id                       String   @id @default(uuid()) @db.Uuid
+  caso_id                  String   @unique @db.Uuid
+  // Bloque 1 — Síntesis jurídica
+  hechos_sintesis          String?
+  cargo_imputado           String?
+  evaluacion_dogmatica     String?
+  fisuras_fortalezas       String?
+  // Bloque 2 — Panorama procesal
+  fortalezas_acusacion     String?
+  debilidades_acusacion    String?
+  prueba_defensa           String?
+  etapa_texto              String?
+  oportunidades            String?
+  // Bloque 3 — Dosimetría y beneficios
+  rangos_pena              String?
+  beneficios               String?
+  restricciones_subrogados String?
+  riesgos_prioritarios     String?
+  // Bloque 4 — Opciones
+  opcion_a                 String?
+  consecuencias_a          String?
+  opcion_b                 String?
+  consecuencias_b          String?
+  opcion_c                 String?
+  consecuencias_c          String?
+  // Bloque 5 — Recomendación
+  recomendacion            String?
+  fundamento_recomendacion String?
+  condicion_vigencia       String?
+  // Adicional
+  observaciones            String?
+  creado_en                DateTime @default(now())
+  actualizado_en           DateTime @updatedAt
+  creado_por               String   @db.Uuid
+  actualizado_por          String?  @db.Uuid
+
+  // Relaciones
+  caso         Caso     @relation(fields: [caso_id], references: [id])
+  creador      Usuario  @relation("ConclusionCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("ConclusionActualizador", fields: [actualizado_por], references: [id])
+
+  @@map("conclusion_operativa")
+}
+
+// =============================================================================
+// 14. REVISION_SUPERVISOR
+// =============================================================================
+
+model RevisionSupervisor {
+  id               String           @id @default(uuid()) @db.Uuid
+  caso_id          String           @db.Uuid
+  supervisor_id    String           @db.Uuid
+  version_revision Int              @default(1)
+  vigente          Boolean          @default(true)
+  observaciones    String
+  fecha_revision   DateTime?        @db.Date
+  resultado        ResultadoRevision
+  creado_en        DateTime         @default(now())
+  creado_por       String           @db.Uuid
+
+  // Relaciones
+  caso       Caso    @relation(fields: [caso_id], references: [id])
+  supervisor Usuario @relation("RevisionSupervisor", fields: [supervisor_id], references: [id])
+  creador    Usuario @relation("RevisionCreador", fields: [creado_por], references: [id])
+
+  // Nota: entidad append-only (MODELO_DATOS_v3 — Principio 2)
+  // No tiene actualizado_en ni actualizado_por
+  // El campo vigente se actualiza solo en el registro anterior al crear uno nuevo
+
+  @@unique([caso_id, version_revision])
+  @@index([caso_id])
+  @@index([supervisor_id])
+  @@map("revision_supervisor")
+}
+
+// =============================================================================
+// 15. DOCUMENTOS
+// =============================================================================
+
+model Documento {
+  id                String             @id @default(uuid()) @db.Uuid
+  caso_id           String             @db.Uuid
+  categoria         CategoriaDocumento
+  nombre_original   String             @db.VarChar(255)
+  nombre_almacenado String             @db.VarChar(255)
+  ruta              String
+  mime_type         String             @db.VarChar(100)
+  tamanio_bytes     BigInt
+  descripcion       String?
+  subido_en         DateTime           @default(now())
+  subido_por        String             @db.Uuid
+
+  // Relaciones
+  caso    Caso    @relation(fields: [caso_id], references: [id])
+  subidor Usuario @relation("DocumentoSubidor", fields: [subido_por], references: [id])
+
+  // Nota: entidad append-only (MODELO_DATOS_v3 — Principio 2)
+  // No tiene actualizado_en ni actualizado_por
+
+  @@index([caso_id])
+  @@index([categoria])
+  @@map("documentos")
+}
+
+// =============================================================================
+// 16. INFORMES_GENERADOS
+// =============================================================================
+
+model InformeGenerado {
+  id                    String        @id @default(uuid()) @db.Uuid
+  caso_id               String        @db.Uuid
+  tipo_informe          TipoInforme
+  formato               FormatoInforme
+  ruta_archivo          String
+  estado_caso_al_generar String       @db.VarChar(50)
+  generado_en           DateTime      @default(now())
+  generado_por          String        @db.Uuid
+
+  // Relaciones
+  caso      Caso    @relation(fields: [caso_id], references: [id])
+  generador Usuario @relation("InformeGenerador", fields: [generado_por], references: [id])
+
+  // Nota: entidad append-only (MODELO_DATOS_v3 — Principio 2)
+
+  @@index([caso_id])
+  @@map("informes_generados")
+}
+
+// =============================================================================
+// 17. AI_REQUEST_LOG
+// =============================================================================
+
+model AIRequestLog {
+  id                 String          @id @default(uuid()) @db.Uuid
+  caso_id            String          @db.Uuid
+  usuario_id         String          @db.Uuid
+  herramienta        HerramientaIA
+  proveedor          String          @db.VarChar(60)
+  modelo             String          @db.VarChar(80)
+  prompt_enviado     String
+  respuesta_recibida String?
+  tokens_entrada     Int?
+  tokens_salida      Int?
+  duracion_ms        Int?
+  estado_llamada     EstadoLlamadaIA
+  error_mensaje      String?
+  creado_en          DateTime        @default(now())
+
+  // Relaciones
+  caso    Caso    @relation(fields: [caso_id], references: [id])
+  usuario Usuario @relation("AIRequestUsuario", fields: [usuario_id], references: [id])
+
+  // Nota: entidad inmutable (MODELO_DATOS_v3 — Principio 2, RI-03)
+  // Solo INSERT, nunca UPDATE ni DELETE
+
+  @@index([caso_id])
+  @@index([usuario_id])
+  @@index([creado_en])
+  @@map("ai_request_log")
+}
+
+// =============================================================================
+// 18. EVENTOS_AUDITORIA
+// =============================================================================
+
+model EventoAuditoria {
+  id             String            @id @default(uuid()) @db.Uuid
+  caso_id        String?           @db.Uuid
+  usuario_id     String            @db.Uuid
+  tipo_evento    TipoEvento
+  estado_origen  String?           @db.VarChar(50)
+  estado_destino String?           @db.VarChar(50)
+  resultado      ResultadoAuditoria
+  motivo_rechazo String?
+  metadata       Json?
+  fecha_evento   DateTime          @default(now())
+
+  // Relaciones
+  caso    Caso?   @relation(fields: [caso_id], references: [id])
+  usuario Usuario @relation("EventoUsuario", fields: [usuario_id], references: [id])
+
+  // Nota: entidad inmutable (MODELO_DATOS_v3 — Principio 2, RI-03)
+  // Solo INSERT, nunca UPDATE ni DELETE
+
+  @@index([caso_id])
+  @@index([usuario_id])
+  @@index([tipo_evento])
+  @@index([fecha_evento])
+  @@map("eventos_auditoria")
+}
