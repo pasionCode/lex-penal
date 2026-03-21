@@ -161,66 +161,66 @@ enum HerramientaIA {
 // =============================================================================
 
 model Usuario {
-  id              String    @id @default(uuid()) @db.Uuid
-  nombre          String    @db.VarChar(120)
-  email           String    @unique @db.VarChar(255)
-  password_hash   String    @db.VarChar(255)
-  perfil          PerfilUsuario
-  activo          Boolean   @default(true)
-  creado_en       DateTime  @default(now())
-  actualizado_en  DateTime  @updatedAt
-  creado_por      String?   @db.Uuid
+  id             String        @id @default(uuid()) @db.Uuid
+  nombre         String        @db.VarChar(120)
+  email          String        @unique @db.VarChar(255)
+  password_hash  String        @db.VarChar(255)
+  perfil         PerfilUsuario
+  activo         Boolean       @default(true)
+  creado_en      DateTime      @default(now())
+  actualizado_en DateTime      @updatedAt
+  creado_por     String?       @db.Uuid
 
   // Relaciones
-  creador                   Usuario?  @relation("UsuarioCreador", fields: [creado_por], references: [id])
-  usuarios_creados          Usuario[] @relation("UsuarioCreador")
-  
+  creador          Usuario?  @relation("UsuarioCreador", fields: [creado_por], references: [id])
+  usuarios_creados Usuario[] @relation("UsuarioCreador")
+
   // Relaciones como responsable/creador en otras entidades
-  casos_responsable         Caso[]    @relation("CasoResponsable")
-  casos_creados             Caso[]    @relation("CasoCreador")
-  casos_actualizados        Caso[]    @relation("CasoActualizador")
-  casos_cambio_estado       Caso[]    @relation("CasoCambioEstado")
-  
-  clientes_creados          Cliente[]  @relation("ClienteCreador")
-  clientes_actualizados     Cliente[]  @relation("ClienteActualizador")
-  
-  hechos_creados            Hecho[]    @relation("HechoCreador")
-  hechos_actualizados       Hecho[]    @relation("HechoActualizador")
-  
-  linea_tiempo_creados      LineaTiempo[] @relation("LineaTiempoCreador")
-  
-  pruebas_creadas           Prueba[]   @relation("PruebaCreador")
-  pruebas_actualizadas      Prueba[]   @relation("PruebaActualizador")
-  
-  riesgos_creados           Riesgo[]   @relation("RiesgoCreador")
-  riesgos_actualizados      Riesgo[]   @relation("RiesgoActualizador")
-  riesgos_responsable       Riesgo[]   @relation("RiesgoResponsable")
-  
-  estrategias_creadas       Estrategia[] @relation("EstrategiaCreador")
-  estrategias_actualizadas  Estrategia[] @relation("EstrategiaActualizador")
-  
-  actuaciones_creadas       Actuacion[]  @relation("ActuacionCreador")
-  actuaciones_actualizadas  Actuacion[]  @relation("ActuacionActualizador")
-  actuaciones_responsable   Actuacion[]  @relation("ActuacionResponsable")
-  
-  explicaciones_creadas     ExplicacionCliente[] @relation("ExplicacionCreador")
+  casos_responsable   Caso[] @relation("CasoResponsable")
+  casos_creados       Caso[] @relation("CasoCreador")
+  casos_actualizados  Caso[] @relation("CasoActualizador")
+  casos_cambio_estado Caso[] @relation("CasoCambioEstado")
+
+  clientes_creados      Cliente[] @relation("ClienteCreador")
+  clientes_actualizados Cliente[] @relation("ClienteActualizador")
+
+  hechos_creados      Hecho[] @relation("HechoCreador")
+  hechos_actualizados Hecho[] @relation("HechoActualizador")
+
+  linea_tiempo_creados LineaTiempo[] @relation("LineaTiempoCreador")
+
+  pruebas_creadas      Prueba[] @relation("PruebaCreador")
+  pruebas_actualizadas Prueba[] @relation("PruebaActualizador")
+
+  riesgos_creados      Riesgo[] @relation("RiesgoCreador")
+  riesgos_actualizados Riesgo[] @relation("RiesgoActualizador")
+  riesgos_responsable  Riesgo[] @relation("RiesgoResponsable")
+
+  estrategias_creadas      Estrategia[] @relation("EstrategiaCreador")
+  estrategias_actualizadas Estrategia[] @relation("EstrategiaActualizador")
+
+  actuaciones_creadas      Actuacion[] @relation("ActuacionCreador")
+  actuaciones_actualizadas Actuacion[] @relation("ActuacionActualizador")
+  actuaciones_responsable  Actuacion[] @relation("ActuacionResponsable")
+
+  explicaciones_creadas      ExplicacionCliente[] @relation("ExplicacionCreador")
   explicaciones_actualizadas ExplicacionCliente[] @relation("ExplicacionActualizador")
-  
-  checklist_items_marcados  ChecklistItem[] @relation("ChecklistItemMarcador")
-  
+
+  checklist_items_marcados ChecklistItem[] @relation("ChecklistItemMarcador")
+
   conclusiones_creadas      ConclusionOperativa[] @relation("ConclusionCreador")
   conclusiones_actualizadas ConclusionOperativa[] @relation("ConclusionActualizador")
-  
-  revisiones_supervisor     RevisionSupervisor[] @relation("RevisionSupervisor")
-  revisiones_creadas        RevisionSupervisor[] @relation("RevisionCreador")
-  
-  documentos_subidos        Documento[] @relation("DocumentoSubidor")
-  
-  informes_generados        InformeGenerado[] @relation("InformeGenerador")
-  
-  ai_requests               AIRequestLog[] @relation("AIRequestUsuario")
-  
-  eventos_auditoria         EventoAuditoria[] @relation("EventoUsuario")
+
+  revisiones_supervisor RevisionSupervisor[] @relation("RevisionSupervisor")
+  revisiones_creadas    RevisionSupervisor[] @relation("RevisionCreador")
+
+  documentos_subidos Documento[] @relation("DocumentoSubidor")
+
+  informes_generados InformeGenerado[] @relation("InformeGenerador")
+
+  ai_requests AIRequestLog[] @relation("AIRequestUsuario")
+
+  eventos_auditoria EventoAuditoria[] @relation("EventoUsuario")
 
   @@map("usuarios")
 }
@@ -230,22 +230,22 @@ model Usuario {
 // =============================================================================
 
 model Cliente {
-  id                 String    @id @default(uuid()) @db.Uuid
-  nombre             String    @db.VarChar(120)
-  documento          String    @db.VarChar(30)
-  tipo_documento     String    @db.VarChar(20)
+  id                 String            @id @default(uuid()) @db.Uuid
+  nombre             String            @db.VarChar(120)
+  documento          String            @db.VarChar(30)
+  tipo_documento     String            @db.VarChar(20)
   contacto           String?
   situacion_libertad SituacionLibertad
-  lugar_detencion    String?   @db.VarChar(200)
-  creado_en          DateTime  @default(now())
-  actualizado_en     DateTime  @updatedAt
-  creado_por         String    @db.Uuid
-  actualizado_por    String?   @db.Uuid
+  lugar_detencion    String?           @db.VarChar(200)
+  creado_en          DateTime          @default(now())
+  actualizado_en     DateTime          @updatedAt
+  creado_por         String            @db.Uuid
+  actualizado_por    String?           @db.Uuid
 
   // Relaciones
-  creador       Usuario  @relation("ClienteCreador", fields: [creado_por], references: [id])
-  actualizador  Usuario? @relation("ClienteActualizador", fields: [actualizado_por], references: [id])
-  casos         Caso[]
+  creador      Usuario  @relation("ClienteCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("ClienteActualizador", fields: [actualizado_por], references: [id])
+  casos        Caso[]
 
   @@unique([tipo_documento, documento])
   @@map("clientes")
@@ -256,36 +256,36 @@ model Cliente {
 // =============================================================================
 
 model Caso {
-  id                          String      @id @default(uuid()) @db.Uuid
-  cliente_id                  String      @db.Uuid
-  responsable_id              String      @db.Uuid
-  radicado                    String      @unique @db.VarChar(80)
-  despacho                    String?     @db.VarChar(200)
-  fecha_apertura              DateTime?   @db.Date
-  delito_imputado             String      @db.VarChar(300)
-  agravantes                  String?
-  regimen_procesal            String      @db.VarChar(100)
-  etapa_procesal              String      @db.VarChar(100)
-  proxima_actuacion           String?
-  fecha_proxima_actuacion     DateTime?   @db.Date
-  responsable_proxima_actuacion String?   @db.VarChar(120)
-  observaciones               String?
-  estado_actual               EstadoCaso  @default(borrador)
-  estado_anterior             EstadoCaso?
-  fecha_cambio_estado         DateTime?
-  usuario_cambio_estado       String?     @db.Uuid
-  creado_en                   DateTime    @default(now())
-  actualizado_en              DateTime    @updatedAt
-  creado_por                  String      @db.Uuid
-  actualizado_por             String?     @db.Uuid
+  id                            String      @id @default(uuid()) @db.Uuid
+  cliente_id                    String      @db.Uuid
+  responsable_id                String      @db.Uuid
+  radicado                      String      @unique @db.VarChar(80)
+  despacho                      String?     @db.VarChar(200)
+  fecha_apertura                DateTime?   @db.Date
+  delito_imputado               String      @db.VarChar(300)
+  agravantes                    String?
+  regimen_procesal              String      @db.VarChar(100)
+  etapa_procesal                String      @db.VarChar(100)
+  proxima_actuacion             String?
+  fecha_proxima_actuacion       DateTime?   @db.Date
+  responsable_proxima_actuacion String?     @db.VarChar(120)
+  observaciones                 String?
+  estado_actual                 EstadoCaso  @default(borrador)
+  estado_anterior               EstadoCaso?
+  fecha_cambio_estado           DateTime?
+  usuario_cambio_estado         String?     @db.Uuid
+  creado_en                     DateTime    @default(now())
+  actualizado_en                DateTime    @updatedAt
+  creado_por                    String      @db.Uuid
+  actualizado_por               String?     @db.Uuid
 
   // Relaciones
-  cliente              Cliente   @relation(fields: [cliente_id], references: [id])
-  responsable          Usuario   @relation("CasoResponsable", fields: [responsable_id], references: [id])
-  creador              Usuario   @relation("CasoCreador", fields: [creado_por], references: [id])
-  actualizador         Usuario?  @relation("CasoActualizador", fields: [actualizado_por], references: [id])
-  usuario_transicion   Usuario?  @relation("CasoCambioEstado", fields: [usuario_cambio_estado], references: [id])
-  
+  cliente            Cliente  @relation(fields: [cliente_id], references: [id])
+  responsable        Usuario  @relation("CasoResponsable", fields: [responsable_id], references: [id])
+  creador            Usuario  @relation("CasoCreador", fields: [creado_por], references: [id])
+  actualizador       Usuario? @relation("CasoActualizador", fields: [actualizado_por], references: [id])
+  usuario_transicion Usuario? @relation("CasoCambioEstado", fields: [usuario_cambio_estado], references: [id])
+
   // Entidades hijas
   hechos               Hecho[]
   linea_tiempo         LineaTiempo[]
@@ -314,17 +314,17 @@ model Caso {
 // =============================================================================
 
 model Hecho {
-  id                  String             @id @default(uuid()) @db.Uuid
-  caso_id             String             @db.Uuid
+  id                  String              @id @default(uuid()) @db.Uuid
+  caso_id             String              @db.Uuid
   orden               Int
   descripcion         String
   estado_hecho        EstadoHecho
   fuente              String?
   incidencia_juridica IncidenciaJuridica?
-  creado_en           DateTime           @default(now())
-  actualizado_en      DateTime           @updatedAt
-  creado_por          String             @db.Uuid
-  actualizado_por     String?            @db.Uuid
+  creado_en           DateTime            @default(now())
+  actualizado_en      DateTime            @updatedAt
+  creado_por          String              @db.Uuid
+  actualizado_por     String?             @db.Uuid
 
   // Relaciones
   caso         Caso     @relation(fields: [caso_id], references: [id])
@@ -367,21 +367,21 @@ model LineaTiempo {
 // =============================================================================
 
 model Prueba {
-  id                       String              @id @default(uuid()) @db.Uuid
-  caso_id                  String              @db.Uuid
-  hecho_id                 String?             @db.Uuid
-  hecho_descripcion_libre  String?
-  descripcion              String
-  tipo_prueba              TipoPrueba
-  licitud                  EvaluacionProbatoria
-  legalidad                EvaluacionProbatoria
-  suficiencia              EvaluacionProbatoria
-  credibilidad             EvaluacionProbatoria
-  posicion_defensiva       String?
-  creado_en                DateTime            @default(now())
-  actualizado_en           DateTime            @updatedAt
-  creado_por               String              @db.Uuid
-  actualizado_por          String?             @db.Uuid
+  id                      String               @id @default(uuid()) @db.Uuid
+  caso_id                 String               @db.Uuid
+  hecho_id                String?              @db.Uuid
+  hecho_descripcion_libre String?
+  descripcion             String
+  tipo_prueba             TipoPrueba
+  licitud                 EvaluacionProbatoria
+  legalidad               EvaluacionProbatoria
+  suficiencia             EvaluacionProbatoria
+  credibilidad            EvaluacionProbatoria
+  posicion_defensiva      String?
+  creado_en               DateTime             @default(now())
+  actualizado_en          DateTime             @updatedAt
+  creado_por              String               @db.Uuid
+  actualizado_por         String?              @db.Uuid
 
   // Relaciones
   caso         Caso     @relation(fields: [caso_id], references: [id])
@@ -402,20 +402,20 @@ model Prueba {
 // =============================================================================
 
 model Riesgo {
-  id                    String          @id @default(uuid()) @db.Uuid
-  caso_id               String          @db.Uuid
+  id                    String           @id @default(uuid()) @db.Uuid
+  caso_id               String           @db.Uuid
   descripcion           String
   probabilidad          Probabilidad
   impacto               Impacto
   prioridad             Prioridad
   estrategia_mitigacion String?
   estado_mitigacion     EstadoMitigacion @default(pendiente)
-  plazo_accion          DateTime?       @db.Date
-  responsable_id        String?         @db.Uuid
-  creado_en             DateTime        @default(now())
-  actualizado_en        DateTime        @updatedAt
-  creado_por            String          @db.Uuid
-  actualizado_por       String?         @db.Uuid
+  plazo_accion          DateTime?        @db.Date
+  responsable_id        String?          @db.Uuid
+  creado_en             DateTime         @default(now())
+  actualizado_en        DateTime         @updatedAt
+  creado_por            String           @db.Uuid
+  actualizado_por       String?          @db.Uuid
 
   // Relaciones
   caso         Caso     @relation(fields: [caso_id], references: [id])
@@ -435,19 +435,19 @@ model Riesgo {
 // =============================================================================
 
 model Estrategia {
-  id                   String   @id @default(uuid()) @db.Uuid
-  caso_id              String   @unique @db.Uuid
-  linea_principal      String?
-  fundamento_juridico  String?
+  id                    String   @id @default(uuid()) @db.Uuid
+  caso_id               String   @unique @db.Uuid
+  linea_principal       String?
+  fundamento_juridico   String?
   fundamento_probatorio String?
-  linea_subsidiaria    String?
+  linea_subsidiaria     String?
   posicion_allanamiento String?
-  posicion_preacuerdo  String?
-  posicion_juicio      String?
-  creado_en            DateTime @default(now())
-  actualizado_en       DateTime @updatedAt
-  creado_por           String   @db.Uuid
-  actualizado_por      String?  @db.Uuid
+  posicion_preacuerdo   String?
+  posicion_juicio       String?
+  creado_en             DateTime @default(now())
+  actualizado_en        DateTime @updatedAt
+  creado_por            String   @db.Uuid
+  actualizado_por       String?  @db.Uuid
 
   // Relaciones
   caso         Caso     @relation(fields: [caso_id], references: [id])
@@ -491,20 +491,20 @@ model Actuacion {
 // =============================================================================
 
 model ExplicacionCliente {
-  id                   String    @id @default(uuid()) @db.Uuid
-  caso_id              String    @unique @db.Uuid
-  delito_explicado     String?
-  riesgos_informados   String?
-  panorama_probatorio  String?
+  id                    String    @id @default(uuid()) @db.Uuid
+  caso_id               String    @unique @db.Uuid
+  delito_explicado      String?
+  riesgos_informados    String?
+  panorama_probatorio   String?
   beneficios_informados String?
-  opciones_explicadas  String?
-  recomendacion        String?
-  decision_cliente     String?
-  fecha_explicacion    DateTime? @db.Date
-  creado_en            DateTime  @default(now())
-  actualizado_en       DateTime  @updatedAt
-  creado_por           String    @db.Uuid
-  actualizado_por      String?   @db.Uuid
+  opciones_explicadas   String?
+  recomendacion         String?
+  decision_cliente      String?
+  fecha_explicacion     DateTime? @db.Date
+  creado_en             DateTime  @default(now())
+  actualizado_en        DateTime  @updatedAt
+  creado_por            String    @db.Uuid
+  actualizado_por       String?   @db.Uuid
 
   // Relaciones
   caso         Caso     @relation(fields: [caso_id], references: [id])
@@ -551,9 +551,9 @@ model ChecklistItem {
   marcado_por String?   @db.Uuid
 
   // Relaciones
-  bloque  ChecklistBloque @relation(fields: [bloque_id], references: [id])
-  caso    Caso            @relation(fields: [caso_id], references: [id])
-  marcador Usuario?       @relation("ChecklistItemMarcador", fields: [marcado_por], references: [id])
+  bloque   ChecklistBloque @relation(fields: [bloque_id], references: [id])
+  caso     Caso            @relation(fields: [caso_id], references: [id])
+  marcador Usuario?        @relation("ChecklistItemMarcador", fields: [marcado_por], references: [id])
 
   @@unique([bloque_id, codigo_item])
   @@index([bloque_id])
@@ -615,16 +615,16 @@ model ConclusionOperativa {
 // =============================================================================
 
 model RevisionSupervisor {
-  id               String           @id @default(uuid()) @db.Uuid
-  caso_id          String           @db.Uuid
-  supervisor_id    String           @db.Uuid
-  version_revision Int              @default(1)
-  vigente          Boolean          @default(true)
+  id               String            @id @default(uuid()) @db.Uuid
+  caso_id          String            @db.Uuid
+  supervisor_id    String            @db.Uuid
+  version_revision Int               @default(1)
+  vigente          Boolean           @default(true)
   observaciones    String
-  fecha_revision   DateTime?        @db.Date
+  fecha_revision   DateTime?         @db.Date
   resultado        ResultadoRevision
-  creado_en        DateTime         @default(now())
-  creado_por       String           @db.Uuid
+  creado_en        DateTime          @default(now())
+  creado_por       String            @db.Uuid
 
   // Relaciones
   caso       Caso    @relation(fields: [caso_id], references: [id])
@@ -675,14 +675,14 @@ model Documento {
 // =============================================================================
 
 model InformeGenerado {
-  id                    String        @id @default(uuid()) @db.Uuid
-  caso_id               String        @db.Uuid
-  tipo_informe          TipoInforme
-  formato               FormatoInforme
-  ruta_archivo          String
-  estado_caso_al_generar String       @db.VarChar(50)
-  generado_en           DateTime      @default(now())
-  generado_por          String        @db.Uuid
+  id                     String         @id @default(uuid()) @db.Uuid
+  caso_id                String         @db.Uuid
+  tipo_informe           TipoInforme
+  formato                FormatoInforme
+  ruta_archivo           String
+  estado_caso_al_generar String         @db.VarChar(50)
+  generado_en            DateTime       @default(now())
+  generado_por           String         @db.Uuid
 
   // Relaciones
   caso      Caso    @relation(fields: [caso_id], references: [id])
@@ -732,16 +732,16 @@ model AIRequestLog {
 // =============================================================================
 
 model EventoAuditoria {
-  id             String            @id @default(uuid()) @db.Uuid
-  caso_id        String?           @db.Uuid
-  usuario_id     String            @db.Uuid
+  id             String             @id @default(uuid()) @db.Uuid
+  caso_id        String?            @db.Uuid
+  usuario_id     String             @db.Uuid
   tipo_evento    TipoEvento
-  estado_origen  String?           @db.VarChar(50)
-  estado_destino String?           @db.VarChar(50)
+  estado_origen  String?            @db.VarChar(50)
+  estado_destino String?            @db.VarChar(50)
   resultado      ResultadoAuditoria
   motivo_rechazo String?
   metadata       Json?
-  fecha_evento   DateTime          @default(now())
+  fecha_evento   DateTime           @default(now())
 
   // Relaciones
   caso    Caso?   @relation(fields: [caso_id], references: [id])
