@@ -1,0 +1,30 @@
+* text=auto
+
+# Código y documentación en LF
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.prisma text eol=lf
+*.sql text eol=lf
+*.graphql text eol=lf
+*.env text eol=lf
+
+# Scripts de Windows en CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
