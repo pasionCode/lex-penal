@@ -14,7 +14,7 @@ import { CreateProceedingDto, UpdateStrategyDto } from './dto/update-strategy.dt
  * PUT    /api/v1/cases/:id/proceedings/:proc_id
  * DELETE /api/v1/cases/:id/proceedings/:proc_id
  */
-@Controller('api/v1/cases/:caseId')
+@Controller('cases/:caseId')
 export class StrategyController {
   constructor(private readonly service: StrategyService) {}
 

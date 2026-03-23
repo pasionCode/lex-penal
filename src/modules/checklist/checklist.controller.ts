@@ -10,7 +10,7 @@ import { UpdateChecklistDto } from './dto/update-checklist-item.dto';
  * critico vive en el bloque, NO en el ítem (MODELO_DATOS_v3).
  * Se genera automáticamente al activar el caso (borrador→en_analisis) (R08).
  */
-@Controller('api/v1/cases/:caseId/checklist')
+@Controller('cases/:caseId/checklist')
 export class ChecklistController {
   constructor(private readonly service: ChecklistService) {}
 

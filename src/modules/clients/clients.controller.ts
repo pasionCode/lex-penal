@@ -10,7 +10,7 @@ import { UpdateClientDto } from './dto/update-client.dto';
  * PUT    /api/v1/clients/:id
  * UNIQUE: (tipo_documento, documento) — no duplicar procesados.
  */
-@Controller('api/v1/clients')
+@Controller('clients')
 export class ClientsController {
   constructor(private readonly service: ClientsService) {}
 

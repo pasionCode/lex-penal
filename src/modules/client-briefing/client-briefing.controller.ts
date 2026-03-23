@@ -10,7 +10,7 @@ import { UpdateClientBriefingDto } from './dto/update-client-briefing.dto';
  * beneficios_informados, opciones_explicadas, recomendacion,
  * decision_cliente, fecha_explicacion.
  */
-@Controller('api/v1/cases/:caseId/client-briefing')
+@Controller('cases/:caseId/client-briefing')
 export class ClientBriefingController {
   constructor(private readonly service: ClientBriefingService) {}
 

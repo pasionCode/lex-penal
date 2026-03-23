@@ -11,7 +11,7 @@ import { AIQueryDto } from './dto/ai-query.dto';
  * 422: valor de herramienta no es uno de los 8 canónicos
  * No disponible para casos en estado cerrado (R09).
  */
-@Controller('api/v1/ai')
+@Controller('ai')
 export class AIController {
   constructor(private readonly service: AIService) {}
 

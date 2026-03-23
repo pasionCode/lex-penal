@@ -10,7 +10,7 @@ import { UpdateConclusionDto } from './dto/update-conclusion.dto';
  * recomendacion no puede ser nulo para aprobado_supervisor→listo_para_cliente.
  * Estructura completa: MODELO_DATOS_v3 — tabla conclusion_operativa.
  */
-@Controller('api/v1/cases/:caseId/conclusion')
+@Controller('cases/:caseId/conclusion')
 export class ConclusionController {
   constructor(private readonly service: ConclusionService) {}
 

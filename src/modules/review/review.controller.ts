@@ -11,7 +11,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
  * observaciones obligatorias en aprobado y devuelto.
  * Solo un registro vigente = true por caso (partial unique index).
  */
-@Controller('api/v1/cases/:caseId/review')
+@Controller('cases/:caseId/review')
 export class ReviewController {
   constructor(private readonly service: ReviewService) {}
 

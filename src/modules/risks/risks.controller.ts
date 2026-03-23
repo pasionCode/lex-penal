@@ -7,7 +7,7 @@ import { UpdateRisksDto } from './dto/update-risks.dto';
  * PUT /api/v1/cases/:id/risks → reemplaza el conjunto completo
  * Riesgos críticos (prioridad=critica) deben tener estrategia_mitigacion (MODELO_DATOS_v3).
  */
-@Controller('api/v1/cases/:caseId/risks')
+@Controller('cases/:caseId/risks')
 export class RisksController {
   constructor(private readonly service: RisksService) {}
 

@@ -17,7 +17,7 @@ import { UpdateCaseDto } from './dto/update-case.dto';
  * - cerrado  → inmutable en todas las herramientas
  * - Estado solo modificable por CasoEstadoService
  */
-@Controller('api/v1/cases')
+@Controller('cases')
 export class CasesController {
   constructor(private readonly service: CasesService) {}
 

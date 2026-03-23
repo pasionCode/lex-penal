@@ -8,7 +8,7 @@ import { CreateTimelineEntryDto } from './dto/create-timeline-entry.dto';
  * linea_tiempo: append-only (MODELO_DATOS_v3 — Principio 2).
  * UNIQUE (caso_id, orden) en BD.
  */
-@Controller('api/v1/cases/:caseId/timeline')
+@Controller('cases/:caseId/timeline')
 export class TimelineController {
   constructor(private readonly service: StrategyService) {}
 

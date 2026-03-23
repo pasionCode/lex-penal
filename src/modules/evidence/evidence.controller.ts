@@ -10,7 +10,7 @@ import { UpdateEvidenceDto } from './dto/update-evidence.dto';
  * credibilidad, posicion_defensiva (MODELO_DATOS_v3).
  * hecho_id si diligenciado debe pertenecer al mismo caso (integridad cruzada).
  */
-@Controller('api/v1/cases/:caseId/evidence')
+@Controller('cases/:caseId/evidence')
 export class EvidenceController {
   constructor(private readonly service: EvidenceService) {}
 

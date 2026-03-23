@@ -118,8 +118,8 @@ de sesión en la respuesta.
 **Respuesta `200`**
 ```json
 {
-  "token_acceso": "<JWT_DE_EJEMPLO>",
-  "usuario": {
+  "access_token": "<JWT_DE_EJEMPLO>",
+  "user": {
     "id": "uuid",
     "nombre": "Nombre Apellido",
     "email": "usuario@dominio.com",
@@ -129,7 +129,7 @@ de sesión en la respuesta.
 ```
 
 El servidor establece simultáneamente una cookie HttpOnly de sesión.
-El cliente conserva `token_acceso` en memoria para las llamadas operativas.
+El cliente conserva `access_token` en memoria para las llamadas operativas.
 
 **Respuestas**
 - `200` — Login exitoso.
@@ -157,8 +157,8 @@ de acceso y el perfil del usuario sin pedir credenciales nuevamente.
 **Respuesta `200`**
 ```json
 {
-  "token_acceso": "eyJ...",
-  "usuario": {
+  "access_token": "eyJ...",
+  "user": {
     "id": "uuid",
     "nombre": "Nombre Apellido",
     "email": "usuario@dominio.com",
@@ -167,7 +167,7 @@ de acceso y el perfil del usuario sin pedir credenciales nuevamente.
 }
 ```
 
-> El `token_acceso` retornado por este endpoint es para uso del cliente
+> El `access_token` retornado por este endpoint es para uso del cliente
 > en memoria de sesión exclusivamente. No debe persistirse en `localStorage`,
 > `sessionStorage` ni ningún almacenamiento accesible desde JavaScript.
 > La cookie HttpOnly — que este endpoint usa para validar la sesión —

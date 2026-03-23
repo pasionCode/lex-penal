@@ -13,7 +13,7 @@ import { GenerateReportDto } from './dto/generate-report.dto';
  * 409: estado del caso no permite ese informe.
  * 422: faltan datos para generarlo.
  */
-@Controller('api/v1/cases/:caseId/reports')
+@Controller('cases/:caseId/reports')
 export class ReportsController {
   constructor(private readonly service: ReportsService) {}
 

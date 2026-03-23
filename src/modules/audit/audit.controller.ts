@@ -8,7 +8,7 @@ import { QueryAuditDto } from './dto/query-audit.dto';
  * El endpoint expone solo metadatos — NO prompt_enviado ni respuesta_recibida
  * de ai_request_log (ARQUITECTURA_MODULO_IA_v3).
  */
-@Controller('api/v1/cases/:caseId/audit')
+@Controller('cases/:caseId/audit')
 export class AuditController {
   constructor(private readonly service: AuditService) {}
 

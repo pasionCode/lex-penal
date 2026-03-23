@@ -8,7 +8,7 @@ import { UpdateFactsDto } from './dto/update-facts.dto';
  * Solo lectura en pendiente_revision y posteriores (R09 parcial).
  * Campos: descripcion, estado_hecho, fuente, incidencia_juridica (MODELO_DATOS_v3).
  */
-@Controller('api/v1/cases/:caseId/facts')
+@Controller('cases/:caseId/facts')
 export class FactsController {
   constructor(private readonly service: FactsService) {}
 
