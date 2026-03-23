@@ -302,7 +302,7 @@ ven todos.
       "responsable": { "id": "uuid", "nombre": "Nombre Apellido" },
       "estado_actual": "en_analisis",
       "delito_imputado": "Hurto calificado",
-      "regimen_procesal": "ordinario",
+      "regimen_procesal": "Ley 906",
       "creado_en": "2026-03-06T14:30:00Z",
       "actualizado_en": "2026-03-06T15:00:00Z"
     }
@@ -316,23 +316,44 @@ ven todos.
 ---
 
 #### `POST /api/v1/cases`
+
 Crea un caso nuevo en estado `borrador`.
-El backend genera automáticamente los registros asociados vacíos:
-checklist, herramientas, conclusión operativa.
+
+La estructura base del caso (checklist_bloques, estrategia, explicacion_cliente,
+conclusion_operativa) se genera automáticamente al activar el caso
+(`borrador` → `en_analisis`), no en el momento de creación.
 
 **Body**
+
 ```json
 {
   "cliente_id": "uuid",
-  "responsable_id": "uuid",
-  "radicado": "11001600002820260001"
+  "radicado": "11001600002820260001",
+  "delito_imputado": "Hurto calificado",
+  "regimen_procesal": "Ley 906",
+  "etapa_procesal": "Investigación"
 }
 ```
 
+| Campo | Obligatorio | Nota |
+|-------|-------------|------|
+| `cliente_id` | ✅ | UUID del cliente/procesado |
+| `radicado` | ✅ | Identificador único del proceso |
+| `delito_imputado` | ✅ | Tipo penal imputado |
+| `regimen_procesal` | ✅ | Ley 600 / Ley 906 |
+| `etapa_procesal` | ✅ | Fase procesal actual |
+| `despacho` | ❌ | Opcional |
+| `fecha_apertura` | ❌ | Opcional (ISO date) |
+
+> **Nota:** `responsable_id`, `creado_por` y `actualizado_por` se asignan
+> automáticamente desde el usuario autenticado. El caso nace con
+> `estado_actual = borrador`.
+
 **Respuestas**
-- `201` — Caso creado con sus registros asociados.
-- `400` — Datos inválidos.
-- `403` — Sin permiso.
+
+- `201` — Caso creado.
+- `400` — Datos inválidos o campos obligatorios faltantes.
+- `403` — Sin permiso para crear casos.
 - `409` — El radicado ya está registrado en el sistema.
 
 ---
@@ -351,7 +372,7 @@ Los datos de las herramientas se cargan por sus endpoints propios.
   "estado_actual": "en_analisis",
   "delito_imputado": "Hurto calificado",
   "etapa_procesal": "Acusación presentada",
-  "regimen_procesal": "ordinario",
+  "regimen_procesal": "Ley 906",
   "creado_en": "2026-03-06T14:30:00Z",
   "actualizado_en": "2026-03-06T15:00:00Z"
 }
@@ -365,16 +386,42 @@ Los datos de las herramientas se cargan por sus endpoints propios.
 ---
 
 #### `PUT /api/v1/cases/{id}`
-Actualiza datos generales del caso (radicado, delito imputado, etapa procesal,
-régimen, responsable).
 
-Solo disponible en estados `borrador`, `en_analisis` y `devuelto`.
-En cualquier otro estado retorna `409`.
+Actualiza metadata editable del caso.
+
+**Campos modificables:**
+
+| Campo | Nota |
+|-------|------|
+| `despacho` | Juzgado o despacho asignado |
+| `etapa_procesal` | Fase procesal actual |
+| `regimen_procesal` | Ley 600 / Ley 906 |
+| `proxima_actuacion` | Descripción de próxima diligencia |
+| `fecha_proxima_actuacion` | Fecha ISO |
+| `responsable_proxima_actuacion` | Texto libre |
+| `observaciones` | Notas generales |
+| `agravantes` | Circunstancias agravantes |
+
+**Campos inmutables (ignorados si se envían):**
+
+- `estado_actual` — Solo modificable vía `/transition`
+- `responsable_id` — Asignado en creación
+- `creado_por` — Asignado en creación
+- `creado_en` — Timestamp de creación
+- `cliente_id` — Identidad del caso
+- `radicado` — Identificador único
+- `delito_imputado` — Tipo penal base
+
+Solo disponible en estados `en_analisis` y `devuelto`.
+En `borrador`, `pendiente_revision`, `aprobado_supervisor`, `listo_para_cliente`
+o `cerrado` retorna `409`.
 
 **Respuestas**
+
 - `200` — Caso actualizado.
-- `403` — Sin permiso.
-- `409` — El estado actual no permite edición general del caso.
+- `403` — Sin permiso o no es propietario del caso.
+- `404` — Caso no encontrado.
+- `409` — El estado actual no permite edición.
 
 ---
 
@@ -440,13 +487,18 @@ Las ocho herramientas del caso (U008) siguen un patrón uniforme:
 | Operación | `borrador` | `en_analisis` | `pendiente_revision` | `devuelto` | `aprobado_supervisor` / `listo_para_cliente` / `cerrado` |
 |---|---|---|---|---|---|
 | `GET` (lectura) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `PUT` (escritura) | ✅ | ✅ | ❌ `409` | ✅ | ❌ `409` |
+| `PUT` (escritura) | ❌ `409` | ✅ | ❌ `409` | ✅ | ❌ `409` |
 
 La lectura siempre está disponible en cualquier estado para cualquier perfil
-con acceso al caso. La escritura solo es posible en `borrador`, `en_analisis`
-y `devuelto`. En `pendiente_revision`, las herramientas son de solo lectura
-para **todos** los perfiles incluyendo supervisor — el supervisor diligencia
-exclusivamente el bloque de revisión (`/review`), no las herramientas del análisis.
+con acceso al caso. La escritura solo es posible en `en_analisis` y `devuelto`.
+
+En `borrador` las herramientas están bloqueadas porque el caso aún no ha sido
+activado — la estructura base (checklist, estrategia, etc.) no existe hasta
+la transición `borrador` → `en_analisis`.
+
+En `pendiente_revision`, las herramientas son de solo lectura para **todos**
+los perfiles incluyendo supervisor — el supervisor diligencia exclusivamente
+el bloque de revisión (`/review`), no las herramientas del análisis.
 
 ---
 
