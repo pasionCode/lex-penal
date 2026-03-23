@@ -146,3 +146,15 @@ A partir de esta desviación, ninguna jornada podrá cerrarse con deuda técnica
 | 2026-03-22 | Pausa metodológica declarada |
 | 2026-03-23 | Saneamiento ejecutado |
 | 2026-03-23 | **CIERRE** |
+
+---
+
+## Deuda técnica menor — Sprint 2
+
+| ID | Descripción | Prioridad | Estado |
+|----|-------------|-----------|--------|
+| DT-001 | Unificar `message` vs `mensaje` en filtro global de excepciones | Baja | Pendiente |
+| DT-002 | Revisar codificación UTF-8 en terminal (mojibake en tildes) | Baja | Pendiente |
+
+**Contexto:** Detectados durante validación de US-06/US-08. No bloquean funcionalidad.
+**Fecha registro:** 2026-03-23
