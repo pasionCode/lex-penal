@@ -14,19 +14,22 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | (completar) |
-| Responsable | (completar) |
+| Última revisión | 2026-03-23 |
+| Responsable | Pablo Jaramillo |
 
 ---
 
 ## Convenciones generales
 
-- **Base path**: `/api/v1`
+- **Base path**: `/api/v1` definido exclusivamente por prefijo global en `src/main.ts`.
+- **Regla de controllers**: los decorators `@Controller(...)` deben declarar rutas relativas al recurso. Queda prohibido repetir `api/v1` dentro del controller.
 - **Formato**: JSON en todas las solicitudes y respuestas.
 - **Fechas**: ISO 8601 (`2026-03-06T14:30:00Z`).
 - **Identificadores**: UUID v4.
 - **Nomenclatura de campos**: snake_case en todo el contrato.
 - **Paginación**: parámetros `page` y `per_page` en endpoints de listado.
+
+> Nota de consistencia: la convención de versionado y prefijo de rutas se rige por ADR-009.
 
 ### Convención de nomenclatura de subrecursos
 
