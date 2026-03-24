@@ -2,56 +2,66 @@ import {
   IsString,
   IsEnum,
   IsOptional,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
-import { TipoPrueba, EvaluacionProbatoria } from './create-evidence.dto';
+
+export enum TipoPrueba {
+  TESTIMONIAL = 'testimonial',
+  DOCUMENTAL = 'documental',
+  PERICIAL = 'pericial',
+  REAL = 'real',
+  OTRO = 'otro',
+}
+
+export enum EvaluacionProbatoria {
+  OK = 'ok',
+  CUESTIONABLE = 'cuestionable',
+  DEFICIENTE = 'deficiente',
+}
 
 /**
- * DTO para editar una prueba.
- * PUT /api/v1/cases/:caseId/evidence/:evidenceId
- *
- * Nota: hecho_id se gestiona via /link y /unlink
+ * DTO para crear una prueba.
+ * POST /api/v1/cases/:caseId/evidence
  */
-export class UpdateEvidenceDto {
-  @IsOptional()
+export class CreateEvidenceDto {
   @IsString({ message: 'descripcion debe ser texto' })
   @MaxLength(2000, { message: 'descripcion no puede exceder 2000 caracteres' })
-  descripcion?: string;
+  descripcion!: string;
 
-  @IsOptional()
   @IsEnum(TipoPrueba, {
     message: 'tipo_prueba debe ser: testimonial, documental, pericial, real u otro',
   })
-  tipo_prueba?: TipoPrueba;
+  tipo_prueba!: TipoPrueba;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'hecho_id debe ser un UUID válido' })
+  hecho_id?: string;
 
   @IsOptional()
   @IsString({ message: 'hecho_descripcion_libre debe ser texto' })
   @MaxLength(500, { message: 'hecho_descripcion_libre no puede exceder 500 caracteres' })
   hecho_descripcion_libre?: string;
 
-  @IsOptional()
   @IsEnum(EvaluacionProbatoria, {
     message: 'licitud debe ser: ok, cuestionable o deficiente',
   })
-  licitud?: EvaluacionProbatoria;
+  licitud!: EvaluacionProbatoria;
 
-  @IsOptional()
   @IsEnum(EvaluacionProbatoria, {
     message: 'legalidad debe ser: ok, cuestionable o deficiente',
   })
-  legalidad?: EvaluacionProbatoria;
+  legalidad!: EvaluacionProbatoria;
 
-  @IsOptional()
   @IsEnum(EvaluacionProbatoria, {
     message: 'suficiencia debe ser: ok, cuestionable o deficiente',
   })
-  suficiencia?: EvaluacionProbatoria;
+  suficiencia!: EvaluacionProbatoria;
 
-  @IsOptional()
   @IsEnum(EvaluacionProbatoria, {
     message: 'credibilidad debe ser: ok, cuestionable o deficiente',
   })
-  credibilidad?: EvaluacionProbatoria;
+  credibilidad!: EvaluacionProbatoria;
 
   @IsOptional()
   @IsString({ message: 'posicion_defensiva debe ser texto' })
