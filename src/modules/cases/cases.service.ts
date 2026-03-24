@@ -8,38 +8,24 @@ import {
 import { Caso } from '@prisma/client';
 import { CasesRepository } from './cases.repository';
 import { CreateCaseDto } from './dto/create-case.dto';
+import { UpdateCaseDto } from './dto/update-case.dto';
 import { EstadoCaso, PerfilUsuario } from '../../types/enums';
 
-/**
- * Orquesta CRUD del caso y delega transiciones a CasoEstadoService.
- * R08: al activar (borrador→en_analisis) crea estructura base atómica.
- * R09: cerrado es inmutable — verificar antes de delegar a herramientas.
- */
 @Injectable()
 export class CasesService {
   constructor(private readonly repository: CasesRepository) {}
 
-  /**
-   * Crea un caso nuevo en estado borrador.
-   * Asigna responsable_id, creado_por y actualizado_por desde el usuario autenticado.
-   *
-   * @throws BadRequestException si el cliente no existe
-   * @throws ConflictException si el radicado ya está registrado
-   */
   async create(dto: CreateCaseDto, userId: string): Promise<Caso> {
-    // 1. Validar que el cliente existe
     const clienteExists = await this.repository.clienteExists(dto.cliente_id);
     if (!clienteExists) {
       throw new BadRequestException(`El cliente ${dto.cliente_id} no existe`);
     }
 
-    // 2. Validar radicado único
     const existente = await this.repository.findByRadicado(dto.radicado);
     if (existente) {
       throw new ConflictException(`El radicado ${dto.radicado} ya está registrado en el sistema`);
     }
 
-    // 3. Crear caso con ownership del usuario autenticado
     return this.repository.create({
       cliente: { connect: { id: dto.cliente_id } },
       responsable: { connect: { id: userId } },
@@ -55,10 +41,6 @@ export class CasesService {
     });
   }
 
-  /**
-   * Lista casos del usuario (ownership).
-   * Supervisor/Admin ven todos.
-   */
   async findAll(userId: string, perfil: PerfilUsuario): Promise<Caso[]> {
     if (perfil === PerfilUsuario.SUPERVISOR || perfil === PerfilUsuario.ADMINISTRADOR) {
       return this.repository.findAll();
@@ -66,13 +48,6 @@ export class CasesService {
     return this.repository.findByResponsable(userId);
   }
 
-  /**
-   * Obtiene un caso por ID con relaciones básicas.
-   * Verifica acceso según perfil en una sola consulta.
-   *
-   * @throws NotFoundException si el caso no existe
-   * @throws ForbiddenException si no tiene acceso
-   */
   async findOne(id: string, userId: string, perfil: PerfilUsuario) {
     const caso = await this.repository.findByIdWithRelations(id);
     
@@ -80,7 +55,6 @@ export class CasesService {
       throw new NotFoundException(`Caso ${id} no encontrado`);
     }
 
-    // Estudiante solo accede a sus propios casos
     if (perfil === PerfilUsuario.ESTUDIANTE && caso.responsable_id !== userId) {
       throw new ForbiddenException('Sin acceso a este caso');
     }
@@ -88,13 +62,79 @@ export class CasesService {
     return caso;
   }
 
-  /**
-   * Verifica que el usuario tiene acceso al caso.
-   * Usado por endpoints que necesitan validar antes de otra operación.
-   *
-   * @throws NotFoundException si el caso no existe
-   * @throws ForbiddenException si no tiene acceso
-   */
+  async update(
+    id: string,
+    dto: UpdateCaseDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Caso> {
+    const caso = await this.checkAccess(id, userId, perfil);
+
+    const estadosEditables = [EstadoCaso.EN_ANALISIS, EstadoCaso.DEVUELTO];
+    if (!estadosEditables.includes(caso.estado_actual as EstadoCaso)) {
+      throw new ConflictException(
+        `El caso en estado "${caso.estado_actual}" no permite edicion`,
+      );
+    }
+
+    const updateData: Record<string, unknown> = {
+      actualizado_por: userId,
+    };
+
+    if (dto.despacho !== undefined) updateData.despacho = dto.despacho;
+    if (dto.etapa_procesal !== undefined) updateData.etapa_procesal = dto.etapa_procesal;
+    if (dto.regimen_procesal !== undefined) updateData.regimen_procesal = dto.regimen_procesal;
+    if (dto.proxima_actuacion !== undefined) updateData.proxima_actuacion = dto.proxima_actuacion;
+    if (dto.fecha_proxima_actuacion !== undefined) {
+      updateData.fecha_proxima_actuacion = new Date(dto.fecha_proxima_actuacion);
+    }
+    if (dto.responsable_proxima_actuacion !== undefined) {
+      updateData.responsable_proxima_actuacion = dto.responsable_proxima_actuacion;
+    }
+    if (dto.observaciones !== undefined) updateData.observaciones = dto.observaciones;
+    if (dto.agravantes !== undefined) updateData.agravantes = dto.agravantes;
+
+    return this.repository.update(id, updateData);
+  }
+
+  async transition(
+    id: string,
+    estadoDestino: EstadoCaso,
+    userId: string,
+    perfil: PerfilUsuario,
+    observaciones?: string,
+  ): Promise<Caso> {
+    const caso = await this.checkAccess(id, userId, perfil);
+
+    const transicionesPermitidas: Record<EstadoCaso, EstadoCaso[]> = {
+      [EstadoCaso.BORRADOR]: [EstadoCaso.EN_ANALISIS],
+      [EstadoCaso.EN_ANALISIS]: [EstadoCaso.PENDIENTE_REVISION],
+      [EstadoCaso.PENDIENTE_REVISION]: [EstadoCaso.APROBADO_SUPERVISOR, EstadoCaso.DEVUELTO],
+      [EstadoCaso.DEVUELTO]: [EstadoCaso.EN_ANALISIS],
+      [EstadoCaso.APROBADO_SUPERVISOR]: [EstadoCaso.LISTO_PARA_CLIENTE],
+      [EstadoCaso.LISTO_PARA_CLIENTE]: [EstadoCaso.CERRADO],
+      [EstadoCaso.CERRADO]: [],
+    };
+
+    const estadoActual = caso.estado_actual as EstadoCaso;
+    const permitidos = transicionesPermitidas[estadoActual] || [];
+
+    if (!permitidos.includes(estadoDestino)) {
+      throw new ConflictException(
+        `Transicion de "${estadoActual}" a "${estadoDestino}" no permitida`,
+      );
+    }
+
+    return this.repository.update(id, {
+      estado_actual: estadoDestino,
+      estado_anterior: estadoActual,
+      fecha_cambio_estado: new Date(),
+      usuario_cambio_estado: userId,
+      actualizado_por: userId,
+      observaciones: observaciones ?? caso.observaciones,
+    });
+  }
+
   async checkAccess(casoId: string, userId: string, perfil: PerfilUsuario): Promise<Caso> {
     const caso = await this.repository.findById(casoId);
     if (!caso) {

@@ -56,7 +56,7 @@ export class CasesRepository {
     return !!cliente;
   }
 
-  async update(id: string, data: Prisma.CasoUpdateInput): Promise<Caso> {
+  async update(id: string, data: Prisma.CasoUncheckedUpdateInput): Promise<Caso> {
     return this.prisma.caso.update({ where: { id }, data });
   }
 }

@@ -67,15 +67,16 @@ export class CasesController {
     return this.service.findOne(id, user.sub, user.perfil as PerfilUsuario);
   }
 
-  /**
+ /**
    * US-10: Actualiza metadata editable del caso.
    */
   @Put(':id')
   async update(
-    @Param('id', ParseUUIDPipe) _id: string,
-    @Body() _dto: UpdateCaseDto,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCaseDto,
+    @CurrentUser() user: JwtPayload,
   ) {
-    throw new Error('not implemented');
+    return this.service.update(id, dto, user.sub, user.perfil as PerfilUsuario);
   }
 
   /**
@@ -83,9 +84,17 @@ export class CasesController {
    */
   @Post(':id/transition')
   async transition(
-    @Param('id', ParseUUIDPipe) _id: string,
-    @Body() _dto: TransitionStateDto,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TransitionStateDto,
+    @CurrentUser() user: JwtPayload,
   ) {
-    throw new Error('not implemented');
+    return this.service.transition(
+      id,
+      dto.estado_destino,
+      user.sub,
+      user.perfil as PerfilUsuario,
+      dto.observaciones,
+    );
   }
+
 }
