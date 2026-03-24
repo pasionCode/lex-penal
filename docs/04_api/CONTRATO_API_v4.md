@@ -514,41 +514,103 @@ Campos principales: `etapa_procesal`, `regimen_procesal`, `proxima_actuacion`,
 
 ---
 
-#### Matriz de hechos
-
+#### Hechos del caso (CRUD individual)
 ```
-GET  /api/v1/cases/{id}/facts
-PUT  /api/v1/cases/{id}/facts
+POST   /api/v1/cases/{id}/facts              → Crear hecho
+GET    /api/v1/cases/{id}/facts              → Listar hechos del caso
+GET    /api/v1/cases/{id}/facts/{factId}     → Detalle de hecho
+PUT    /api/v1/cases/{id}/facts/{factId}     → Editar hecho
 ```
 
-Gestiona la lista de hechos del caso. El `PUT` reemplaza el conjunto completo
-de hechos. Cada hecho incluye: `descripcion`, `estado_hecho`, `fuente`,
-`incidencia_juridica`.
+**Campos del hecho:**
 
-`estado_hecho`: `acreditado` | `referido` | `discutido`.
-`incidencia_juridica`: `tipicidad` | `antijuridicidad` | `culpabilidad` | `procedimiento` | `null`.
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|-------------|-------------|
+| `orden` | integer | No | Posición cronológica (asignado por backend, único por caso) |
+| `descripcion` | string | Sí | Descripción del hecho |
+| `estado_hecho` | enum | Sí | `acreditado` \| `referido` \| `discutido` |
+| `fuente` | string | No | Origen de la información |
+| `incidencia_juridica` | enum | No | `tipicidad` \| `antijuridicidad` \| `culpabilidad` \| `procedimiento` |
 
-> **Advertencia operativa**: `PUT` reemplaza el conjunto completo del recurso.
-> El cliente debe enviar el estado completo actual — incluyendo los elementos
-> que no cambian. Omitir un elemento implica eliminarlo.
+**Respuestas:**
+
+| Código | Condición |
+|--------|-----------|
+| `201` | Hecho creado |
+| `200` | Listado / detalle / edición exitosa |
+| `400` | Payload inválido |
+| `403` | Sin acceso al caso |
+| `404` | Caso o hecho no encontrado |
+| `409` | Orden duplicado en el caso |
 
 ---
 
-#### Matriz probatoria
-
+#### Pruebas del caso (CRUD individual)
 ```
-GET  /api/v1/cases/{id}/evidence
-PUT  /api/v1/cases/{id}/evidence
+POST   /api/v1/cases/{id}/evidence                    → Crear prueba
+GET    /api/v1/cases/{id}/evidence                    → Listar pruebas del caso
+GET    /api/v1/cases/{id}/evidence/{evidenceId}       → Detalle de prueba
+PUT    /api/v1/cases/{id}/evidence/{evidenceId}       → Editar prueba
 ```
 
-Gestiona la lista de elementos probatorios. Cada elemento incluye:
-`descripcion`, `tipo_prueba`, `hecho_id`, `hecho_descripcion_libre`,
-`licitud`, `legalidad`, `suficiencia`, `credibilidad`, `posicion_defensiva`.
+**Campos de la prueba:**
 
-> **Advertencia operativa**: `PUT` reemplaza el conjunto completo del recurso.
-> El cliente debe enviar el estado completo actual. Omitir un elemento implica eliminarlo.
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|-------------|-------------|
+| `descripcion` | string | Sí | Descripción de la prueba |
+| `tipo_prueba` | enum | Sí | `testimonial` \| `documental` \| `pericial` \| `real` \| `otro` |
+| `hecho_id` | uuid | No | Hecho vinculado (mismo caso) |
+| `hecho_descripcion_libre` | string | No | Descripción alternativa si no hay hecho formal |
+| `licitud` | enum | Sí | `ok` \| `cuestionable` \| `deficiente` |
+| `legalidad` | enum | Sí | `ok` \| `cuestionable` \| `deficiente` |
+| `suficiencia` | enum | Sí | `ok` \| `cuestionable` \| `deficiente` |
+| `credibilidad` | enum | Sí | `ok` \| `cuestionable` \| `deficiente` |
+| `posicion_defensiva` | string | No | Postura frente a la prueba |
+
+**Respuestas:**
+
+| Código | Condición |
+|--------|-----------|
+| `201` | Prueba creada |
+| `200` | Listado / detalle / edición exitosa |
+| `400` | Payload inválido |
+| `403` | Sin acceso al caso |
+| `404` | Caso, prueba o hecho no encontrado |
+| `409` | `hecho_id` no pertenece al mismo caso |
 
 ---
+
+#### Vínculo prueba-hecho
+```
+PATCH  /api/v1/cases/{id}/evidence/{evidenceId}/link    → Vincular prueba a hecho
+PATCH  /api/v1/cases/{id}/evidence/{evidenceId}/unlink  → Desvincular prueba
+```
+
+**Body de `/link`:**
+```json
+{
+  "hecho_id": "uuid-del-hecho"
+}
+```
+
+**Reglas:**
+
+- El hecho debe pertenecer al mismo caso que la prueba
+- Una prueba solo puede estar vinculada a un hecho a la vez
+- `/unlink` no requiere body — simplemente limpia `hecho_id`
+
+**Respuestas:**
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Vínculo creado/eliminado |
+| `403` | Sin acceso al caso |
+| `404` | Caso, prueba o hecho no encontrado |
+| `409` | Hecho no pertenece al mismo caso |
+
+---
+
+#### Matriz de riesgos
 
 #### Matriz de riesgos
 
