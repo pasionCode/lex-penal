@@ -152,7 +152,10 @@ Implementar los tres módulos finales del MVP: revisión del supervisor, generac
 
 ## 10. Estado del MVP al cierre de E3
 
-### Módulos operativos (18/18)
+### Módulos operativos (15/15)
+
+> **Nota de corrección (Sprint 7):** El conteo original decía 18/18 contando
+> modelos Prisma. El conteo correcto es 15/15 módulos MVP operativos.
 - ✅ auth, users, clients
 - ✅ cases (CRUD + transiciones)
 - ✅ facts, evidence
