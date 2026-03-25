@@ -10,10 +10,14 @@ import { CasesRepository } from './cases.repository';
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { EstadoCaso, PerfilUsuario } from '../../types/enums';
+import { ChecklistService } from '../checklist/checklist.service';
 
 @Injectable()
 export class CasesService {
-  constructor(private readonly repository: CasesRepository) {}
+  constructor(
+    private readonly repository: CasesRepository,
+    private readonly checklistService: ChecklistService,
+  ) {}
 
   async create(dto: CreateCaseDto, userId: string): Promise<Caso> {
     const clienteExists = await this.repository.clienteExists(dto.cliente_id);
@@ -29,37 +33,26 @@ export class CasesService {
     return this.repository.create({
       cliente: { connect: { id: dto.cliente_id } },
       responsable: { connect: { id: userId } },
-      creador: { connect: { id: userId } },
-      actualizador: { connect: { id: userId } },
       radicado: dto.radicado,
       delito_imputado: dto.delito_imputado,
-      regimen_procesal: dto.regimen_procesal,
-      etapa_procesal: dto.etapa_procesal,
       despacho: dto.despacho ?? null,
-      fecha_apertura: dto.fecha_apertura ? new Date(dto.fecha_apertura) : null,
+      etapa_procesal: dto.etapa_procesal,
+      regimen_procesal: dto.regimen_procesal,
       estado_actual: EstadoCaso.BORRADOR,
+      creador: { connect: { id: userId } },
+      actualizador: { connect: { id: userId } },
     });
   }
 
   async findAll(userId: string, perfil: PerfilUsuario): Promise<Caso[]> {
-    if (perfil === PerfilUsuario.SUPERVISOR || perfil === PerfilUsuario.ADMINISTRADOR) {
-      return this.repository.findAll();
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      return this.repository.findByResponsable(userId);
     }
-    return this.repository.findByResponsable(userId);
+    return this.repository.findAll();
   }
 
-  async findOne(id: string, userId: string, perfil: PerfilUsuario) {
-    const caso = await this.repository.findByIdWithRelations(id);
-    
-    if (!caso) {
-      throw new NotFoundException(`Caso ${id} no encontrado`);
-    }
-
-    if (perfil === PerfilUsuario.ESTUDIANTE && caso.responsable_id !== userId) {
-      throw new ForbiddenException('Sin acceso a este caso');
-    }
-
-    return caso;
+  async findOne(id: string, userId: string, perfil: PerfilUsuario): Promise<Caso> {
+    return this.checkAccess(id, userId, perfil);
   }
 
   async update(
@@ -123,6 +116,11 @@ export class CasesService {
       throw new ConflictException(
         `Transicion de "${estadoActual}" a "${estadoDestino}" no permitida`,
       );
+    }
+
+    // Bootstrap de estructura base al activar el caso
+    if (estadoActual === EstadoCaso.BORRADOR && estadoDestino === EstadoCaso.EN_ANALISIS) {
+      await this.checklistService.bootstrapIfNeeded(id);
     }
 
     return this.repository.update(id, {

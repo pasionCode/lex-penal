@@ -1,26 +1,43 @@
-import { Body, Controller, Get, Param, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ClientBriefingService } from './client-briefing.service';
 import { UpdateClientBriefingDto } from './dto/update-client-briefing.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
 
 /**
- * GET /api/v1/cases/:id/client-briefing
- * PUT /api/v1/cases/:id/client-briefing
- * situacion_libertad del procesado vive en clients, NO aquí (MODELO_DATOS_v3).
- * Campos: delito_explicado, riesgos_informados, panorama_probatorio,
- * beneficios_informados, opciones_explicadas, recomendacion,
- * decision_cliente, fecha_explicacion.
+ * Explicación al cliente — recurso único por caso.
+ * GET  /api/v1/cases/:caseId/client-briefing
+ * PUT  /api/v1/cases/:caseId/client-briefing
  */
 @Controller('cases/:caseId/client-briefing')
+@UseGuards(JwtAuthGuard)
 export class ClientBriefingController {
   constructor(private readonly service: ClientBriefingService) {}
 
   @Get()
-  get(@Param('caseId') _id: string): Promise<unknown> {
-    throw new Error('not implemented');
+  async findOne(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
   }
 
   @Put()
-  update(@Param('caseId') _id: string, @Body() _dto: UpdateClientBriefingDto): Promise<unknown> {
-    throw new Error('not implemented');
+  async update(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: UpdateClientBriefingDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.update(caseId, dto, user.sub, user.perfil as PerfilUsuario);
   }
 }

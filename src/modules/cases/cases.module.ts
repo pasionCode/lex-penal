@@ -3,6 +3,7 @@ import { CasesController } from './cases.controller';
 import { CasesService } from './cases.service';
 import { CasesRepository } from './cases.repository';
 import { CasoEstadoService } from './services/caso-estado.service';
+import { ChecklistModule } from '../checklist/checklist.module';
 
 /**
  * Módulo de casos.
@@ -10,6 +11,7 @@ import { CasoEstadoService } from './services/caso-estado.service';
  * para verificar permisos de escritura (R08, R09).
  */
 @Module({
+  imports: [ChecklistModule],
   controllers: [CasesController],
   providers: [
     CasesService,
