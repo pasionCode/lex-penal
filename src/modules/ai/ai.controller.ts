@@ -1,22 +1,30 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { AIService } from './ai.service';
 import { AIQueryDto } from './dto/ai-query.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
 
 /**
+ * Consultas IA del caso.
  * POST /api/v1/ai/query
- *
- * 200: respuesta + tokens_entrada + tokens_salida + modelo_usado
- * 503: proveedor no disponible (caso y herramientas siguen operando)
- * 500: proveedor respondió pero falló el log — no se entrega la respuesta (RI-IA-02)
- * 422: valor de herramienta no es uno de los 8 canónicos
- * No disponible para casos en estado cerrado (R09).
  */
 @Controller('ai')
+@UseGuards(JwtAuthGuard)
 export class AIController {
   constructor(private readonly service: AIService) {}
 
   @Post('query')
-  query(@Body() _dto: AIQueryDto): Promise<unknown> {
-    throw new Error('not implemented');
+  async query(
+    @Body() dto: AIQueryDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.query(dto, user.sub, user.perfil as PerfilUsuario);
   }
 }

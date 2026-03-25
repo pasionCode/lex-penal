@@ -1,40 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AnthropicAdapter } from '../../infrastructure/ai/providers/anthropic.adapter';
 import { AIController } from './ai.controller';
 import { AIService } from './ai.service';
-import { AIContextBuilder } from './context-builders/ai-context-builder';
-import { BasicInfoContextBuilder } from './context-builders/basic-info.context-builder';
-import { FactsContextBuilder } from './context-builders/facts.context-builder';
-import { EvidenceContextBuilder } from './context-builders/evidence.context-builder';
-import { RisksContextBuilder } from './context-builders/risks.context-builder';
-import { StrategyContextBuilder } from './context-builders/strategy.context-builder';
-import { ClientBriefingContextBuilder } from './context-builders/client-briefing.context-builder';
-import { ChecklistContextBuilder } from './context-builders/checklist.context-builder';
-import { ConclusionContextBuilder } from './context-builders/conclusion.context-builder';
-import { AIRequestLogRepository } from './logging/ai-request-log.repository';
+import { AIRepository } from './ai.repository';
+import { PrismaModule } from '../../infrastructure/database/prisma/prisma.module';
 
 /**
- * Módulo de IA (ADR-004, R05, R07).
- * IAProviderAdapter y AnthropicAdapter viven en src/infrastructure/ai/providers/.
- * Plantillas en src/modules/ai/prompt-templates/ (archivos .txt versionados).
- * IAContextBuilder resuelve qué repositorios consultar por herramienta.
+ * Módulo de IA — MVP simplificado.
+ * Usa placeholder en lugar de proveedor real.
  */
 @Module({
+  imports: [PrismaModule],
   controllers: [AIController],
-  providers: [
-    AIService,
-    AIRequestLogRepository,
-    AIContextBuilder,
-    BasicInfoContextBuilder,
-    FactsContextBuilder,
-    EvidenceContextBuilder,
-    RisksContextBuilder,
-    StrategyContextBuilder,
-    ClientBriefingContextBuilder,
-    ChecklistContextBuilder,
-    ConclusionContextBuilder,
-    AnthropicAdapter,
-  ],
+  providers: [AIService, AIRepository],
   exports: [AIService],
 })
 export class AIModule {}

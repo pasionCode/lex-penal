@@ -1,38 +1,53 @@
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { GenerateReportDto } from './dto/generate-report.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
 
 /**
- * GET  /api/v1/cases/:id/reports            → historial de informes generados
- * POST /api/v1/cases/:id/reports            → solicita generación de informe
- * GET  /api/v1/cases/:id/reports/:reportId  → descarga informe
- *
- * Los informes se generan exclusivamente en backend (PI-01).
- * Todo informe queda registrado en informes_generados (PI-02).
- * Idempotencia: mismo tipo+formato en <5 min retorna el existente (PI-04).
- * 409: estado del caso no permite ese informe.
- * 422: faltan datos para generarlo.
+ * Informes generados del caso.
+ * GET  /api/v1/cases/:caseId/reports - historial
+ * POST /api/v1/cases/:caseId/reports - generar
+ * GET  /api/v1/cases/:caseId/reports/:reportId - detalle/descarga
  */
 @Controller('cases/:caseId/reports')
+@UseGuards(JwtAuthGuard)
 export class ReportsController {
   constructor(private readonly service: ReportsService) {}
 
   @Get()
-  findAll(@Param('caseId') _id: string): Promise<unknown> {
-    throw new Error('not implemented');
+  async findAll(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findAll(caseId, user.sub, user.perfil as PerfilUsuario);
   }
 
   @Post()
-  generate(@Param('caseId') _id: string, @Body() _dto: GenerateReportDto): Promise<unknown> {
-    throw new Error('not implemented');
+  async generate(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: GenerateReportDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.generate(caseId, dto, user.sub, user.perfil as PerfilUsuario);
   }
 
   @Get(':reportId')
-  download(
-    @Param('caseId') _caseId: string,
-    @Param('reportId') _reportId: string,
-    @Query('format') _format: string,
-  ): Promise<unknown> {
-    throw new Error('not implemented');
+  async findOne(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findOne(caseId, reportId, user.sub, user.perfil as PerfilUsuario);
   }
 }
