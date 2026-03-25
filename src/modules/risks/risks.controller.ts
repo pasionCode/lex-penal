@@ -1,23 +1,62 @@
-import { Body, Controller, Get, Param, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { RisksService } from './risks.service';
-import { UpdateRisksDto } from './dto/update-risks.dto';
+import { CreateRiskDto } from './dto/create-risk.dto';
+import { UpdateRiskDto } from './dto/update-risk.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
 
 /**
- * GET /api/v1/cases/:id/risks
- * PUT /api/v1/cases/:id/risks → reemplaza el conjunto completo
- * Riesgos críticos (prioridad=critica) deben tener estrategia_mitigacion (MODELO_DATOS_v3).
+ * CRUD individual de riesgos del caso.
  */
 @Controller('cases/:caseId/risks')
+@UseGuards(JwtAuthGuard)
 export class RisksController {
   constructor(private readonly service: RisksService) {}
 
-  @Get()
-  findAll(@Param('caseId') _caseId: string): Promise<unknown> {
-    throw new Error('not implemented');
+  @Post()
+  async create(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: CreateRiskDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.create(caseId, dto, user.sub, user.perfil as PerfilUsuario);
   }
 
-  @Put()
-  replace(@Param('caseId') _caseId: string, @Body() _dto: UpdateRisksDto): Promise<unknown> {
-    throw new Error('not implemented');
+  @Get()
+  async findAll(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Get(':riskId')
+  async findOne(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Param('riskId', ParseUUIDPipe) riskId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findOne(caseId, riskId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Put(':riskId')
+  async update(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Param('riskId', ParseUUIDPipe) riskId: string,
+    @Body() dto: UpdateRiskDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.update(caseId, riskId, dto, user.sub, user.perfil as PerfilUsuario);
   }
 }

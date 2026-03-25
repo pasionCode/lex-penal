@@ -612,19 +612,36 @@ PATCH  /api/v1/cases/{id}/evidence/{evidenceId}/unlink  → Desvincular prueba
 
 #### Matriz de riesgos
 
-#### Matriz de riesgos
-
+#### Riesgos del caso (CRUD individual)
 ```
-GET  /api/v1/cases/{id}/risks
-PUT  /api/v1/cases/{id}/risks
+POST   /api/v1/cases/{id}/risks              → Crear riesgo
+GET    /api/v1/cases/{id}/risks              → Listar riesgos del caso
+GET    /api/v1/cases/{id}/risks/{riskId}     → Detalle de riesgo
+PUT    /api/v1/cases/{id}/risks/{riskId}     → Editar riesgo
 ```
 
-Gestiona la lista de riesgos. Cada riesgo incluye: `descripcion`,
-`probabilidad`, `impacto`, `prioridad`, `estrategia_mitigacion`,
-`estado_mitigacion`, `plazo_accion`, `responsable_id`.
+**Campos del riesgo:**
 
-> **Advertencia operativa**: `PUT` reemplaza el conjunto completo del recurso.
-> El cliente debe enviar el estado completo actual. Omitir un elemento implica eliminarlo.
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|-------------|-------------|
+| `descripcion` | string | Sí | Descripción del riesgo |
+| `probabilidad` | enum | Sí | `alta` \| `media` \| `baja` |
+| `impacto` | enum | Sí | `alto` \| `medio` \| `bajo` |
+| `prioridad` | enum | Sí | `critica` \| `alta` \| `media` \| `baja` |
+| `estrategia_mitigacion` | string | No* | Obligatorio si prioridad=critica |
+| `estado_mitigacion` | enum | No | `pendiente` \| `en_curso` \| `mitigado` \| `aceptado` (default: pendiente) |
+| `plazo_accion` | date | No | Fecha límite para mitigar |
+| `responsable_id` | uuid | No | Usuario responsable de mitigar |
+
+**Respuestas:**
+
+| Código | Condición |
+|--------|-----------|
+| `201` | Riesgo creado |
+| `200` | Listado / detalle / edición exitosa |
+| `400` | Payload inválido o prioridad crítica sin estrategia |
+| `403` | Sin acceso al caso |
+| `404` | Caso o riesgo no encontrado |
 
 ---
 

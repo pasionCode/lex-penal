@@ -1,28 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
-import { Riesgo, Prisma } from '@prisma/client';
+import { LineaTiempo, Prisma } from '@prisma/client';
 
 @Injectable()
-export class RisksRepository {
+export class TimelineRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.RiesgoUncheckedCreateInput): Promise<Riesgo> {
-    return this.prisma.riesgo.create({ data });
+  async create(data: Prisma.LineaTiempoUncheckedCreateInput): Promise<LineaTiempo> {
+    return this.prisma.lineaTiempo.create({ data });
   }
 
-  async findById(id: string): Promise<Riesgo | null> {
-    return this.prisma.riesgo.findUnique({ where: { id } });
-  }
-
-  async findByCaseId(casoId: string): Promise<Riesgo[]> {
-    return this.prisma.riesgo.findMany({
+  async findByCaseId(casoId: string): Promise<LineaTiempo[]> {
+    return this.prisma.lineaTiempo.findMany({
       where: { caso_id: casoId },
-      orderBy: [{ prioridad: 'asc' }, { creado_en: 'asc' }],
+      orderBy: [{ fecha_evento: 'asc' }, { orden: 'asc' }],
     });
   }
 
-  async update(id: string, data: Prisma.RiesgoUncheckedUpdateInput): Promise<Riesgo> {
-    return this.prisma.riesgo.update({ where: { id }, data });
+  async getNextOrder(casoId: string): Promise<number> {
+    const last = await this.prisma.lineaTiempo.findFirst({
+      where: { caso_id: casoId },
+      orderBy: { orden: 'desc' },
+      select: { orden: true },
+    });
+    return (last?.orden ?? 0) + 1;
   }
 
   async caseExists(casoId: string): Promise<boolean> {

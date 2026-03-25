@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { StrategyController } from './strategy.controller';
-import { TimelineController } from './timeline.controller';
 import { StrategyService } from './strategy.service';
 import { StrategyRepository } from './strategy.repository';
+import { PrismaModule } from '../../infrastructure/database/prisma/prisma.module';
 
 @Module({
-  controllers: [StrategyController, TimelineController],
+  imports: [PrismaModule],
+  controllers: [StrategyController],
   providers: [StrategyService, StrategyRepository],
   exports: [StrategyService],
 })

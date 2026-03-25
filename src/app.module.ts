@@ -23,6 +23,7 @@ import { FactsModule } from './modules/facts/facts.module';
 import { EvidenceModule } from './modules/evidence/evidence.module';
 import { RisksModule } from './modules/risks/risks.module';
 import { StrategyModule } from './modules/strategy/strategy.module';
+import { TimelineModule } from './modules/timeline/timeline.module';
 import { ClientBriefingModule } from './modules/client-briefing/client-briefing.module';
 import { ChecklistModule } from './modules/checklist/checklist.module';
 import { ConclusionModule } from './modules/conclusion/conclusion.module';
@@ -58,6 +59,7 @@ import { AuditModule } from './modules/audit/audit.module';
     EvidenceModule,
     RisksModule,
     StrategyModule,
+    TimelineModule,
     ClientBriefingModule,
     ChecklistModule,
     ConclusionModule,
