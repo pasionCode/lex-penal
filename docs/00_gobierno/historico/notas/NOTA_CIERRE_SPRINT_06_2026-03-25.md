@@ -29,17 +29,17 @@ Implementar los tres módulos finales del MVP: revisión del supervisor, generac
 - Solo supervisores/admin pueden crear revisiones
 - Estudiantes acceden solo a `/feedback` de su propio caso
 
-### 4.2 Reports — Generación con idempotencia
-- Mismo tipo+formato en <5 min retorna el existente
+### 4.2 Reports — Generación persistida de informes
 - Registro en `InformeGenerado` con estado del caso al momento
 - Ruta de archivo generada (placeholder para MVP)
+- Endpoint actual retorna metadatos del informe generado
 - Descarga binaria real diferida a post-MVP
 
 ### 4.3 AI — Endpoint operativo con logging obligatorio
 - Respuesta placeholder para MVP (sin proveedor real)
 - Registro obligatorio en `AIRequestLog`
 - 8 herramientas canónicas validadas por enum
-- Bloqueado en casos cerrados
+- Control de acceso validado por ownership del caso
 
 ## 5. Endpoints implementados
 
@@ -148,6 +148,7 @@ Implementar los tres módulos finales del MVP: revisión del supervisor, generac
 
 ### Nueva
 - DT-007: AI module simplificado (removidos context builders y adapter para MVP)
+- DT-008: Revisar encoding UTF-8 en respuesta placeholder del módulo AI
 
 ## 10. Estado del MVP al cierre de E3
 
@@ -184,4 +185,4 @@ Queda autorizada la transición a la Fase E4.
 
 | Hash | Mensaje |
 |------|---------|
-| (pendiente) | feat(sprint6): implementa review, reports, ai |
+| 142380d | feat(mvp): completa Sprint 6 con review, reports y ai |
