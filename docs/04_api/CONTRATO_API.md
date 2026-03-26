@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-26 |
+| Última revisión | 2026-03-26 (Sprint 13) |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -778,11 +778,16 @@ GET    /api/v1/cases/{id}/proceedings/{proc_id}
 Gestiona las actuaciones procesales del caso. Vinculadas a la estrategia
 y usadas en los informes `cronologico` y `agenda_vencimientos`.
 
+Entidad con **política append-only**. No se permite edición ni eliminación.
+
 Cada actuación incluye: `descripcion`, `fecha`, `responsable_id`,
 `responsable_externo`, `completada`.
 
 Al menos uno de `responsable_id` o `responsable_externo` debe estar
 diligenciado cuando la actuación tiene responsable asignado.
+
+> **Nota de implementación (Sprint 13):** Se retiró la exposición de `PUT` y `DELETE`
+> para alinear el recurso con la política append-only.
 
 **Respuestas:**
 

@@ -6,7 +6,7 @@
 - Fase: E5 — Expansión funcional controlada
 - Sprint: Sprint 13
 - Foco: `proceedings`
-- Estado: LISTO PARA CIERRE
+- Estado: CERRADO
 
 ---
 
@@ -75,9 +75,9 @@ Antes de abrir Sprint 13 se preservan estas reglas:
 - [x] baseline documentado
 - [x] contrato revisado contra runtime
 - [x] nota de cierre emitida
-- [ ] commit realizado
-- [ ] push realizado
-- [ ] `git status` final limpio
+- [x] commit realizado
+- [x] push realizado
+- [x] `git status` final limpio
 
 ---
 
@@ -121,7 +121,7 @@ Sprint 13 solo podrá declararse cerrado cuando:
 - [x] la regresión mínima esté verde
 - [x] el contrato no contradiga el runtime
 - [x] la nota de cierre esté emitida
-- [ ] el repositorio quede limpio
+- [x] el repositorio quede limpio
 
 ---
 
@@ -172,4 +172,4 @@ src/modules/proceedings/
 ---
 
 *Documento actualizado: 2026-03-26*  
-*Sprint 13 — Fase E5 — LISTO PARA CIERRE*
+*Sprint 13 — Fase E5 — CERRADO*
