@@ -801,13 +801,14 @@ diligenciado cuando la actuación tiene responsable asignado.
 GET    /api/v1/cases/{id}/documents
 POST   /api/v1/cases/{id}/documents
 GET    /api/v1/cases/{id}/documents/{doc_id}
+PUT    /api/v1/cases/{id}/documents/{doc_id}
 ```
 
 Gestiona los metadatos de documentos asociados al caso.
-Entidad **append-only**: no se permite modificación ni eliminación.
+Entidad con **política híbrida**: solo el campo `descripcion` es editable. No se permite eliminación.
 
-> **Nota de implementación (Sprint 10):** Actualmente solo se registran
-> metadatos. La subida real de archivos binarios queda diferida a sprint posterior.
+> **Nota de implementación (Sprint 11):** Se registran metadatos y se permite
+> actualizar `descripcion`. La subida real de archivos binarios queda diferida.
 
 **Campos del documento:**
 
