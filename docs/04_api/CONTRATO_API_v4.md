@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-23 |
+| Última revisión | 2026-03-26 |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -610,7 +610,6 @@ PATCH  /api/v1/cases/{id}/evidence/{evidenceId}/unlink  → Desvincular prueba
 
 ---
 
-#### Matriz de riesgos
 
 #### Riesgos del caso (CRUD individual)
 ```
@@ -770,11 +769,10 @@ Cada evento incluye: `fecha_evento`, `descripcion`, `orden`.
 
 #### Actuaciones procesales
 
-> **⚠️ Nota de implementación:** Los endpoints `/api/v1/cases/{id}/proceedings` se encuentran reservados para desarrollo post-MVP y no están implementados en el backend actual. Su inclusión en este documento tiene carácter prospectivo y no contractual para la versión vigente del sistema.
-
 ```
 GET    /api/v1/cases/{id}/proceedings
 POST   /api/v1/cases/{id}/proceedings
+GET    /api/v1/cases/{id}/proceedings/{proc_id}
 PUT    /api/v1/cases/{id}/proceedings/{proc_id}
 DELETE /api/v1/cases/{id}/proceedings/{proc_id}
 ```
@@ -788,10 +786,54 @@ Cada actuación incluye: `descripcion`, `fecha`, `responsable_id`,
 Al menos uno de `responsable_id` o `responsable_externo` debe estar
 diligenciado cuando la actuación tiene responsable asignado.
 
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista o detalle de actuaciones |
+| `201` | Actuación creada |
+| `400` | Payload inválido |
+| `404` | Caso o actuación no encontrada |
+
+
+#### Documentos del caso
+```
+GET    /api/v1/cases/{id}/documents
+POST   /api/v1/cases/{id}/documents
+GET    /api/v1/cases/{id}/documents/{doc_id}
+```
+
+Gestiona los metadatos de documentos asociados al caso.
+Entidad **append-only**: no se permite modificación ni eliminación.
+
+> **Nota de implementación (Sprint 10):** Actualmente solo se registran
+> metadatos. La subida real de archivos binarios queda diferida a sprint posterior.
+
+**Campos del documento:**
+
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|-------------|-------------|
+| `categoria` | enum | Sí | `acusacion`, `defensa`, `cliente`, `actuacion`, `informe`, `evidencia`, `anexo`, `otro` |
+| `nombre_original` | string | Sí | Nombre original del archivo |
+| `nombre_almacenado` | string | Sí | Nombre en almacenamiento |
+| `ruta` | string | Sí | Ruta de almacenamiento (referencial) |
+| `mime_type` | string | Sí | Tipo MIME del archivo |
+| `tamanio_bytes` | integer | Sí | Tamaño en bytes |
+| `descripcion` | string | No | Descripción opcional |
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista o detalle de documentos |
+| `201` | Documento registrado |
+| `400` | Payload inválido |
+| `404` | Caso o documento no encontrado |
+
 ---
 
-### Revisión del supervisor
 
+### Revisión del supervisor
 #### `GET /api/v1/cases/{id}/review`
 Retorna el historial completo de revisiones del caso, ordenado por versión.
 La revisión vigente tiene `vigente: true`.

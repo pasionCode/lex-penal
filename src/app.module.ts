@@ -30,6 +30,8 @@ import { ConclusionModule } from './modules/conclusion/conclusion.module';
 
 // Flujos formales
 import { ReviewModule } from './modules/review/review.module';
+import { ProceedingsModule } from './modules/proceedings/proceedings.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { ReportsModule } from './modules/reports/reports.module';
 
 // Transversales
@@ -65,6 +67,8 @@ import { AuditModule } from './modules/audit/audit.module';
     ConclusionModule,
     // Flujos formales
     ReviewModule,
+    ProceedingsModule,
+    DocumentsModule,
     ReportsModule,
     // Transversales
     AIModule,
