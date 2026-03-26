@@ -1,15 +1,6 @@
 import { IsEnum, IsString, IsUUID, IsNotEmpty, MaxLength } from 'class-validator';
+import { HerramientaIA } from '../../../types/enums';
 
-export enum HerramientaIA {
-  BASIC_INFO = 'basic_info',
-  FACTS = 'facts',
-  EVIDENCE = 'evidence',
-  RISKS = 'risks',
-  STRATEGY = 'strategy',
-  CLIENT_BRIEFING = 'client_briefing',
-  CHECKLIST = 'checklist',
-  CONCLUSION = 'conclusion',
-}
 
 /**
  * DTO para consulta IA.

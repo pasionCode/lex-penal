@@ -1,19 +1,6 @@
 import { IsEnum } from 'class-validator';
+import { TipoInforme, FormatoInforme } from '../../../types/enums';
 
-export enum TipoInforme {
-  RESUMEN_EJECUTIVO = 'resumen_ejecutivo',
-  CONCLUSION_OPERATIVA = 'conclusion_operativa',
-  CONTROL_CALIDAD = 'control_calidad',
-  RIESGOS = 'riesgos',
-  CRONOLOGICO = 'cronologico',
-  REVISION_SUPERVISOR = 'revision_supervisor',
-  AGENDA_VENCIMIENTOS = 'agenda_vencimientos',
-}
-
-export enum FormatoInforme {
-  PDF = 'pdf',
-  DOCX = 'docx',
-}
 
 /**
  * DTO para solicitar generación de informe.

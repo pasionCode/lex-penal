@@ -1,9 +1,6 @@
 import { IsEnum, IsString, IsNotEmpty, IsOptional, IsDateString, MaxLength } from 'class-validator';
+import { ResultadoRevision } from '../../../types/enums';
 
-export enum ResultadoRevision {
-  APROBADO = 'aprobado',
-  DEVUELTO = 'devuelto',
-}
 
 /**
  * DTO para crear revisión del supervisor.

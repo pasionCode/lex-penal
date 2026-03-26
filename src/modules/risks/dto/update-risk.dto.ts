@@ -6,12 +6,7 @@ import {
   IsDateString,
   MaxLength,
 } from 'class-validator';
-import {
-  Probabilidad,
-  Impacto,
-  Prioridad,
-  EstadoMitigacion,
-} from './create-risk.dto';
+import { Probabilidad, Impacto, Prioridad, EstadoMitigacion } from '../../../types/enums';
 
 /**
  * DTO para editar un riesgo.

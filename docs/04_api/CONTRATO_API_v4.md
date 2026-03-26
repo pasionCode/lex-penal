@@ -770,6 +770,8 @@ Cada evento incluye: `fecha_evento`, `descripcion`, `orden`.
 
 #### Actuaciones procesales
 
+> **⚠️ Nota de implementación:** Los endpoints `/api/v1/cases/{id}/proceedings` se encuentran reservados para desarrollo post-MVP y no están implementados en el backend actual. Su inclusión en este documento tiene carácter prospectivo y no contractual para la versión vigente del sistema.
+
 ```
 GET    /api/v1/cases/{id}/proceedings
 POST   /api/v1/cases/{id}/proceedings

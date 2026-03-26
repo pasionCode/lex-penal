@@ -4,19 +4,8 @@ import {
   IsOptional,
   MaxLength,
 } from 'class-validator';
+import { EstadoHecho, IncidenciaJuridica } from '../../../types/enums';
 
-export enum EstadoHecho {
-  ACREDITADO = 'acreditado',
-  REFERIDO = 'referido',
-  DISCUTIDO = 'discutido',
-}
-
-export enum IncidenciaJuridica {
-  TIPICIDAD = 'tipicidad',
-  ANTIJURIDICIDAD = 'antijuridicidad',
-  CULPABILIDAD = 'culpabilidad',
-  PROCEDIMIENTO = 'procedimiento',
-}
 
 /**
  * DTO para crear un hecho.

@@ -5,20 +5,8 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
+import { TipoPrueba, EvaluacionProbatoria } from '../../../types/enums';
 
-export enum TipoPrueba {
-  TESTIMONIAL = 'testimonial',
-  DOCUMENTAL = 'documental',
-  PERICIAL = 'pericial',
-  REAL = 'real',
-  OTRO = 'otro',
-}
-
-export enum EvaluacionProbatoria {
-  OK = 'ok',
-  CUESTIONABLE = 'cuestionable',
-  DEFICIENTE = 'deficiente',
-}
 
 /**
  * DTO para crear una prueba.

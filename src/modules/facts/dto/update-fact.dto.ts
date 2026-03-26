@@ -4,7 +4,7 @@ import {
   IsOptional,
   MaxLength,
 } from 'class-validator';
-import { EstadoHecho, IncidenciaJuridica } from './create-fact.dto';
+import { EstadoHecho, IncidenciaJuridica } from '../../../types/enums';
 
 /**
  * DTO para editar un hecho.

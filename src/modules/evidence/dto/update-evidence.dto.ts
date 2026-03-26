@@ -4,7 +4,7 @@ import {
   IsOptional,
   MaxLength,
 } from 'class-validator';
-import { TipoPrueba, EvaluacionProbatoria } from './create-evidence.dto';
+import { TipoPrueba, EvaluacionProbatoria } from '../../../types/enums';
 
 /**
  * DTO para editar una prueba.

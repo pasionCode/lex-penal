@@ -8,32 +8,8 @@ import {
   ValidateIf,
   IsNotEmpty,
 } from 'class-validator';
+import { Probabilidad, Impacto, Prioridad, EstadoMitigacion } from '../../../types/enums';
 
-export enum Probabilidad {
-  ALTA = 'alta',
-  MEDIA = 'media',
-  BAJA = 'baja',
-}
-
-export enum Impacto {
-  ALTO = 'alto',
-  MEDIO = 'medio',
-  BAJO = 'bajo',
-}
-
-export enum Prioridad {
-  CRITICA = 'critica',
-  ALTA = 'alta',
-  MEDIA = 'media',
-  BAJA = 'baja',
-}
-
-export enum EstadoMitigacion {
-  PENDIENTE = 'pendiente',
-  EN_CURSO = 'en_curso',
-  MITIGADO = 'mitigado',
-  ACEPTADO = 'aceptado',
-}
 
 /**
  * DTO para crear un riesgo.

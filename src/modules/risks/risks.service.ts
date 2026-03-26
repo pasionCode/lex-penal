@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { Riesgo } from '@prisma/client';
 import { RisksRepository } from './risks.repository';
-import { CreateRiskDto, Prioridad } from './dto/create-risk.dto';
+import { CreateRiskDto } from './dto/create-risk.dto';
 import { UpdateRiskDto } from './dto/update-risk.dto';
-import { PerfilUsuario } from '../../types/enums';
+import { PerfilUsuario, Prioridad } from '../../types/enums';
 
 @Injectable()
 export class RisksService {

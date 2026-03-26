@@ -131,15 +131,15 @@ export enum TipoEvento {
 
 /**
  * Valores canónicos del campo herramienta en POST /api/v1/ai/query.
- * Coinciden exactamente con los subrecursos del contrato API (kebab-case).
+ * Convención oficial: snake_case (definido en Sprint 8, E4).
  */
 export enum HerramientaIA {
-  BASIC_INFO = 'basic-info',
+  BASIC_INFO = 'basic_info',
   FACTS = 'facts',
   EVIDENCE = 'evidence',
   RISKS = 'risks',
   STRATEGY = 'strategy',
-  CLIENT_BRIEFING = 'client-briefing',
+  CLIENT_BRIEFING = 'client_briefing',
   CHECKLIST = 'checklist',
   CONCLUSION = 'conclusion',
 }
