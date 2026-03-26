@@ -2,8 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
   Param,
   Body,
   UseGuards,
@@ -11,19 +9,19 @@ import {
 } from '@nestjs/common';
 import { ProceedingsService } from './proceedings.service';
 import { CreateProceedingDto } from './dto/create-proceeding.dto';
-import { UpdateProceedingDto } from './dto/update-proceeding.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { PerfilUsuario } from '../../types/enums';
 
 /**
- * CRUD de actuaciones procesales del caso.
+ * Actuaciones procesales del caso — Política Append-Only (Sprint 13)
+ * 
  * GET    /api/v1/cases/:caseId/proceedings              → Listar
  * POST   /api/v1/cases/:caseId/proceedings              → Crear
  * GET    /api/v1/cases/:caseId/proceedings/:proceedingId → Detalle
- * PUT    /api/v1/cases/:caseId/proceedings/:proceedingId → Editar
- * DELETE /api/v1/cases/:caseId/proceedings/:proceedingId → Eliminar
+ * 
+ * PUT y DELETE removidos por política append-only.
  */
 @Controller('cases/:caseId/proceedings')
 @UseGuards(JwtAuthGuard)
@@ -54,24 +52,5 @@ export class ProceedingsController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.service.findOne(caseId, proceedingId, user.sub, user.perfil as PerfilUsuario);
-  }
-
-  @Put(':proceedingId')
-  async update(
-    @Param('caseId', ParseUUIDPipe) caseId: string,
-    @Param('proceedingId', ParseUUIDPipe) proceedingId: string,
-    @Body() dto: UpdateProceedingDto,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.service.update(caseId, proceedingId, dto, user.sub, user.perfil as PerfilUsuario);
-  }
-
-  @Delete(':proceedingId')
-  async remove(
-    @Param('caseId', ParseUUIDPipe) caseId: string,
-    @Param('proceedingId', ParseUUIDPipe) proceedingId: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.service.remove(caseId, proceedingId, user.sub, user.perfil as PerfilUsuario);
   }
 }

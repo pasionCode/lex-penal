@@ -773,8 +773,6 @@ Cada evento incluye: `fecha_evento`, `descripcion`, `orden`.
 GET    /api/v1/cases/{id}/proceedings
 POST   /api/v1/cases/{id}/proceedings
 GET    /api/v1/cases/{id}/proceedings/{proc_id}
-PUT    /api/v1/cases/{id}/proceedings/{proc_id}
-DELETE /api/v1/cases/{id}/proceedings/{proc_id}
 ```
 
 Gestiona las actuaciones procesales del caso. Vinculadas a la estrategia
