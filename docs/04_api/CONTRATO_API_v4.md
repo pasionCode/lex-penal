@@ -954,13 +954,15 @@ La indisponibilidad del módulo de IA no afecta ningún flujo del caso.
 ```json
 {
   "caso_id": "uuid",
-  "herramienta": "matriz_probatoria",
+  "herramienta": "basic_info",
   "consulta": "¿Qué elementos probatorios presentan mayor riesgo de exclusión?"
 }
 ```
 
-**Valores válidos de `herramienta`**: `basic-info`, `facts`, `evidence`,
-`risks`, `strategy`, `client-briefing`, `checklist`, `conclusion`.
+**Valores válidos de `herramienta`**: `basic_info`, `facts`, `evidence`,
+`risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`.
+
+> **Nota de consistencia:** Los nombres de subrecursos HTTP pueden usar kebab-case en la ruta del caso (por ejemplo, `/basic-info`, `/client-briefing`), pero el campo `herramienta` del módulo de IA usa exclusivamente `snake_case` (`basic_info`, `client_briefing`, etc.).
 
 **Respuesta `200`**
 ```json
