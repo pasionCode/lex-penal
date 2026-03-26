@@ -11,13 +11,13 @@
 
 Items que bloquean calidad de producción o generan errores visibles al usuario.
 
-| ID | Tipo | Descripción | Impacto | Acción |
+| ID | Tipo | Descripción | Impacto | Estado |
 |----|------|-------------|---------|--------|
-| BUG-001 | Bug | Encoding UTF-8 corrupto: "Investigación" → "Investigaci�n" | Usuario ve caracteres rotos | Verificar charset en PostgreSQL, Prisma y headers HTTP |
-| H-006 | Contrato-Código | HerramientaIA: contrato dice `basic-info` (kebab), DTO acepta `basic_info` (snake) | Request con valores del contrato rechazados con 400 | Decidir convención y alinear contrato + código |
-| DT-002 | Deuda técnica | Encoding UTF-8 en respuestas (confirmado como BUG-001) | Mismo que BUG-001 | Consolidar con BUG-001 |
+| BUG-001 | Bug | Encoding UTF-8 corrupto: "Investigación" → "Investigaci�n" | Usuario ve caracteres rotos | ✅ Cerrado Sprint 8 |
+| H-006 | Contrato-Código | HerramientaIA: contrato dice `basic-info` (kebab), DTO acepta `basic_info` (snake) | Request con valores del contrato rechazados con 400 | ✅ Cerrado Sprint 8 |
+| DT-002 | Deuda técnica | Encoding UTF-8 en respuestas (confirmado como BUG-001) | Mismo que BUG-001 | ✅ Cerrado Sprint 8 |
 
-**Criterio de cierre:** Los tres items resueltos y verificados en runtime.
+**Criterio de cierre:** ✅ Los tres items resueltos y verificados en runtime (2026-03-26).
 
 ---
 
@@ -114,7 +114,7 @@ H-007 ←── Decisión de ubicación canónica de enums
 
 | Criterio | Verificación |
 |----------|--------------|
-| BUG-001 resuelto | Respuesta JSON con "Investigación" correcta |
+| BUG-001 resuelto | Respuesta JSON sin caracteres corruptos; valores homologados sin tildes por política de datos |
 | H-006 resuelto | POST /ai/query acepta únicamente la convención oficial definida; contrato, DTO y runtime alineados |
 | H-007 resuelto | `grep -r "enum.*Herramienta"` devuelve solo una ubicación |
 | Código muerto eliminado | `RolesGuard` y `TransitionCaseDto` no existen |
@@ -129,7 +129,12 @@ _Espacio para registrar decisiones y observaciones durante E4_
 | Fecha | Decisión/Observación |
 |-------|----------------------|
 | 2026-03-25 | Backlog creado con base en hallazgos de Sprint 7 |
+| 2026-03-26 | **Sprint 8:** BUG-001 corregido (dato corrupto en BD, homologado sin tildes) |
+| 2026-03-26 | **Sprint 8:** H-006 cerrado (convención oficial: snake_case para campo `herramienta`) |
+| 2026-03-26 | **Sprint 8:** DT-002 cerrado (consolidado con BUG-001) |
+| 2026-03-26 | **Sprint 8:** Regresión verificada (cases, timeline, review, reports OK) |
 
 ---
 
-**Backlog E4 ACTIVO — 2026-03-25**
+**Backlog E4 ACTUALIZADO — 2026-03-26**
+**Prioridad Alta: 3/3 cerrados**
