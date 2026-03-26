@@ -48,4 +48,14 @@ export class DocumentsRepository {
     });
     return caso?.responsable_id ?? null;
   }
+
+  async update(
+    id: string,
+    data: { descripcion?: string },
+  ): Promise<Documento> {
+    return this.prisma.documento.update({
+      where: { id },
+      data,
+    });
+  }
 }

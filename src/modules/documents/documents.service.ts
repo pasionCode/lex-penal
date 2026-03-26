@@ -6,6 +6,7 @@ import {
 import { Documento } from '@prisma/client';
 import { DocumentsRepository } from './documents.repository';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { UpdateDocumentDto } from './dto/update-document.dto';
 import { PerfilUsuario, CategoriaDocumento } from '../../types/enums';
 
 // Tipo para documento serializable (BigInt → number)
@@ -68,6 +69,26 @@ export class DocumentsService {
       subido_por: userId,
     });
     return this.serialize(doc);
+  }
+
+  async update(
+    caseId: string,
+    documentId: string,
+    dto: UpdateDocumentDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<DocumentoSerializable> {
+    await this.validateCaseAccess(caseId, userId, perfil);
+
+    const document = await this.repository.findById(documentId);
+    if (!document || document.caso_id !== caseId) {
+      throw new NotFoundException(`Documento ${documentId} no encontrado`);
+    }
+
+    const updated = await this.repository.update(documentId, {
+      descripcion: dto.descripcion,
+    });
+    return this.serialize(updated);
   }
 
   private async validateCaseAccess(

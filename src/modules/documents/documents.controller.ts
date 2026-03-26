@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Put,
   Post,
   Param,
   Body,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
@@ -52,5 +54,15 @@ export class DocumentsController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.service.findOne(caseId, documentId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Put(':documentId')
+  async update(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Body() dto: UpdateDocumentDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.update(caseId, documentId, dto, user.sub, user.perfil as PerfilUsuario);
   }
 }
