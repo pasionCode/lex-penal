@@ -2,16 +2,39 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { SubjectsRepository } from './subjects.repository';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
 @Injectable()
 export class SubjectsService {
   constructor(private readonly repository: SubjectsRepository) {}
 
-  async findAllByCaseId(caseId: string) {
+  async findAllByCaseId(
+    caseId: string,
+    page: number,
+    perPage: number,
+  ): Promise<PaginatedResponse<any>> {
     const caseExists = await this.repository.caseExists(caseId);
     if (!caseExists) {
       throw new NotFoundException('Caso no encontrado');
     }
-    return this.repository.findAllByCaseId(caseId);
+
+    const { data, total } = await this.repository.findAllByCaseId(
+      caseId,
+      page,
+      perPage,
+    );
+
+    return {
+      data,
+      total,
+      page,
+      per_page: perPage,
+    };
   }
 
   async findOne(caseId: string, subjectId: string) {

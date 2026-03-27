@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   ParseUUIDPipe,
@@ -11,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
-import { CreateSubjectDto } from './dto/create-subject.dto';
+import { CreateSubjectDto, ListSubjectsQueryDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('cases/:caseId/subjects')
@@ -20,8 +21,13 @@ export class SubjectsController {
   constructor(private readonly service: SubjectsService) {}
 
   @Get()
-  async findAll(@Param('caseId', ParseUUIDPipe) caseId: string) {
-    return this.service.findAllByCaseId(caseId);
+  async findAll(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Query() query: ListSubjectsQueryDto,
+  ) {
+    const page = query.page ?? 1;
+    const perPage = query.per_page ?? 20;
+    return this.service.findAllByCaseId(caseId, page, perPage);
   }
 
   @Post()

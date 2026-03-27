@@ -6,11 +6,26 @@ import { CreateSubjectDto } from './dto/create-subject.dto';
 export class SubjectsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllByCaseId(caseId: string) {
-    return this.prisma.subject.findMany({
-      where: { caso_id: caseId },
-      orderBy: { creado_en: 'desc' },
-    });
+  async findAllByCaseId(
+    caseId: string,
+    page: number,
+    perPage: number,
+  ): Promise<{ data: any[]; total: number }> {
+    const skip = (page - 1) * perPage;
+
+    const [data, total] = await Promise.all([
+      this.prisma.subject.findMany({
+        where: { caso_id: caseId },
+        orderBy: { creado_en: 'desc' },
+        skip,
+        take: perPage,
+      }),
+      this.prisma.subject.count({
+        where: { caso_id: caseId },
+      }),
+    ]);
+
+    return { data, total };
   }
 
   async findById(subjectId: string) {
