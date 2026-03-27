@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
-import { CreateSubjectDto, TipoSujeto } from './dto/create-subject.dto';
+import { CreateSubjectDto } from './dto/create-subject.dto';
+import { TipoSujeto } from '@prisma/client';
 
 @Injectable()
 export class SubjectsRepository {
@@ -11,12 +12,17 @@ export class SubjectsRepository {
     page: number,
     perPage: number,
     tipo?: TipoSujeto,
+    nombre?: string,
   ): Promise<{ data: any[]; total: number }> {
     const skip = (page - 1) * perPage;
 
-    const whereClause: { caso_id: string; tipo?: TipoSujeto } = { caso_id: caseId };
+    const whereClause: { caso_id: string; tipo?: TipoSujeto; nombre?: { contains: string; mode: 'insensitive' } } = { caso_id: caseId };
     if (tipo) {
       whereClause.tipo = tipo;
+    }
+
+    if (nombre) {
+      whereClause.nombre = { contains: nombre, mode: 'insensitive' };
     }
 
     const [data, total] = await Promise.all([

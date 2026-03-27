@@ -761,4 +761,30 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 ---
 
-*Documento actualizado: 2026-03-27 (Sprint 16)*
+*Documento actualizado: 2026-03-27 (Sprint 18)*
+
+## Addendum Sprint 18 — subjects: filtro por nombre
+
+### GET `/api/v1/cases/{caseId}/subjects`
+
+#### Query params adicionales
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `nombre` | string | No | — | Filtra por coincidencia parcial en el campo `nombre` |
+
+#### Reglas de comportamiento
+- `nombre` aplica búsqueda parcial sobre el campo `nombre`.
+- La búsqueda por `nombre` es case-insensitive.
+- `tipo` y `nombre` pueden usarse simultáneamente.
+- Los filtros se aplican antes de la paginación.
+- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
+- Si `nombre` es vacío o contiene solo espacios, la respuesta es `400 Bad Request`.
+
+#### Ejemplos
+- `GET /api/v1/cases/{caseId}/subjects?nombre=Juan`
+- `GET /api/v1/cases/{caseId}/subjects?tipo=imputado&nombre=Test`
+- `GET /api/v1/cases/{caseId}/subjects?nombre=Test&page=1&per_page=1`
+
+### Historial de cambios
+- 2026-03-27 — Sprint 18: se incorpora filtro opcional por `nombre` en listado de `subjects`, compatible con `tipo` y paginación.

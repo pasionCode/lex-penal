@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SubjectsRepository } from './subjects.repository';
-import { CreateSubjectDto, TipoSujeto } from './dto/create-subject.dto';
+import { CreateSubjectDto } from './dto/create-subject.dto';
+import { TipoSujeto } from '@prisma/client';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -18,6 +19,7 @@ export class SubjectsService {
     page: number,
     perPage: number,
     tipo?: TipoSujeto,
+    nombre?: string,
   ): Promise<PaginatedResponse<any>> {
     const caseExists = await this.repository.caseExists(caseId);
     if (!caseExists) {
@@ -29,6 +31,7 @@ export class SubjectsService {
       page,
       perPage,
       tipo,
+      nombre,
     );
 
     return {
