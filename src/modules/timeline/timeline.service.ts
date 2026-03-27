@@ -35,9 +35,17 @@ export class TimelineService {
     casoId: string,
     userId: string,
     perfil: PerfilUsuario,
-  ): Promise<LineaTiempo[]> {
+    page = 1,
+    perPage = 20,
+  ): Promise<{ data: LineaTiempo[]; total: number; page: number; per_page: number }> {
     await this.checkCaseAccess(casoId, userId, perfil);
-    return this.repository.findByCaseId(casoId);
+
+    const [data, total] = await Promise.all([
+      this.repository.findByCaseIdPaginated(casoId, page, perPage),
+      this.repository.countByCaseId(casoId),
+    ]);
+
+    return { data, total, page, per_page: perPage };
   }
 
   private async checkCaseAccess(

@@ -41,4 +41,20 @@ export class TimelineRepository {
     });
     return caso?.responsable_id ?? null;
   }
+  async findByCaseIdPaginated(
+    casoId: string,
+    page: number,
+    perPage: number,
+  ): Promise<LineaTiempo[]> {
+    return this.prisma.lineaTiempo.findMany({
+      where: { caso_id: casoId },
+      orderBy: [{ fecha_evento: 'asc' }, { orden: 'asc' }],
+      skip: (page - 1) * perPage,
+      take: perPage,
+    });
+  }
+
+  async countByCaseId(casoId: string): Promise<number> {
+    return this.prisma.lineaTiempo.count({ where: { caso_id: casoId } });
+  }
 }

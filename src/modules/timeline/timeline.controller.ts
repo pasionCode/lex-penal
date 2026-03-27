@@ -4,8 +4,11 @@ import {
   Post,
   Param,
   Body,
+  Query,
   UseGuards,
   ParseUUIDPipe,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { TimelineService } from './timeline.service';
 import { CreateTimelineEntryDto } from './dto/create-timeline-entry.dto';
@@ -27,9 +30,17 @@ export class TimelineController {
   @Get()
   async findAll(
     @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('per_page', new DefaultValuePipe(20), ParseIntPipe) perPage: number,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+    return this.service.findByCaseId(
+      caseId,
+      user.sub,
+      user.perfil as PerfilUsuario,
+      page,
+      perPage,
+    );
   }
 
   @Post()
