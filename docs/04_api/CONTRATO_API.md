@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-27 (Sprint 21) |
+| Última revisión | 2026-03-27 (Sprint 22) |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -765,6 +765,7 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 | Sprint | Fecha | Cambios |
 |--------|-------|---------|
 | 21 | 2026-03-27 | Consolidación contractual de `GET /subjects`: integración canónica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion`. |
+| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
 | 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
 | 15 | 2026-03-27 | Agregado subrecurso `subjects` (sección 6) con política append-only |
 | 14 | 2026-03-27 | Hardening de validaciones en `proceedings` |
@@ -774,5 +775,5 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 ---
 
-*Documento actualizado: 2026-03-27 (Sprint 21)*
+*Documento actualizado: 2026-03-27 (Sprint 22)*
 
