@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.0 |
-| Fecha | 2026-03-06 |
+| Versión | 1.1 |
+| Fecha | 2026-03-27 |
 | Estado | Vigente |
 | Entorno | Producción — VM única Ubuntu 24.04 LTS |
 
@@ -230,42 +230,33 @@ pm2 restart lexpenal-frontend
 # Reiniciar ambos
 pm2 restart all
 
-# Recargar Nginx sin cortar conexiones activas
-sudo nginx -t && sudo systemctl reload nginx
+# Reiniciar Nginx (si se modificó configuración)
+sudo systemctl reload nginx
 ```
 
-Antes de reiniciar Nginx siempre ejecutar `nginx -t` para verificar
-que la configuración es válida. Un reinicio con configuración
-inválida deja el servidor inaccesible.
-
-### 6.3 Logs de aplicación
+### 6.3 Logs
 
 ```bash
-# Logs de backend (últimas 100 líneas)
+# Logs del backend (últimas 100 líneas)
 pm2 logs lexpenal-backend --lines 100
 
-# Logs de Nginx (errores)
-sudo tail -n 100 /var/log/nginx/error.log
+# Logs de Nginx
+sudo tail -100 /var/log/nginx/access.log
+sudo tail -100 /var/log/nginx/error.log
 
 # Logs de PostgreSQL
-sudo tail -n 100 /var/log/postgresql/postgresql-*.log
+sudo journalctl -u postgresql -n 100
 ```
 
-Los logs de aplicación no deben contener secretos, tokens completos
-ni contraseñas. Si se detecta un secreto en logs, rotar la credencial
-afectada inmediatamente.
-
-### 6.4 Salud del sistema
+### 6.4 Espacio en disco
 
 ```bash
-# Uso de disco
+# Uso general
 df -h
 
-# Uso de memoria
-free -h
-
-# Procesos activos por consumo de CPU
-top -b -n 1 | head -20
+# Directorios más grandes
+du -sh /var/lib/postgresql/*
+du -sh /var/log/*
 ```
 
 Si el disco supera el 80% de uso, revisar logs antiguos y backups
@@ -495,3 +486,47 @@ con registro manual del hecho.
 | Arquitectura del backend | `docs/06_backend/ARQUITECTURA_BACKEND.md` |
 | ADR-001 — despliegue en VM única | `docs/00_gobierno/adrs/ADR-001-despliegue-inicial-vm.md` |
 | ADR-004 — módulo IA desacoplado | `docs/00_gobierno/adrs/ADR-004-modulo-ia-desacoplado.md` |
+
+---
+
+## 12. Operación técnica controlada
+
+### 12.1. Prioridad de intervención reproducible
+
+Las intervenciones técnicas sobre el sistema deben privilegiar mecanismos reproducibles y verificables:
+
+- bloques de terminal con comandos exactos;
+- scripts ejecutables;
+- parches aplicables con `git apply`;
+- heredocs o reemplazos automatizados.
+
+### 12.2. Restricción de edición manual
+
+La edición manual artesanal de archivos de código o configuración es **excepción**, no práctica ordinaria. Solo se permite cuando:
+
+- no existe alternativa reproducible razonable;
+- la complejidad del cambio lo justifica formalmente;
+- queda registrada la excepción en el registro de la intervención.
+
+### 12.3. Excepción formal
+
+Toda edición manual debe tratarse como excepción metodológica y registrarse indicando:
+
+- archivo afectado;
+- razón de la excepción;
+- resultado verificado.
+
+### 12.4. Intervención humana en flujos asistidos
+
+En flujos de operación asistidos por IA, la participación del operador se centra en:
+
+- ejecutar comandos proporcionados;
+- validar resultados obtenidos;
+- autorizar excepciones cuando se requieran;
+- verificar y documentar evidencia.
+
+El operador no debe alterar discrecionalmente los artefactos técnicos salvo excepción formal registrada.
+
+---
+
+*Documento actualizado: 2026-03-27 (v1.1)*
