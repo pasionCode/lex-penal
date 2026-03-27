@@ -1,14 +1,6 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
-import { TipoSujeto } from '@prisma/client';
+import {Transform, Type} from 'class-transformer';
+import {IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min} from 'class-validator';
+import { TipoIdentificacion, TipoSujeto } from '@prisma/client';
 
 export class ListSubjectsQueryDto {
   @IsOptional()
@@ -45,4 +37,15 @@ export class ListSubjectsQueryDto {
   @IsString()
   @IsNotEmpty()
   identificacion?: string;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsEnum(TipoIdentificacion, {
+    message: 'tipo_identificacion debe ser: CC, TI, CE, PAS, NIT, otro',
+  })
+  @IsNotEmpty()
+  tipo_identificacion?: TipoIdentificacion;
+
 }
