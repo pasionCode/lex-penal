@@ -561,7 +561,6 @@ Entidad con **política híbrida**: solo el campo `descripcion` es editable. No 
 Entidad con **política append-only**. No se permite edición ni eliminación.
 
 #### 6.1 Listar sujetos de un caso
-
 ```
 GET /api/v1/cases/{caseId}/subjects
 Authorization: Bearer {token}
@@ -573,9 +572,15 @@ Authorization: Bearer {token}
 |-----------|------|---------|-------------|
 | `page` | number | 1 | Página actual (1-indexed) |
 | `per_page` | number | 20 | Elementos por página (1-100) |
+| `tipo` | enum | — | Filtra por tipo de sujeto procesal |
+
+**Valores válidos de `tipo`:** `victima`, `imputado`, `testigo`, `apoderado`, `otro`
+
+El filtro se aplica antes de la paginación. Si se especifica un `tipo` válido
+que no tiene registros, la respuesta es `200 OK` con `data: []` y `total: 0`.
+Si `tipo` es inválido, la respuesta es `400 Bad Request`.
 
 **Respuesta exitosa:** `200 OK`
-
 ```json
 {
   "data": [
@@ -606,11 +611,10 @@ disponibles, la respuesta es `200 OK` con `data: []`. Los campos `total`, `page`
 y `per_page` se mantienen informativos.
 
 **Errores:**
-- `400` — Parámetros de paginación inválidos
+- `400` — Parámetros de paginación o filtro inválidos
 - `404` — Caso no encontrado
 
 > **Breaking change (Sprint 16):** La respuesta cambió de array plano `[...]` a objeto paginado `{ data, total, page, per_page }`.
-
 ---
 
 #### 6.2 Crear sujeto
@@ -753,6 +757,7 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 | 14 | 2026-03-27 | Hardening de validaciones en `proceedings` |
 | 13 | 2026-03-26 | Política append-only para `proceedings`, removidos PUT/DELETE |
 | 12 | 2026-03-26 | Hardening de validaciones en `documents` |
+| 17 | 2026-03-27 | Filtro por `tipo` en `GET /subjects`. Parámetro opcional con validación enum. |
 
 ---
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
-import { CreateSubjectDto } from './dto/create-subject.dto';
+import { CreateSubjectDto, TipoSujeto } from './dto/create-subject.dto';
 
 @Injectable()
 export class SubjectsRepository {
@@ -10,18 +10,24 @@ export class SubjectsRepository {
     caseId: string,
     page: number,
     perPage: number,
+    tipo?: TipoSujeto,
   ): Promise<{ data: any[]; total: number }> {
     const skip = (page - 1) * perPage;
 
+    const whereClause: { caso_id: string; tipo?: TipoSujeto } = { caso_id: caseId };
+    if (tipo) {
+      whereClause.tipo = tipo;
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.subject.findMany({
-        where: { caso_id: caseId },
+        where: whereClause,
         orderBy: { creado_en: 'desc' },
         skip,
         take: perPage,
       }),
       this.prisma.subject.count({
-        where: { caso_id: caseId },
+        where: whereClause,
       }),
     ]);
 

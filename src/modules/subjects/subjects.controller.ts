@@ -27,7 +27,7 @@ export class SubjectsController {
   ) {
     const page = query.page ?? 1;
     const perPage = query.per_page ?? 20;
-    return this.service.findAllByCaseId(caseId, page, perPage);
+    return this.service.findAllByCaseId(caseId, page, perPage, query.tipo);
   }
 
   @Post()

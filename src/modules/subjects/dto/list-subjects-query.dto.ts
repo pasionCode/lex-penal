@@ -1,5 +1,6 @@
-import { IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { TipoSujeto } from './create-subject.dto';
 
 export class ListSubjectsQueryDto {
   @IsOptional()
@@ -14,4 +15,10 @@ export class ListSubjectsQueryDto {
   @Min(1, { message: 'per_page debe ser >= 1' })
   @Max(100, { message: 'per_page no puede exceder 100' })
   per_page?: number = 20;
+
+  @IsOptional()
+  @IsEnum(TipoSujeto, {
+    message: 'tipo debe ser: victima, imputado, testigo, apoderado, otro',
+  })
+  tipo?: TipoSujeto;
 }
