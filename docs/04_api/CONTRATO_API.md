@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-27 (Sprint 16) |
+| Última revisión | 2026-03-27 (Sprint 21) |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -573,12 +573,26 @@ Authorization: Bearer {token}
 | `page` | number | 1 | Página actual (1-indexed) |
 | `per_page` | number | 20 | Elementos por página (1-100) |
 | `tipo` | enum | — | Filtra por tipo de sujeto procesal |
+| `nombre` | string | — | Filtra por coincidencia parcial case-insensitive en `nombre` |
+| `identificacion` | string | — | Filtra por coincidencia exacta en `identificacion` |
+| `tipo_identificacion` | enum | — | Filtra por coincidencia exacta en `tipo_identificacion` |
 
 **Valores válidos de `tipo`:** `victima`, `imputado`, `testigo`, `apoderado`, `otro`
 
-El filtro se aplica antes de la paginación. Si se especifica un `tipo` válido
-que no tiene registros, la respuesta es `200 OK` con `data: []` y `total: 0`.
-Si `tipo` es inválido, la respuesta es `400 Bad Request`.
+**Valores válidos de `tipo_identificacion`:** `CC`, `TI`, `CE`, `PAS`, `NIT`, `otro`
+
+#### Reglas de comportamiento
+- Los filtros se aplican antes de la paginación.
+- `tipo`, `nombre`, `identificacion` y `tipo_identificacion` pueden combinarse entre sí.
+- `nombre` aplica búsqueda parcial case-insensitive.
+- `identificacion` aplica comparación exacta.
+- `tipo_identificacion` aplica comparación exacta.
+- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
+- Si `tipo` es inválido, la respuesta es `400 Bad Request`.
+- Si `nombre` es vacío o contiene solo espacios, la respuesta es `400 Bad Request`.
+- Si `identificacion` es vacía o contiene solo espacios, la respuesta es `400 Bad Request`.
+- Si `tipo_identificacion` es inválido, la respuesta es `400 Bad Request`.
+- Si `tipo_identificacion` es vacío, la respuesta es `400 Bad Request`.
 
 **Respuesta exitosa:** `200 OK`
 ```json
@@ -606,16 +620,14 @@ Si `tipo` es inválido, la respuesta es `400 Bad Request`.
 }
 ```
 
-**Comportamiento de página fuera de rango:** Si `page` excede el total de páginas
-disponibles, la respuesta es `200 OK` con `data: []`. Los campos `total`, `page`
-y `per_page` se mantienen informativos.
+**Comportamiento de página fuera de rango:** Si `page` excede el total de páginas disponibles, la respuesta es `200 OK` con `data: []`. Los campos `total`, `page` y `per_page` se mantienen informativos.
 
 **Errores:**
 - `400` — Parámetros de paginación o filtro inválidos
 - `404` — Caso no encontrado
 
-> **Breaking change (Sprint 16):** La respuesta cambió de array plano `[...]` a objeto paginado `{ data, total, page, per_page }`.
----
+> **Consolidación contractual (Sprint 21):** Se integra en bloque único la semántica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion` para `GET /subjects`.
+
 
 #### 6.2 Crear sujeto
 
@@ -752,6 +764,7 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 | Sprint | Fecha | Cambios |
 |--------|-------|---------|
+| 21 | 2026-03-27 | Consolidación contractual de `GET /subjects`: integración canónica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion`. |
 | 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
 | 15 | 2026-03-27 | Agregado subrecurso `subjects` (sección 6) con política append-only |
 | 14 | 2026-03-27 | Hardening de validaciones en `proceedings` |
@@ -761,57 +774,5 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 ---
 
-*Documento actualizado: 2026-03-27 (Sprint 19)*
+*Documento actualizado: 2026-03-27 (Sprint 21)*
 
-## Addendum Sprint 18 — subjects: filtro por nombre
-
-### GET `/api/v1/cases/{caseId}/subjects`
-
-#### Query params adicionales
-
-| Parámetro | Tipo | Requerido | Default | Descripción |
-|-----------|------|-----------|---------|-------------|
-| `nombre` | string | No | — | Filtra por coincidencia parcial en el campo `nombre` |
-
-#### Reglas de comportamiento
-- `nombre` aplica búsqueda parcial sobre el campo `nombre`.
-- La búsqueda por `nombre` es case-insensitive.
-- `tipo` y `nombre` pueden usarse simultáneamente.
-- Los filtros se aplican antes de la paginación.
-- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
-- Si `nombre` es vacío o contiene solo espacios, la respuesta es `400 Bad Request`.
-
-#### Ejemplos
-- `GET /api/v1/cases/{caseId}/subjects?nombre=Juan`
-- `GET /api/v1/cases/{caseId}/subjects?tipo=imputado&nombre=Test`
-- `GET /api/v1/cases/{caseId}/subjects?nombre=Test&page=1&per_page=1`
-
-### Historial de cambios
-- 2026-03-27 — Sprint 18: se incorpora filtro opcional por `nombre` en listado de `subjects`, compatible con `tipo` y paginación.
-
-## Addendum Sprint 19 — subjects: filtro por identificacion
-
-### GET `/api/v1/cases/{caseId}/subjects`
-
-#### Query params adicionales
-
-| Parámetro | Tipo | Requerido | Default | Descripción |
-|-----------|------|-----------|---------|-------------|
-| `identificacion` | string | No | — | Filtra por coincidencia exacta en el campo `identificacion` |
-
-#### Reglas de comportamiento
-- `identificacion` aplica comparación exacta sobre el campo `identificacion`.
-- `identificacion` se normaliza con `trim`.
-- `tipo`, `nombre` e `identificacion` pueden usarse simultáneamente.
-- Los filtros se aplican antes de la paginación.
-- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
-- Si `identificacion` es vacía o contiene solo espacios, la respuesta es `400 Bad Request`.
-
-#### Ejemplos
-- `GET /api/v1/cases/{caseId}/subjects?identificacion=1234567890`
-- `GET /api/v1/cases/{caseId}/subjects?tipo=victima&identificacion=1234567890`
-- `GET /api/v1/cases/{caseId}/subjects?nombre=Juan&identificacion=1234567890`
-- `GET /api/v1/cases/{caseId}/subjects?identificacion=1234567890&page=1&per_page=1`
-
-### Historial de cambios
-- 2026-03-27 — Sprint 19: se incorpora filtro opcional por `identificacion` en listado de `subjects`, compatible con `tipo`, `nombre` y paginación.
