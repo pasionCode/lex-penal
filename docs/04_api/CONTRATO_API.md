@@ -761,7 +761,7 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 ---
 
-*Documento actualizado: 2026-03-27 (Sprint 18)*
+*Documento actualizado: 2026-03-27 (Sprint 19)*
 
 ## Addendum Sprint 18 — subjects: filtro por nombre
 
@@ -788,3 +788,30 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 ### Historial de cambios
 - 2026-03-27 — Sprint 18: se incorpora filtro opcional por `nombre` en listado de `subjects`, compatible con `tipo` y paginación.
+
+## Addendum Sprint 19 — subjects: filtro por identificacion
+
+### GET `/api/v1/cases/{caseId}/subjects`
+
+#### Query params adicionales
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `identificacion` | string | No | — | Filtra por coincidencia exacta en el campo `identificacion` |
+
+#### Reglas de comportamiento
+- `identificacion` aplica comparación exacta sobre el campo `identificacion`.
+- `identificacion` se normaliza con `trim`.
+- `tipo`, `nombre` e `identificacion` pueden usarse simultáneamente.
+- Los filtros se aplican antes de la paginación.
+- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
+- Si `identificacion` es vacía o contiene solo espacios, la respuesta es `400 Bad Request`.
+
+#### Ejemplos
+- `GET /api/v1/cases/{caseId}/subjects?identificacion=1234567890`
+- `GET /api/v1/cases/{caseId}/subjects?tipo=victima&identificacion=1234567890`
+- `GET /api/v1/cases/{caseId}/subjects?nombre=Juan&identificacion=1234567890`
+- `GET /api/v1/cases/{caseId}/subjects?identificacion=1234567890&page=1&per_page=1`
+
+### Historial de cambios
+- 2026-03-27 — Sprint 19: se incorpora filtro opcional por `identificacion` en listado de `subjects`, compatible con `tipo`, `nombre` y paginación.

@@ -13,16 +13,21 @@ export class SubjectsRepository {
     perPage: number,
     tipo?: TipoSujeto,
     nombre?: string,
+    identificacion?: string,
   ): Promise<{ data: any[]; total: number }> {
     const skip = (page - 1) * perPage;
 
-    const whereClause: { caso_id: string; tipo?: TipoSujeto; nombre?: { contains: string; mode: 'insensitive' } } = { caso_id: caseId };
+    const whereClause: { caso_id: string; tipo?: TipoSujeto; nombre?: { contains: string; mode: 'insensitive' }; identificacion?: string } = { caso_id: caseId };
     if (tipo) {
       whereClause.tipo = tipo;
     }
 
     if (nombre) {
       whereClause.nombre = { contains: nombre, mode: 'insensitive' };
+    }
+
+    if (identificacion) {
+      whereClause.identificacion = identificacion;
     }
 
     const [data, total] = await Promise.all([

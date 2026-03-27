@@ -20,6 +20,7 @@ export class SubjectsService {
     perPage: number,
     tipo?: TipoSujeto,
     nombre?: string,
+    identificacion?: string,
   ): Promise<PaginatedResponse<any>> {
     const caseExists = await this.repository.caseExists(caseId);
     if (!caseExists) {
@@ -32,6 +33,7 @@ export class SubjectsService {
       perPage,
       tipo,
       nombre,
+      identificacion,
     );
 
     return {

@@ -36,4 +36,13 @@ export class ListSubjectsQueryDto {
   @IsString()
   @IsNotEmpty()
   nombre?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    return value.trim();
+  })
+  @IsString()
+  @IsNotEmpty()
+  identificacion?: string;
 }
