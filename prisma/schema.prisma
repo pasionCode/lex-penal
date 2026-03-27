@@ -156,6 +156,23 @@ enum HerramientaIA {
   conclusion
 }
 
+enum TipoSujeto {
+  victima
+  imputado
+  testigo
+  apoderado
+  otro
+}
+
+enum TipoIdentificacion {
+  CC
+  TI
+  CE
+  PAS
+  NIT
+  otro
+}
+
 // =============================================================================
 // 1. USUARIOS
 // =============================================================================
@@ -217,6 +234,8 @@ model Usuario {
   documentos_subidos Documento[] @relation("DocumentoSubidor")
 
   informes_generados InformeGenerado[] @relation("InformeGenerador")
+  sujetos_creados      Subject[] @relation("SubjectCreador")
+  sujetos_actualizados Subject[] @relation("SubjectActualizador")
 
   ai_requests AIRequestLog[] @relation("AIRequestUsuario")
 
@@ -302,6 +321,7 @@ model Caso {
   informes_generados   InformeGenerado[]
   ai_request_logs      AIRequestLog[]
   eventos_auditoria    EventoAuditoria[]
+  sujetos              Subject[]
 
   @@index([cliente_id])
   @@index([responsable_id])
@@ -755,4 +775,31 @@ model EventoAuditoria {
   @@index([tipo_evento])
   @@index([fecha_evento])
   @@map("eventos_auditoria")
+}
+
+// =============================================================================
+// SUJETOS PROCESALES
+// =============================================================================
+
+model Subject {
+  id                   String              @id @default(uuid()) @db.Uuid
+  caso_id              String              @db.Uuid
+  tipo                 TipoSujeto
+  nombre               String              @db.VarChar(120)
+  identificacion       String?             @db.VarChar(40)
+  tipo_identificacion  TipoIdentificacion?
+  contacto             String?             @db.VarChar(120)
+  direccion            String?             @db.VarChar(255)
+  notas                String?
+  creado_en            DateTime            @default(now())
+  actualizado_en       DateTime            @updatedAt
+  creado_por           String              @db.Uuid
+  actualizado_por      String?             @db.Uuid
+
+  caso         Caso     @relation(fields: [caso_id], references: [id], onDelete: Cascade)
+  creador      Usuario  @relation("SubjectCreador", fields: [creado_por], references: [id])
+  actualizador Usuario? @relation("SubjectActualizador", fields: [actualizado_por], references: [id])
+
+  @@index([caso_id])
+  @@map("subjects")
 }

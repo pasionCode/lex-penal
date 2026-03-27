@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-26 (Sprint 13) |
+| Última revisión | 2026-03-27 (Sprint 15) |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -1090,3 +1090,81 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 **Nota**: el log de IA filtrado por `tipo=ia_query` no expone el contenido
 del prompt ni la respuesta completa — solo metadatos de la llamada.
 El contenido completo es de acceso restringido a nivel de base de datos.
+
+---
+
+## 6. Sujetos procesales
+
+Entidad con política append-only. No se permite edición ni eliminación en este sprint.
+
+### 6.1 Listar sujetos de un caso
+```
+GET /api/v1/cases/{caseId}/subjects
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "caso_id": "uuid",
+    "tipo": "victima | imputado | testigo | apoderado | otro",
+    "nombre": "string",
+    "identificacion": "string | null",
+    "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro | null",
+    "contacto": "string | null",
+    "direccion": "string | null",
+    "notas": "string | null",
+    "creado_en": "datetime",
+    "actualizado_en": "datetime",
+    "creado_por": "uuid",
+    "actualizado_por": "uuid | null"
+  }
+]
+```
+
+**Errores:**
+- `404` — Caso no encontrado
+
+### 6.2 Crear sujeto
+```
+POST /api/v1/cases/{caseId}/subjects
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "tipo": "victima | imputado | testigo | apoderado | otro",
+  "nombre": "string (requerido, max 120)",
+  "identificacion": "string (opcional, max 40)",
+  "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro (opcional)",
+  "contacto": "string (opcional, max 120)",
+  "direccion": "string (opcional, max 255)",
+  "notas": "string (opcional)"
+}
+```
+
+**Respuesta exitosa:** `201 Created`
+
+**Errores:**
+- `400` — Validación fallida
+- `404` — Caso no encontrado
+
+### 6.3 Obtener sujeto por ID
+```
+GET /api/v1/cases/{caseId}/subjects/{subjectId}
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa:** `200 OK`
+
+**Errores:**
+- `404` — Caso no encontrado
+- `404` — Sujeto no encontrado
+
+---
+
+*Nota de implementación Sprint 15: Subrecurso `subjects` implementado con política append-only (GET, POST, GET detalle). PUT y DELETE no expuestos.*

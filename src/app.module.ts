@@ -37,6 +37,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 // Transversales
 import { AIModule } from './modules/ai/ai.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { SubjectsModule } from './modules/subjects/subjects.module';
 
 /**
  * Módulo raíz de LexPenal backend.
@@ -73,6 +74,7 @@ import { AuditModule } from './modules/audit/audit.module';
     // Transversales
     AIModule,
     AuditModule,
+    SubjectsModule,
   ],
 })
 export class AppModule {}
