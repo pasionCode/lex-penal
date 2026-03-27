@@ -5,14 +5,17 @@ import {
   IsBoolean,
   IsDateString,
   MaxLength,
-  ValidateIf,
+  IsNotEmpty,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /**
  * DTO para crear una actuación procesal.
  * POST /api/v1/cases/:caseId/proceedings
  */
 export class CreateProceedingDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @IsNotEmpty({ message: 'descripcion es requerido' })
   @IsString({ message: 'descripcion debe ser texto' })
   @MaxLength(1000, { message: 'descripcion no puede exceder 1000 caracteres' })
   descripcion!: string;

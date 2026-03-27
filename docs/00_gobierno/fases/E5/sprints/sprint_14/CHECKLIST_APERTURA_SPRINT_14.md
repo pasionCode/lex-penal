@@ -6,7 +6,7 @@
 - Fase: E5 — Expansión funcional controlada
 - Sprint: Sprint 14
 - Fecha de apertura: 2026-03-26
-- Estado: ABIERTO
+- Estado: LISTO PARA CIERRE
 
 ---
 
@@ -66,11 +66,11 @@ Endurecer validaciones, respuestas negativas y consistencia contractual del subr
 
 ### A. Higiene de arranque
 
-- [ ] `git status` limpio
-- [ ] rama `main` sincronizada con `origin/main`
-- [ ] `npm run build` exitoso
-- [ ] aplicación levanta sin errores críticos
-- [ ] token JWT vigente para pruebas
+- [x] `git status` limpio
+- [x] rama `main` sincronizada con `origin/main`
+- [x] `npm run build` exitoso
+- [x] aplicación levanta sin errores críticos
+- [x] token JWT vigente para pruebas
 
 ### B. Delimitación del sprint
 
@@ -78,60 +78,60 @@ Endurecer validaciones, respuestas negativas y consistencia contractual del subr
 - [x] política del sprint definida: hardening append-only
 - [x] conducción definida: A3 condicionado por baseline
 - [x] exclusiones expresas registradas
-- [ ] criterio de cierre acordado
+- [x] criterio de cierre acordado
 
 ### C. Baseline previo
 
-- [ ] ejecutar `GET /cases/{id}/proceedings`
-- [ ] ejecutar `POST /cases/{id}/proceedings` válido
-- [ ] ejecutar `GET /cases/{id}/proceedings/{proc_id}`
-- [ ] ejecutar negativas `400` pendientes
-- [ ] verificar `404` para `caseId` inexistente
-- [ ] verificar que `PUT` y `DELETE` siguen no expuestos
-- [ ] capturar evidencia previa del comportamiento actual
-- [ ] definir mini-regresión del sprint
+- [x] ejecutar `GET /cases/{id}/proceedings`
+- [x] ejecutar `POST /cases/{id}/proceedings` válido
+- [x] ejecutar `GET /cases/{id}/proceedings/{proc_id}`
+- [x] ejecutar negativas `400` pendientes
+- [x] verificar `404` para `caseId` inexistente
+- [x] verificar que `PUT` y `DELETE` siguen no expuestos
+- [x] capturar evidencia previa del comportamiento actual
+- [x] definir mini-regresión del sprint
 
 ### D. Hardening objetivo
 
 #### A1 — Validaciones del payload
 
-- [ ] validar `descripcion` requerida / no vacía
-- [ ] validar longitud máxima de `descripcion`, si aplica
-- [ ] validar formato de `fecha`
-- [ ] validar tipo de `completada`
-- [ ] validar payload vacío
-- [ ] validar campos extra no permitidos
-- [ ] revisar mensajes de error en español y coherentes
+- [x] validar `descripcion` requerida / no vacía
+- [x] validar longitud máxima de `descripcion`, si aplica
+- [x] validar formato de `fecha`
+- [x] validar tipo de `completada`
+- [x] validar payload vacío
+- [ ] validar campos extra no permitidos (no requerido)
+- [x] revisar mensajes de error en español y coherentes
 
 #### A2 — Reglas de responsable
 
-- [ ] validar consistencia entre `responsable_id` y `responsable_externo`
+- [x] validar consistencia entre `responsable_id` y `responsable_externo` (explorado, sin brecha)
 
 ### E. Implementación
 
-- [ ] DTOs ajustados si aplica
-- [ ] controller ajustado solo si aplica
-- [ ] service ajustado solo si aplica
-- [ ] repository ajustado solo si aplica
-- [ ] sin refactor amplio fuera del foco
+- [x] DTOs ajustados si aplica
+- [ ] controller ajustado solo si aplica (no requerido)
+- [ ] service ajustado solo si aplica (no requerido)
+- [ ] repository ajustado solo si aplica (no requerido)
+- [x] sin refactor amplio fuera del foco
 
 ### F. Validación
 
-- [ ] prueba positiva principal verde
-- [ ] persistencia confirmada
-- [ ] negativa `400` por payload inválido
-- [ ] negativa `400` por tipos incorrectos
-- [ ] negativa `404` por `caseId` inexistente
-- [ ] `PUT` no expuesto
-- [ ] `DELETE` no expuesto
-- [ ] mini-regresión verde
-- [ ] build final verde
+- [x] prueba positiva principal verde
+- [x] persistencia confirmada
+- [x] negativa `400` por payload inválido
+- [x] negativa `400` por tipos incorrectos
+- [x] negativa `404` por `caseId` inexistente
+- [x] `PUT` no expuesto
+- [x] `DELETE` no expuesto
+- [x] mini-regresión verde
+- [x] build final verde
 
 ### G. Documentación y cierre
 
-- [ ] baseline documentado
-- [ ] contrato revisado contra runtime
-- [ ] nota de cierre emitida
+- [x] baseline documentado
+- [x] contrato revisado contra runtime
+- [x] nota de cierre emitida
 - [ ] commit realizado
 - [ ] push realizado
 - [ ] `git status` final limpio
@@ -161,12 +161,12 @@ Endurecer validaciones, respuestas negativas y consistencia contractual del subr
 
 Sprint 14 solo podrá declararse cerrado cuando:
 
-- [ ] el subrecurso `proceedings` mantenga política append-only
-- [ ] exista evidencia positiva y negativa en runtime
-- [ ] las validaciones relevantes del `POST` estén endurecidas
-- [ ] `PUT` y `DELETE` permanezcan no expuestos
-- [ ] el contrato no contradiga el runtime
-- [ ] la nota de cierre esté emitida
+- [x] el subrecurso `proceedings` mantenga política append-only
+- [x] exista evidencia positiva y negativa en runtime
+- [x] las validaciones relevantes del `POST` estén endurecidas
+- [x] `PUT` y `DELETE` permanezcan no expuestos
+- [x] el contrato no contradiga el runtime
+- [x] la nota de cierre esté emitida
 - [ ] el repositorio quede limpio
 
 ---
@@ -196,5 +196,5 @@ Sprint 14 solo podrá declararse cerrado cuando:
 
 ---
 
-*Documento generado: 2026-03-26*  
-*Sprint 14 — Fase E5 — ABIERTO*
+*Documento actualizado: 2026-03-27*  
+*Sprint 14 — Fase E5 — LISTO PARA CIERRE*
