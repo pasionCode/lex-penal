@@ -727,15 +727,29 @@ Registra una nueva revisión del caso.
 #### `GET /api/v1/cases/{caseId}/reports`
 Lista los informes generados para el caso.
 
----
-
 #### `POST /api/v1/cases/{caseId}/reports`
 Solicita la generación de un informe del caso.
 
 **Tipos disponibles:** `resumen_ejecutivo`, `conclusion_operativa`, `control_calidad`,
 `riesgos`, `cronologico`, `revision_supervisor`, `agenda_vencimientos`
 
-**Formatos disponibles**: `pdf`, `docx`
+**Formatos disponibles:** `pdf`, `docx`
+
+**Idempotencia:** Si existe un informe del mismo tipo y formato generado en los últimos 5 minutos, se retorna ese informe en lugar de crear uno nuevo.
+
+#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+Retorna el detalle de un informe específico.
+
+**Respuestas (todos los endpoints):**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista o detalle de informes |
+| `201` | Informe generado |
+| `400` | Payload inválido (tipo o formato no válido) |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso o informe no encontrado |
 
 ---
 
