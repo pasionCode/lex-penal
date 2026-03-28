@@ -423,6 +423,7 @@ PUT  /api/v1/cases/{caseId}/basic-info
 ---
 
 #### 5.2 Hechos del caso
+
 ```
 POST   /api/v1/cases/{caseId}/facts
 GET    /api/v1/cases/{caseId}/facts
@@ -430,6 +431,55 @@ GET    /api/v1/cases/{caseId}/facts/{factId}
 PUT    /api/v1/cases/{caseId}/facts/{factId}
 ```
 
+Recurso **colección editable**: múltiples hechos por caso, con update parcial.
+
+**Comportamiento:**
+- `POST /facts` crea un hecho con `orden` asignado automáticamente.
+- `GET /facts` lista todos los hechos del caso ordenados por `orden`.
+- `GET /facts/:id` obtiene detalle de un hecho.
+- `PUT /facts/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+
+**Orden automático:** El campo `orden` es asignado automáticamente en creación y no es editable por el cliente. Cada nuevo hecho recibe el siguiente número de orden disponible.
+
+**Campos POST (CreateFactDto):**
+
+| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+|-------|------|-----------|-------------|-------------|
+| `descripcion` | string | 2000 | Sí | Descripción del hecho |
+| `estado_hecho` | enum | - | Sí | Estado probatorio del hecho |
+| `fuente` | string | 500 | No | Fuente del hecho |
+| `incidencia_juridica` | enum | - | No | Categoría jurídica afectada |
+
+**Campos PUT (UpdateFactDto):**
+
+Todos los campos son opcionales. Solo se actualizan los campos presentes en el payload.
+
+| Campo | Tipo | MaxLength | Obligatorio |
+|-------|------|-----------|-------------|
+| `descripcion` | string | 2000 | No |
+| `estado_hecho` | enum | - | No |
+| `fuente` | string | 500 | No |
+| `incidencia_juridica` | enum | - | No |
+
+**Enums:**
+
+| Enum | Valores |
+|------|---------|
+| `estado_hecho` | `acreditado`, `referido`, `discutido` |
+| `incidencia_juridica` | `tipicidad`, `antijuridicidad`, `culpabilidad`, `procedimiento` |
+
+**Dependencia funcional:** Al menos 1 hecho registrado es requisito para la transición `en_analisis → pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista obtenida, detalle obtenido o hecho actualizado |
+| `201` | Hecho creado |
+| `400` | Payload inválido (campo requerido faltante o enum inválido) |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso o hecho no encontrado |
 ---
 
 #### 5.3 Pruebas del caso
