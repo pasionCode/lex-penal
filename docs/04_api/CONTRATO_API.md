@@ -480,11 +480,26 @@ PUT  /api/v1/cases/{caseId}/checklist
 ---
 
 #### 5.8 Conclusión operativa
-
 ```
 GET  /api/v1/cases/{caseId}/conclusion
 PUT  /api/v1/cases/{caseId}/conclusion
 ```
+
+Recurso **singleton**: existe exactamente una conclusión operativa por caso.
+
+**Comportamiento especial:**
+- Si `GET /conclusion` se invoca y no existe aún una conclusión para el caso, el sistema la crea automáticamente y retorna el recurso resultante.
+- `PUT /conclusion` actualiza la conclusión existente del caso.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Conclusión obtenida, auto-creada o actualizada |
+| `400` | Payload inválido en `PUT` |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso no encontrado |
 
 ---
 
