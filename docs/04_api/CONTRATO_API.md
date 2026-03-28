@@ -510,12 +510,59 @@ Recurso **singleton**: existe exactamente una explicación al cliente por caso.
 ---
 
 #### 5.7 Checklist de calidad
-
 ```
 GET  /api/v1/cases/{caseId}/checklist
 PUT  /api/v1/cases/{caseId}/checklist
 ```
 
+Recurso **jerarquico**: estructura fija de bloques con items.
+
+**Bootstrap:** El checklist se crea automaticamente al activar el caso (transicion `borrador -> en_analisis`). No se auto-crea en `GET`.
+
+**Estructura de respuesta:**
+```json
+{
+  "bloques": [
+    {
+      "id": "uuid",
+      "codigo_bloque": "B01",
+      "nombre_bloque": "Verificacion de hechos",
+      "critico": true,
+      "completado": false,
+      "items": [
+        {
+          "id": "uuid",
+          "codigo_item": "B01_01",
+          "descripcion": "Hechos contrastados con denuncia",
+          "marcado": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Formato PUT:**
+```json
+{
+  "items": [
+    { "id": "uuid-item", "marcado": true },
+    { "id": "uuid-item", "marcado": false }
+  ]
+}
+```
+
+**Recalculo automatico:** Al actualizar items, `bloque.completado` se recalcula como `true` solo si todos sus items estan marcados.
+
+**Respuestas:**
+
+| Codigo | Descripcion |
+|--------|-------------|
+| `200` | Checklist obtenido o actualizado |
+| `400` | Item inexistente en payload |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso o item de otro caso |
+| `404` | Caso no encontrado |
 ---
 
 #### 5.8 Conclusión operativa
