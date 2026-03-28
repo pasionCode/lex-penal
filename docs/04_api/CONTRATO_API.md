@@ -655,6 +655,7 @@ Entidad con **política append-only**. No se permite edición ni eliminación.
 ---
 
 #### 5.11 Documentos del caso
+
 ```
 GET    /api/v1/cases/{caseId}/documents
 POST   /api/v1/cases/{caseId}/documents
@@ -662,7 +663,51 @@ GET    /api/v1/cases/{caseId}/documents/{documentId}
 PUT    /api/v1/cases/{caseId}/documents/{documentId}
 ```
 
-Entidad con **política híbrida**: solo el campo `descripcion` es editable. No se permite eliminación.
+Recurso **colección con edición limitada**: múltiples documentos por caso, con restricción de mutabilidad.
+
+**Comportamiento:**
+- `GET /documents` lista todos los documentos del caso.
+- `POST /documents` registra metadatos de un nuevo documento.
+- `GET /documents/:id` obtiene detalle de un documento.
+- `PUT /documents/:id` actualiza **solo el campo `descripcion`** (política Sprint 11).
+
+**Política de inmutabilidad:** Los campos `categoria`, `nombre_original`, `nombre_almacenado`, `ruta`, `mime_type` y `tamanio_bytes` son inmutables después de la creación. Solo `descripcion` es editable vía PUT.
+
+**Nota:** El recurso implementa solo metadatos, sin subida real de archivos binarios.
+
+**Campos POST (CreateDocumentDto):**
+
+| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+|-------|------|-----------|-------------|-------------|
+| `categoria` | enum | - | Sí | Categoría del documento |
+| `nombre_original` | string | 255 | Sí | Nombre original del archivo |
+| `nombre_almacenado` | string | 255 | Sí | Nombre almacenado en sistema |
+| `ruta` | string | 500 | Sí | Ruta de almacenamiento |
+| `mime_type` | string | 100 | Sí | Tipo MIME del archivo |
+| `tamanio_bytes` | int | - | Sí | Tamaño en bytes (min 1) |
+| `descripcion` | string | 1000 | No | Descripción del documento |
+
+**Enum `categoria`:**
+`acusacion`, `defensa`, `cliente`, `actuacion`, `informe`, `evidencia`, `anexo`, `otro`
+
+**Campos PUT (UpdateDocumentDto):**
+
+| Campo | Tipo | MaxLength | Obligatorio |
+|-------|------|-----------|-------------|
+| `descripcion` | string | 1000 | No |
+
+**Serialización:** El campo `tamanio_bytes` se persiste como BigInt y se serializa como Number en las respuestas JSON.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista obtenida, detalle obtenido o descripción actualizada |
+| `201` | Documento registrado |
+| `400` | Payload inválido (campo requerido faltante o valor fuera de rango) |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso o documento no encontrado |
 
 ---
 
