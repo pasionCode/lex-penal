@@ -462,10 +462,26 @@ PUT  /api/v1/cases/{caseId}/strategy
 ---
 
 #### 5.6 Explicación al cliente
-
 ```
 GET  /api/v1/cases/{caseId}/client-briefing
 PUT  /api/v1/cases/{caseId}/client-briefing
+```
+
+Recurso **singleton**: existe exactamente una explicación al cliente por caso.
+
+**Comportamiento especial:**
+- Si `GET /client-briefing` se invoca y no existe aún una explicación para el caso, el sistema la crea automáticamente y retorna el recurso resultante.
+- `PUT /client-briefing` actualiza la explicación existente del caso.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Explicación obtenida, auto-creada o actualizada |
+| `400` | Payload inválido en `PUT` |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso no encontrado |
 ```
 
 ---
@@ -500,7 +516,6 @@ Recurso **singleton**: existe exactamente una conclusión operativa por caso.
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso no encontrado |
-
 ---
 
 #### 5.9 Línea de tiempo
