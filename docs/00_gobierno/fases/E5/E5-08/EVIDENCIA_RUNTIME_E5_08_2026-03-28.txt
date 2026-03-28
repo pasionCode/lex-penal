@@ -1,0 +1,29 @@
+=== E5-08 RECUPERACION ===
+Sat Mar 28 09:45:47 HPS 2026
+
+=== VERIFICACION CONTRATO ===
+0
+#### `GET /api/v1/users/{id}`
+Retorna un usuario por ID. Solo Administrador.
+
+Para consultar datos propios, usar `GET /api/v1/users/me`.
+
+**Respuestas**
+
+=== RUNTIME INLINE E5-08 ===
+[PASS] login admin
+[PASS] crear usuario temporal
+[PASS] GET /users/me como admin -> 200
+[PASS] GET /users/:id como admin -> 200
+[PASS] login usuario temporal
+[PASS] GET /users/me como no-admin -> 200
+[PASS] GET /users/:id como no-admin -> 403
+
+=== BUILD ===
+
+> lex-penal@0.1.0 build
+> nest build
+
+
+=== FIN E5-08 ===
+Log: docs/00_gobierno/fases/E5/E5-08/EVIDENCIA_RUNTIME_E5_08_2026-03-28.txt

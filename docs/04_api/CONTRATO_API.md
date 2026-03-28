@@ -148,30 +148,6 @@ Cierra sesión. Invalida el token de acceso y elimina la cookie de sesión.
 
 ---
 
-#### `GET /api/v1/auth/session`
-Rehidrata la sesión del cliente usando la cookie HttpOnly.
-Usado por el frontend tras una recarga de página para recuperar el token
-de acceso y el perfil del usuario sin pedir credenciales nuevamente.
-
-**Autenticación**: cookie HttpOnly (no requiere Bearer).
-
-**Respuesta `200`**
-```json
-{
-  "access_token": "eyJ...",
-  "user": {
-    "id": "uuid",
-    "nombre": "Nombre Apellido",
-    "email": "usuario@dominio.com",
-    "perfil": "supervisor"
-  }
-}
-```
-
-**Respuestas**
-- `200` — Sesión válida. Retorna token y perfil.
-- `401` — Cookie ausente, expirada o inválida. El cliente redirige a login.
-
 ---
 
 ### 2. Usuarios
@@ -211,8 +187,9 @@ Crea un usuario. Solo Administrador.
 ---
 
 #### `GET /api/v1/users/{id}`
-Retorna un usuario por ID. Administrador puede ver cualquiera;
-otros perfiles solo su propio registro.
+Retorna un usuario por ID. Solo Administrador.
+
+Para consultar datos propios, usar `GET /api/v1/users/me`.
 
 **Respuestas**
 - `200` — Usuario encontrado.
