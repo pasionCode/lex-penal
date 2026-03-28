@@ -136,7 +136,7 @@ estado_origen    : string
 estado_destino   : string
 usuario_id       : FK Usuario
 fecha_evento     : timestamp
-resultado        : enum (aprobado | rechazado)
+resultado        : enum (aprobado | devuelto)
 motivo_rechazo   : string nullable
 ```
 

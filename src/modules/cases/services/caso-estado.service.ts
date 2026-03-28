@@ -166,23 +166,20 @@ export class CasoEstadoService {
         estadoDestino === EstadoCaso.EN_ANALISIS
       ) {
         await this.generarEstructuraBase(tx, casoId, usuarioId);
-      }
+      }        // 5b. Si es transición de supervisor: validar revisión vigente compatible
+        if (
+          (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
+            estadoDestino === EstadoCaso.DEVUELTO) ||
+          (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
+            estadoDestino === EstadoCaso.APROBADO_SUPERVISOR)
+        ) {
+          await this.assertRevisionCompatibleForPendingReviewExit(
+            tx,
+            casoId,
+            estadoDestino,
+          );
+        }
 
-      // 5b. Si es transición de supervisor: persistir revisión
-      if (
-        (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
-          estadoDestino === EstadoCaso.DEVUELTO) ||
-        (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
-          estadoDestino === EstadoCaso.APROBADO_SUPERVISOR)
-      ) {
-        await this.persistirRevisionSupervisor(
-          tx,
-          casoId,
-          usuarioId,
-          metadata?.observaciones || '',
-          estadoDestino === EstadoCaso.APROBADO_SUPERVISOR ? 'aprobado' : 'devuelto',
-        );
-      }
 
       // 6. Actualizar caso
       const updated = await tx.caso.update({
@@ -460,10 +457,11 @@ export class CasoEstadoService {
 
   /**
    * Guarda: pendiente_revision → aprobado_supervisor
-   * - Observaciones no vacías (se persisten como revisión durante la transición)
+   * - Observaciones no vacías
+   * - Debe existir una revisión vigente compatible con resultado aprobado
    *
-   * Nota: La revisión del supervisor se crea EN el momento de la transición,
-   * no antes. Por eso solo verificamos que vengan observaciones.
+   * Nota: La revisión del supervisor NO se crea durante la transición.
+   * La transición solo valida la existencia de una revisión vigente compatible.
    */
   private async verificarGuardaAprobacionSupervisor(
     casoId: string,
@@ -476,11 +474,11 @@ export class CasoEstadoService {
 
   /**
    * Guarda: devuelto → en_analisis
-   * - Al menos una revisión registrada (la devolución creó una)
+   * - Al menos una revisión registrada
    *
-   * Nota: Si el caso está en estado devuelto, necesariamente existe
-   * al menos una revisión (la que causó la devolución).
-   * Esta guarda es más una verificación de integridad que un bloqueo real.
+   * Nota: Si el caso está en estado devuelto, debe existir
+   * al menos una revisión previa asociada al ciclo de supervisión.
+   * Esta guarda es una verificación de integridad.
    */
   private async verificarGuardaDevueltoAEnAnalisis(
     casoId: string,
@@ -577,64 +575,58 @@ export class CasoEstadoService {
     }
   }
 
+
+
   // --------------------------------------------------------------------------
-  // PERSISTENCIA DE REVISIÓN DEL SUPERVISOR
+  // VALIDACIÓN DE REVISIÓN DEL SUPERVISOR
   // --------------------------------------------------------------------------
 
   /**
-   * Persiste la revisión del supervisor al ejecutar transiciones de aprobación/devolución.
-   *
-   * Flujo:
-   * 1. Marca revisiones anteriores como vigente = false
-   * 2. Calcula siguiente version_revision
-   * 3. Crea nueva revisión con vigente = true
-   *
-   * @param tx - Transacción de Prisma
-   * @param casoId - ID del caso
-   * @param supervisorId - ID del usuario supervisor
-   * @param observaciones - Observaciones obligatorias
-   * @param resultado - 'aprobado' | 'devuelto'
+   * Valida que exista una revisión vigente compatible para salir de pendiente_revision.
+   * No crea revisiones ni altera versionado/vigencia.
    */
-  private async persistirRevisionSupervisor(
+  private async assertRevisionCompatibleForPendingReviewExit(
     tx: Prisma.TransactionClient,
     casoId: string,
-    supervisorId: string,
-    observaciones: string,
-    resultado: 'aprobado' | 'devuelto',
+    estadoDestino: EstadoCaso,
   ): Promise<void> {
-    // 1. Marcar revisiones anteriores como no vigentes
-    await tx.revisionSupervisor.updateMany({
+    if (
+      estadoDestino !== EstadoCaso.DEVUELTO &&
+      estadoDestino !== EstadoCaso.APROBADO_SUPERVISOR
+    ) {
+      return;
+    }
+
+    const revisionVigente = await tx.revisionSupervisor.findFirst({
       where: {
         caso_id: casoId,
         vigente: true,
       },
-      data: {
-        vigente: false,
-      },
-    });
-
-    // 2. Obtener siguiente versión
-    const ultimaRevision = await tx.revisionSupervisor.findFirst({
-      where: { caso_id: casoId },
       orderBy: { version_revision: 'desc' },
-      select: { version_revision: true },
-    });
-    const siguienteVersion = (ultimaRevision?.version_revision || 0) + 1;
-
-    // 3. Crear nueva revisión
-    await tx.revisionSupervisor.create({
-      data: {
-        caso_id: casoId,
-        supervisor_id: supervisorId,
-        version_revision: siguienteVersion,
+      select: {
+        id: true,
+        resultado: true,
+        version_revision: true,
         vigente: true,
-        observaciones,
-        fecha_revision: new Date(),
-        resultado,
-        creado_por: supervisorId,
       },
     });
+
+    if (!revisionVigente) {
+      throw new UnprocessableEntityException(
+        'No existe revisión vigente para salir de pendiente_revision.',
+      );
+    }
+
+    const resultadoEsperado =
+      estadoDestino === EstadoCaso.APROBADO_SUPERVISOR ? 'aprobado' : 'devuelto';
+
+    if (revisionVigente.resultado !== resultadoEsperado) {
+      throw new UnprocessableEntityException(
+        `La revisión vigente debe tener resultado ${resultadoEsperado}.`,
+      );
+    }
   }
+
 
   // --------------------------------------------------------------------------
   // GENERACIÓN DE ESTRUCTURA BASE (R08) — E5-05: Con items U008

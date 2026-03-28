@@ -112,7 +112,7 @@ export class CasesService {
    *    - Validación de permisos por perfil
    *    - Verificación de guardas
    *    - Bootstrap de estructura en borrador→en_analisis
-   *    - Persistencia de revisión en devuelto/aprobado_supervisor
+   *    - Validación de revisión vigente compatible en devuelto/aprobado_supervisor
    *    - Registro de auditoría
    */
   async transition(
