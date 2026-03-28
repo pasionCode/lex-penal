@@ -8,8 +8,8 @@ import {
   Query,
   UseGuards,
   NotFoundException,
-  NotImplementedException,
   ForbiddenException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,10 +19,30 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PerfilUsuario } from '../../types/enums';
 
+/**
+ * Controlador de usuarios.
+ *
+ * Endpoints:
+ * - GET  /me         → Datos de sesión del usuario autenticado
+ * - GET  /           → Lista usuarios (solo admin)
+ * - POST /           → Crea usuario (solo admin)
+ * - GET  /:id        → Detalle de usuario (solo admin)
+ * - PUT  /:id        → Actualiza usuario (solo admin)
+ *
+ * E5-06: Cierre de superficie administrativa mínima.
+ */
 @Controller('users')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
 
+  // ==========================================================================
+  // ENDPOINT DE SESIÓN (existente)
+  // ==========================================================================
+
+  /**
+   * Retorna datos del usuario autenticado.
+   * Acceso: cualquier usuario autenticado.
+   */
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getMe(@CurrentUser('sub') userId: string) {
@@ -40,11 +60,29 @@ export class UsersController {
     };
   }
 
+  // ==========================================================================
+  // ENDPOINTS ADMINISTRATIVOS (E5-06)
+  // ==========================================================================
+
+  /**
+   * Lista todos los usuarios.
+   * Acceso: solo administrador.
+   * Respuesta saneada (sin password_hash).
+   */
   @Get()
-  findAll(@Query() _query: QueryUsersDto): Promise<unknown> {
-    throw new NotImplementedException('Endpoint no implementado en Sprint 1');
+  @UseGuards(JwtAuthGuard)
+  async findAll(
+    @Query() _query: QueryUsersDto,
+    @CurrentUser('perfil') perfil: string,
+  ) {
+    this.assertAdmin(perfil);
+    return this.service.listUsers();
   }
 
+  /**
+   * Crea un nuevo usuario.
+   * Acceso: solo administrador.
+   */
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(
@@ -52,20 +90,54 @@ export class UsersController {
     @CurrentUser('sub') currentUserId: string,
     @CurrentUser('perfil') perfil: string,
   ) {
-    if (perfil !== PerfilUsuario.ADMINISTRADOR) {
-      throw new ForbiddenException('Solo administradores pueden crear usuarios');
-    }
-
+    this.assertAdmin(perfil);
     return this.service.createUser(dto, currentUserId);
   }
 
+  /**
+   * Obtiene detalle de un usuario por ID.
+   * Acceso: solo administrador.
+   * Respuesta saneada (sin password_hash).
+   */
   @Get(':id')
-  findOne(@Param('id') _id: string): Promise<unknown> {
-    throw new NotImplementedException('Endpoint no implementado en Sprint 1');
+  @UseGuards(JwtAuthGuard)
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('perfil') perfil: string,
+  ) {
+    this.assertAdmin(perfil);
+    return this.service.getUserByIdForAdmin(id);
   }
 
+  /**
+   * Actualiza un usuario.
+   * Acceso: solo administrador.
+   * Campos actualizables: nombre, email, perfil, activo.
+   * Respuesta saneada (sin password_hash).
+   */
   @Put(':id')
-  update(@Param('id') _id: string, @Body() _dto: UpdateUserDto): Promise<unknown> {
-    throw new NotImplementedException('Endpoint no implementado en Sprint 1');
+  @UseGuards(JwtAuthGuard)
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('perfil') perfil: string,
+  ) {
+    this.assertAdmin(perfil);
+    return this.service.updateUser(id, dto, currentUserId);
+  }
+
+  // ==========================================================================
+  // UTILIDADES PRIVADAS
+  // ==========================================================================
+
+  /**
+   * Verifica que el perfil sea administrador.
+   * @throws ForbiddenException si no es administrador
+   */
+  private assertAdmin(perfil: string): void {
+    if (perfil !== PerfilUsuario.ADMINISTRADOR) {
+      throw new ForbiddenException('Solo administradores pueden realizar esta acción');
+    }
   }
 }
