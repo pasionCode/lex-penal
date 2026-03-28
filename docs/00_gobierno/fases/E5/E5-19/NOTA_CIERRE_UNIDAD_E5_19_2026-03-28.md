@@ -64,13 +64,13 @@ Se ejecutó el script `test_e5_19.sh` con el siguiente resultado:
 12. `GET /documents/:id` con estudiante ajeno → `403`
 13. `PUT /documents/:id` con estudiante ajeno → `403`
 
-### Evidencia de build
+## 5. Evidencia de build
 Se ejecutó adicionalmente `npm run build`.
 
 Resultado:
 - `nest build` completado sin errores.
 
-## 5. Alineación contractual consolidada
+## 6. Alineación contractual consolidada
 El contrato API del recurso `documents` quedó alineado con la implementación real en los siguientes puntos:
 
 - recurso modelado como **colección con edición limitada**
@@ -83,7 +83,7 @@ El contrato API del recurso `documents` quedó alineado con la implementación r
 - nota de serialización de `tamanio_bytes`
 - nota de ausencia de carga binaria real
 
-## 6. Resultado de la unidad
+## 7. Resultado de la unidad
 La unidad E5-19 queda cerrada con resultado satisfactorio.
 
 ### Conclusión
@@ -91,12 +91,12 @@ La unidad E5-19 queda cerrada con resultado satisfactorio.
 - No se identifican deudas estructurales que obliguen ajuste de código en esta unidad.
 - La deuda existente era principalmente **contractual y documental**, y queda resuelta con esta alineación.
 
-## 7. Archivos de soporte de la unidad
+## 8. Archivos de soporte de la unidad
 - `docs/00_gobierno/fases/E5/E5-19/CHECKLIST_APERTURA_E5_19_2026-03-28.md`
 - `docs/00_gobierno/fases/E5/E5-19/NOTA_CIERRE_UNIDAD_E5_19_2026-03-28.md`
 - `docs/04_api/CONTRATO_API.md`
 - `test_e5_19.sh`
 
-## 8. Estado final
+## 9. Estado final
 **E5-19 CERRADA**  
 Subrecurso `documents` validado en runtime y alineado contractualmente.
