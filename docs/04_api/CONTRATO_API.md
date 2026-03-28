@@ -482,6 +482,39 @@ GET  /api/v1/cases/{caseId}/strategy
 PUT  /api/v1/cases/{caseId}/strategy
 ```
 
+Recurso **singleton**: existe exactamente una instancia de estrategia por cada caso.
+
+**Comportamiento especial:**
+- Si `GET /strategy` se invoca y no existe, el sistema la crea automáticamente (lazy initialization).
+- `PUT /strategy` actualiza la estrategia existente o la crea si no existe (upsert funcional).
+- Siempre retorna `200`, nunca `201`.
+
+**Campos:**
+
+| Campo | Tipo | MaxLength | Descripción |
+|-------|------|-----------|-------------|
+| `linea_principal` | string | 2000 | Línea defensiva principal |
+| `fundamento_juridico` | string | 3000 | Fundamento jurídico de la defensa |
+| `fundamento_probatorio` | string | 3000 | Fundamento probatorio |
+| `linea_subsidiaria` | string | 2000 | Línea defensiva subsidiaria |
+| `posicion_allanamiento` | string | 1000 | Posición frente a allanamiento |
+| `posicion_preacuerdo` | string | 1000 | Posición frente a preacuerdo |
+| `posicion_juicio` | string | 1000 | Posición frente a juicio |
+
+Todos los campos son opcionales en `PUT`.
+
+**Dependencia funcional:** El campo `linea_principal` es obligatorio para la transición `en_analisis -> pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones, no en este endpoint.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Estrategia obtenida, auto-creada o actualizada correctamente |
+| `400` | Payload inválido o incumplimiento de validaciones del DTO en `PUT` |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso no encontrado |
+
 ---
 
 #### 5.6 Explicación al cliente
