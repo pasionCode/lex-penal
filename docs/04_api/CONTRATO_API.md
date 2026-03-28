@@ -721,28 +721,49 @@ Authorization: Bearer {token}
 
 ---
 
-### 7. Revisión del supervisor
+### 7. Revision del supervisor
 
 #### `GET /api/v1/cases/{caseId}/review`
 Retorna el historial completo de revisiones del caso.
 
-**Acceso**: Solo Supervisor y Administrador.
-
----
+**Acceso:** Solo Supervisor y Administrador.
 
 #### `GET /api/v1/cases/{caseId}/review/feedback`
-Retorna la vista filtrada de la revisión vigente para el responsable del caso.
+Retorna la vista filtrada de la revision vigente para el responsable del caso.
+Retorna `null` si no existe revision vigente.
 
-**Acceso**: Estudiante responsable del caso, Supervisor y Administrador.
-
----
+**Acceso:** Estudiante responsable del caso, Supervisor y Administrador.
 
 #### `POST /api/v1/cases/{caseId}/review`
-Registra una nueva revisión del caso.
+Registra una nueva revision del caso.
 
-**Solo disponible cuando el caso está en `pendiente_revision`.**
-**Solo Supervisor y Administrador.**
+**Restricciones:**
+- Solo Supervisor y Administrador
+- Solo cuando el caso esta en estado `pendiente_revision`
 
+**Comportamiento:**
+- Incrementa `version_revision`
+- Marca la nueva revision como `vigente: true`
+- Marca revisiones anteriores como `vigente: false`
+
+**Campos requeridos:**
+
+| Campo | Tipo | Descripcion |
+|-------|------|-------------|
+| `resultado` | enum | `aprobado` o `devuelto` |
+| `observaciones` | string | Observaciones del supervisor (max 3000) |
+| `fecha_revision` | datetime | Opcional, default: ahora |
+
+**Respuestas (todos los endpoints):**
+
+| Codigo | Descripcion |
+|--------|-------------|
+| `200` | Historial, feedback o revision obtenida |
+| `201` | Revision creada |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso o perfil insuficiente |
+| `404` | Caso no encontrado |
+| `409` | Caso no esta en estado `pendiente_revision` |
 ---
 
 ### 8. Informes
