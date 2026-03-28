@@ -2,7 +2,6 @@
  * Constantes para la máquina de estados del caso.
  * Fuente canónica: ADR-003-maquina-de-estados-del-caso.md
  */
-
 import { EstadoCaso, PerfilUsuario } from '../../../types/enums';
 
 /**
@@ -98,6 +97,28 @@ export const BLOQUES_CHECKLIST_U008 = [
   { codigo: 'B11', nombre: 'Explicación al cliente', critico: true },
   { codigo: 'B12', nombre: 'Conclusión operativa', critico: true },
 ] as const;
+
+/**
+ * Items del checklist U008 — Taxonomía mínima.
+ * 1 item por bloque para destrabar guardas.
+ * Expandible en fases posteriores.
+ *
+ * E5-05: Resuelve D-05 (bootstrap sin items).
+ */
+export const ITEMS_CHECKLIST_U008: Record<string, { codigo: string; descripcion: string }[]> = {
+  B01: [{ codigo: 'B01_01', descripcion: 'Hechos y línea de tiempo verificados' }],
+  B02: [{ codigo: 'B02_01', descripcion: 'Problema jurídico delimitado' }],
+  B03: [{ codigo: 'B03_01', descripcion: 'Tipicidad analizada' }],
+  B04: [{ codigo: 'B04_01', descripcion: 'Antijuridicidad analizada' }],
+  B05: [{ codigo: 'B05_01', descripcion: 'Culpabilidad analizada' }],
+  B06: [{ codigo: 'B06_01', descripcion: 'Matriz probatoria consolidada' }],
+  B07: [{ codigo: 'B07_01', descripcion: 'Ruta procesal definida' }],
+  B08: [{ codigo: 'B08_01', descripcion: 'Riesgos y estrategia documentados' }],
+  B09: [{ codigo: 'B09_01', descripcion: 'Dosimetría y beneficios revisados' }],
+  B10: [{ codigo: 'B10_01', descripcion: 'Salidas alternativas evaluadas' }],
+  B11: [{ codigo: 'B11_01', descripcion: 'Explicación al cliente preparada' }],
+  B12: [{ codigo: 'B12_01', descripcion: 'Conclusión operativa elaborada' }],
+};
 
 /**
  * Genera la clave de permiso para una transición.

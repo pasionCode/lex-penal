@@ -23,7 +23,6 @@
  * - Se persisten en revision_supervisor con resultado correspondiente
  * - La revisión anterior (si existe) se marca como vigente = false
  */
-
 import {
   Injectable,
   ConflictException,
@@ -39,6 +38,7 @@ import {
   PERMISOS_TRANSICION,
   ESTADOS_ESCRITURA_BLOQUEADA,
   BLOQUES_CHECKLIST_U008,
+  ITEMS_CHECKLIST_U008,
   claveTransicion,
 } from '../constants/caso-estado.constants';
 
@@ -130,6 +130,7 @@ export class CasoEstadoService {
     // 3. Verificar permiso del perfil del usuario
     const clave = claveTransicion(estadoActual, estadoDestino);
     const perfilesPermitidos = PERMISOS_TRANSICION[clave] || [];
+
     if (!perfilesPermitidos.includes(perfilUsuario)) {
       throw new ForbiddenException({
         error: 'PERMISO_DENEGADO',
@@ -147,6 +148,7 @@ export class CasoEstadoService {
       estadoDestino,
       metadata,
     );
+
     if (!validacion.valida) {
       throw new UnprocessableEntityException({
         error: 'TRANSITION_REJECTED',
@@ -244,7 +246,6 @@ export class CasoEstadoService {
     }
 
     const estadoActual = caso.estado_actual as EstadoCaso;
-
     if (ESTADOS_ESCRITURA_BLOQUEADA.includes(estadoActual)) {
       throw new ConflictException({
         error: 'ESCRITURA_BLOQUEADA',
@@ -418,6 +419,7 @@ export class CasoEstadoService {
         completado: false,
       },
     });
+
     if (bloquesCriticosIncompletos > 0) {
       motivos.push(
         `El checklist tiene ${bloquesCriticosIncompletos} bloque(s) crítico(s) incompleto(s).`,
@@ -429,6 +431,7 @@ export class CasoEstadoService {
       where: { caso_id: casoId },
       select: { linea_principal: true },
     });
+
     if (!estrategia?.linea_principal) {
       motivos.push('La estrategia debe tener al menos una línea defensiva principal.');
     }
@@ -437,6 +440,7 @@ export class CasoEstadoService {
     const cantidadHechos = await this.prisma.hecho.count({
       where: { caso_id: casoId },
     });
+
     if (cantidadHechos === 0) {
       motivos.push('Debe existir al menos un hecho registrado.');
     }
@@ -485,6 +489,7 @@ export class CasoEstadoService {
     const cantidadRevisiones = await this.prisma.revisionSupervisor.count({
       where: { caso_id: casoId },
     });
+
     if (cantidadRevisiones === 0) {
       // Esto indicaría un problema de integridad en los datos
       motivos.push(
@@ -544,6 +549,7 @@ export class CasoEstadoService {
         completado: false,
       },
     });
+
     if (bloquesCriticosIncompletos > 0) {
       motivos.push(
         `El checklist tiene ${bloquesCriticosIncompletos} bloque(s) crítico(s) incompleto(s).`,
@@ -631,19 +637,19 @@ export class CasoEstadoService {
   }
 
   // --------------------------------------------------------------------------
-  // GENERACIÓN DE ESTRUCTURA BASE (R08)
+  // GENERACIÓN DE ESTRUCTURA BASE (R08) — E5-05: Con items U008
   // --------------------------------------------------------------------------
 
   /**
    * Genera la estructura base de herramientas al activar un caso.
    * Se ejecuta en transición borrador → en_analisis.
    *
-   * IDEMPOTENCIA: Si por error se intenta ejecutar dos veces, no duplica
-   * registros. Verifica existencia antes de crear.
+   * IDEMPOTENCIA: Verifica existencia antes de crear cada elemento.
+   * Soporta backfill de items para casos con bloques pero sin items.
    *
    * Crea:
    * - checklist_bloques (12 bloques del U008)
-   * - checklist_items (ítems por bloque) — TODO: definir ítems específicos
+   * - checklist_items (1 item por bloque - taxonomía mínima E5-05)
    * - estrategia (registro vacío)
    * - explicacion_cliente (registro vacío)
    * - conclusion_operativa (registro vacío)
@@ -672,13 +678,41 @@ export class CasoEstadoService {
       }
     }
 
-    // TODO: 2. Crear checklist_items por bloque (con verificación de existencia)
-    // Requiere definir ítems específicos del U008 por bloque
+    // 2. Crear checklist_items por bloque (idempotente - backfill compatible)
+    // Cargar bloques del caso (pueden existir de antes o recién creados)
+    const bloques = await tx.checklistBloque.findMany({
+      where: { caso_id: casoId },
+      select: { id: true, codigo_bloque: true },
+    });
+
+    for (const bloque of bloques) {
+      // Verificar si el bloque ya tiene items
+      const itemsExistentes = await tx.checklistItem.count({
+        where: { bloque_id: bloque.id },
+      });
+
+      // Si no tiene items, crear los definidos en ITEMS_CHECKLIST_U008
+      if (itemsExistentes === 0) {
+        const itemsDefinidos = ITEMS_CHECKLIST_U008[bloque.codigo_bloque] || [];
+        for (const item of itemsDefinidos) {
+          await tx.checklistItem.create({
+            data: {
+              bloque_id: bloque.id,
+              caso_id: casoId,
+              codigo_item: item.codigo,
+              descripcion: item.descripcion,
+              marcado: false,
+            },
+          });
+        }
+      }
+    }
 
     // 3. Crear estrategia vacía (solo si no existe)
     const estrategiaExiste = await tx.estrategia.findUnique({
       where: { caso_id: casoId },
     });
+
     if (!estrategiaExiste) {
       await tx.estrategia.create({
         data: {
@@ -692,6 +726,7 @@ export class CasoEstadoService {
     const explicacionExiste = await tx.explicacionCliente.findUnique({
       where: { caso_id: casoId },
     });
+
     if (!explicacionExiste) {
       await tx.explicacionCliente.create({
         data: {
@@ -705,6 +740,7 @@ export class CasoEstadoService {
     const conclusionExiste = await tx.conclusionOperativa.findUnique({
       where: { caso_id: casoId },
     });
+
     if (!conclusionExiste) {
       await tx.conclusionOperativa.create({
         data: {
