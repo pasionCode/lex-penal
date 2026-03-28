@@ -450,6 +450,29 @@ GET    /api/v1/cases/{caseId}/risks/{riskId}
 PUT    /api/v1/cases/{caseId}/risks/{riskId}
 ```
 
+Coleccion editable sin DELETE expuesto.
+
+**Enums validos:**
+
+| Campo | Valores |
+|-------|---------|
+| `probabilidad` | `alta`, `media`, `baja` |
+| `impacto` | `alto`, `medio`, `bajo` |
+| `prioridad` | `critica`, `alta`, `media`, `baja` |
+| `estado_mitigacion` | `pendiente`, `en_curso`, `mitigado`, `aceptado` |
+
+**Regla de negocio:** Si `prioridad = critica`, el campo `estrategia_mitigacion` es obligatorio.
+
+**Respuestas:**
+
+| Codigo | Descripcion |
+|--------|-------------|
+| `200` | Lista o detalle de riesgos, o riesgo actualizado |
+| `201` | Riesgo creado |
+| `400` | Payload invalido o prioridad critica sin estrategia |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso o riesgo no encontrado |
 ---
 
 #### 5.5 Estrategia de defensa
