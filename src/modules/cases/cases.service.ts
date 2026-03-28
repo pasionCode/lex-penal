@@ -11,12 +11,22 @@ import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { EstadoCaso, PerfilUsuario } from '../../types/enums';
 import { ChecklistService } from '../checklist/checklist.service';
+import { CasoEstadoService } from './services/caso-estado.service';
 
+/**
+ * Servicio principal de casos.
+ *
+ * NOTA E5-04: El método transition() ahora delega a CasoEstadoService
+ * para ejecutar guardas, persistir revisiones y registrar auditoría.
+ * Se conserva checkAccess() para validar que el estudiante sea
+ * responsable del caso antes de permitir la transición.
+ */
 @Injectable()
 export class CasesService {
   constructor(
     private readonly repository: CasesRepository,
     private readonly checklistService: ChecklistService,
+    private readonly casoEstadoService: CasoEstadoService,
   ) {}
 
   async create(dto: CreateCaseDto, userId: string): Promise<Caso> {
@@ -90,6 +100,21 @@ export class CasesService {
     return this.repository.update(id, updateData);
   }
 
+  /**
+   * US-09: Transiciona el estado del caso.
+   *
+   * E5-04: Delegación a CasoEstadoService.
+   *
+   * Flujo:
+   * 1. checkAccess() - Valida existencia y permisos de acceso (estudiante = solo su caso)
+   * 2. casoEstadoService.transicionar() - Ejecuta:
+   *    - Validación de matriz de transiciones
+   *    - Validación de permisos por perfil
+   *    - Verificación de guardas
+   *    - Bootstrap de estructura en borrador→en_analisis
+   *    - Persistencia de revisión en devuelto/aprobado_supervisor
+   *    - Registro de auditoría
+   */
   async transition(
     id: string,
     estadoDestino: EstadoCaso,
@@ -97,40 +122,17 @@ export class CasesService {
     perfil: PerfilUsuario,
     observaciones?: string,
   ): Promise<Caso> {
-    const caso = await this.checkAccess(id, userId, perfil);
+    // 1. Validar acceso (estudiante solo puede transicionar su propio caso)
+    await this.checkAccess(id, userId, perfil);
 
-    const transicionesPermitidas: Record<EstadoCaso, EstadoCaso[]> = {
-      [EstadoCaso.BORRADOR]: [EstadoCaso.EN_ANALISIS],
-      [EstadoCaso.EN_ANALISIS]: [EstadoCaso.PENDIENTE_REVISION],
-      [EstadoCaso.PENDIENTE_REVISION]: [EstadoCaso.APROBADO_SUPERVISOR, EstadoCaso.DEVUELTO],
-      [EstadoCaso.DEVUELTO]: [EstadoCaso.EN_ANALISIS],
-      [EstadoCaso.APROBADO_SUPERVISOR]: [EstadoCaso.LISTO_PARA_CLIENTE],
-      [EstadoCaso.LISTO_PARA_CLIENTE]: [EstadoCaso.CERRADO],
-      [EstadoCaso.CERRADO]: [],
-    };
-
-    const estadoActual = caso.estado_actual as EstadoCaso;
-    const permitidos = transicionesPermitidas[estadoActual] || [];
-
-    if (!permitidos.includes(estadoDestino)) {
-      throw new ConflictException(
-        `Transicion de "${estadoActual}" a "${estadoDestino}" no permitida`,
-      );
-    }
-
-    // Bootstrap de estructura base al activar el caso
-    if (estadoActual === EstadoCaso.BORRADOR && estadoDestino === EstadoCaso.EN_ANALISIS) {
-      await this.checklistService.bootstrapIfNeeded(id);
-    }
-
-    return this.repository.update(id, {
-      estado_actual: estadoDestino,
-      estado_anterior: estadoActual,
-      fecha_cambio_estado: new Date(),
-      usuario_cambio_estado: userId,
-      actualizado_por: userId,
-      observaciones: observaciones ?? caso.observaciones,
-    });
+    // 2. Delegar a CasoEstadoService (motor completo)
+    return this.casoEstadoService.transicionar(
+      id,
+      estadoDestino,
+      userId,
+      perfil,
+      observaciones ? { observaciones } : undefined,
+    );
   }
 
   async checkAccess(casoId: string, userId: string, perfil: PerfilUsuario): Promise<Caso> {
