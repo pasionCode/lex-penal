@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-27 (Sprint 22) |
+| Última revisión | 2026-03-28 (E5-22) |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -38,7 +38,7 @@ Los subrecursos de un caso siguen una convención según su naturaleza:
 | Naturaleza | Convención | Ejemplos |
 |---|---|---|
 | Colección — representa múltiples elementos | Plural | `/facts`, `/evidence`, `/risks`, `/subjects` |
-| Documento único — representa exactamente un documento por caso | Singular o kebab-case descriptivo | `/basic-info`, `/strategy`, `/client-briefing`, `/checklist`, `/conclusion`, `/review` |
+| Documento único — representa exactamente un documento por caso | Singular o kebab-case descriptivo | `/strategy`, `/client-briefing`, `/checklist`, `/conclusion`, `/review` |
 
 Esta convención aplica a todos los subrecursos de `/api/v1/cases/{caseId}/*`.
 Los subrecursos de colección exponen operaciones sobre una colección de elementos
@@ -323,7 +323,7 @@ Crea un caso nuevo en estado `borrador`.
 ---
 
 #### `GET /api/v1/cases/{caseId}`
-Retorna el caso completo con metadatos del estado actual.
+Retorna el caso completo con metadatos del estado actual y la ficha básica editable del caso.
 
 **Respuesta `200`**
 ```json
@@ -341,6 +341,11 @@ Retorna el caso completo con metadatos del estado actual.
 }
 ```
 
+**Ficha básica del caso:**
+
+La ficha básica del caso se consulta oficialmente a través del agregado raíz `GET /api/v1/cases/{caseId}`.
+No existe el subrecurso `GET /api/v1/cases/{caseId}/basic-info`.
+
 **Respuestas**
 - `200` — Caso encontrado.
 - `403` — Sin acceso a este caso.
@@ -351,6 +356,11 @@ Retorna el caso completo con metadatos del estado actual.
 #### `PUT /api/v1/cases/{caseId}`
 
 Actualiza metadata editable del caso.
+
+**Ficha básica del caso:**
+
+La ficha básica del caso se actualiza oficialmente a través del agregado raíz `PUT /api/v1/cases/{caseId}`.
+No existe el subrecurso `PUT /api/v1/cases/{caseId}/basic-info`.
 
 **Campos modificables:**
 
@@ -365,7 +375,10 @@ Actualiza metadata editable del caso.
 | `observaciones` | Notas generales |
 | `agravantes` | Circunstancias agravantes |
 
-Solo disponible en estados `en_analisis` y `devuelto`.
+**Campos inmutables:**
+`estado_actual`, `responsable_id`, `creado_por`, `creado_en`, `cliente_id`, `radicado`, `delito_imputado`.
+
+**Restricción de estado:** Solo disponible en estados `en_analisis` y `devuelto`.
 
 **Respuestas**
 
@@ -413,16 +426,7 @@ Las herramientas del caso siguen un patrón uniforme:
 
 ---
 
-#### 5.1 Ficha básica
-
-```
-GET  /api/v1/cases/{caseId}/basic-info
-PUT  /api/v1/cases/{caseId}/basic-info
-```
-
----
-
-#### 5.2 Hechos del caso
+#### 5.1 Hechos del caso
 
 ```
 POST   /api/v1/cases/{caseId}/facts
@@ -482,7 +486,7 @@ Todos los campos son opcionales. Solo se actualizan los campos presentes en el p
 | `404` | Caso o hecho no encontrado |
 ---
 
-#### 5.3 Pruebas del caso
+#### 5.2 Pruebas del caso
 ```
 POST   /api/v1/cases/{caseId}/evidence
 GET    /api/v1/cases/{caseId}/evidence
@@ -492,7 +496,7 @@ PUT    /api/v1/cases/{caseId}/evidence/{evidenceId}
 
 ---
 
-#### 5.4 Riesgos del caso
+#### 5.3 Riesgos del caso
 ```
 POST   /api/v1/cases/{caseId}/risks
 GET    /api/v1/cases/{caseId}/risks
@@ -525,7 +529,7 @@ Coleccion editable sin DELETE expuesto.
 | `404` | Caso o riesgo no encontrado |
 ---
 
-#### 5.5 Estrategia de defensa
+#### 5.4 Estrategia de defensa
 
 ```
 GET  /api/v1/cases/{caseId}/strategy
@@ -567,7 +571,7 @@ Todos los campos son opcionales en `PUT`.
 
 ---
 
-#### 5.6 Explicación al cliente
+#### 5.5 Explicación al cliente
 ```
 GET  /api/v1/cases/{caseId}/client-briefing
 PUT  /api/v1/cases/{caseId}/client-briefing
@@ -592,7 +596,7 @@ Recurso **singleton**: existe exactamente una explicación al cliente por caso.
 
 ---
 
-#### 5.7 Checklist de calidad
+#### 5.6 Checklist de calidad
 ```
 GET  /api/v1/cases/{caseId}/checklist
 PUT  /api/v1/cases/{caseId}/checklist
@@ -648,7 +652,7 @@ Recurso **jerarquico**: estructura fija de bloques con items.
 | `404` | Caso no encontrado |
 ---
 
-#### 5.8 Conclusión operativa
+#### 5.7 Conclusión operativa
 ```
 GET  /api/v1/cases/{caseId}/conclusion
 PUT  /api/v1/cases/{caseId}/conclusion
@@ -671,7 +675,7 @@ Recurso **singleton**: existe exactamente una conclusión operativa por caso.
 | `404` | Caso no encontrado |
 ---
 
-#### 5.9 Línea de tiempo
+#### 5.8 Línea de tiempo
 
 ```
 GET  /api/v1/cases/{caseId}/timeline
@@ -725,7 +729,7 @@ La respuesta de GET incluye metadatos de paginación:
 
 ---
 
-#### 5.10 Actuaciones procesales
+#### 5.9 Actuaciones procesales
 
 ```
 GET    /api/v1/cases/{caseId}/proceedings
@@ -749,7 +753,7 @@ Entidad con **política append-only**. No se permite edición ni eliminación.
 
 ---
 
-#### 5.11 Documentos del caso
+#### 5.10 Documentos del caso
 
 ```
 GET    /api/v1/cases/{caseId}/documents
@@ -1049,6 +1053,7 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 | Sprint | Fecha | Cambios |
 |--------|-------|---------|
+| E5-22 | 2026-03-28 | Corrección contractual de `basic-info`: se elimina la referencia residual al subrecurso y se explicita que la ficha básica del caso se consulta y actualiza vía `GET/PUT /api/v1/cases/{caseId}`. |
 | 21 | 2026-03-27 | Consolidación contractual de `GET /subjects`: integración canónica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion`. |
 | 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
 | 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
@@ -1060,5 +1065,5 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 
 ---
 
-*Documento actualizado: 2026-03-27 (Sprint 22)*
+*Documento actualizado: 2026-03-28 (E5-22)*
 
