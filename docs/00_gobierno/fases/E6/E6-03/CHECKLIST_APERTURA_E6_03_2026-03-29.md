@@ -3,120 +3,137 @@
 ## 1. Identificación
 - Proyecto: LEX_PENAL
 - Fase: E6 — Integración y hardening del MVP
-- Unidad: E6-03 — [DEFINIR FOCO OPERATIVO]
+- Unidad: E6-03 — Flujo de cierre de caso, validación AI 409 e inmutabilidad downstream de client-briefing
 - Fecha de apertura: 2026-03-29
 - Estado: ABIERTA
 
 ## 2. Objetivo específico
-Abrir la unidad E6-03 para intervenir el siguiente frente prioritario del hardening/integración del MVP, conservando coherencia con lo ya validado en E6-01 y E6-02, y asegurando que la nueva superficie quede:
+Validar el flujo real hasta `cerrado`, comprobar que `POST /api/v1/ai/query` responde `409` en casos cerrados, y endurecer el comportamiento downstream de `client-briefing` para que el recurso:
 
-- alineada con la implementación real
-- validada en runtime
-- documentada bajo gobierno MDS
-- sin regresión sobre lo ya cerrado
-
-> **Nota operativa:** el foco específico de E6-03 debe declararse expresamente antes de su cierre.  
-> Esta apertura deja formalmente habilitada la unidad y su marco metodológico, a la espera de fijar el objetivo técnico puntual.
+- permita documentar `decision_cliente` cuando el caso esté listo para cliente
+- quede inmutable una vez el caso alcance estado `cerrado`
+- conserve coherencia con la máquina de estados real del sistema
 
 ## 3. Justificación
-Tras el cierre satisfactorio de E6-01 y E6-02 sobre el módulo de auditoría, la fase E6 entra en un punto donde ya no basta con validar endpoints aislados: se requiere continuar la integración y el hardening del MVP sobre superficies reales, priorizando trazabilidad, consistencia funcional, validación runtime y cierre de gobierno.
+La evidencia vigente confirma que:
 
-E6-03 se abre para abordar el siguiente bloque de trabajo de esta fase, manteniendo la disciplina ya aplicada:
+- la máquina de estados sí permite llegar a `cerrado`
+- la guarda final exige `decision_cliente`
+- AI ya bloquea consultas en casos cerrados con `409`
+- `client-briefing` sí persiste `decision_cliente`, pero hoy no valida estado del caso
 
-- baseline técnico previo
-- identificación de punto real de intervención
-- implementación controlada
-- prueba dedicada
-- build verde
-- nota formal de cierre
+E6-03 se abre para cerrar esa brecha y validar end-to-end el comportamiento del MVP en estado terminal.
 
 ## 4. Alcance de E6-03
 Debe quedar implementado, validado y documentado, como mínimo:
 
-- baseline técnico de la superficie seleccionada
-- identificación del punto real de escritura / lectura / validación según el foco
-- decisión técnica explícita de implementación
-- ajuste de código en servicio/repository/controller donde corresponda
-- prueba runtime dedicada
+- baseline técnico del flujo hasta `cerrado`
+- confirmación de la guarda `decision_cliente`
+- confirmación runtime de `AI 409` en caso cerrado
+- hardening de `client-briefing` por estado
+- excepción funcional explícita para permitir edición en `listo_para_cliente`
+- bloqueo de edición en `cerrado`
+- script runtime dedicado
 - build verde
 - nota de cierre E6-03
 
 ## 5. Fuera de alcance
-Queda fuera de alcance de E6-03, salvo decisión expresa posterior:
+Queda fuera de alcance de E6-03:
 
-- rediseño transversal de arquitectura no exigido por el foco
-- refactor masivo de módulos no impactados
+- hardening concurrente de `version_revision`
+- restricciones únicas nuevas en base de datos
+- refactor transversal de todos los recursos operativos
+- regresión exhaustiva de toda la fase E6
 - cambios de frontend o UI
-- migraciones no justificadas por el objetivo puntual
-- hardening global de toda la fase E6 en una sola unidad
-- cierre acumulado de fase E6
+- rediseño del módulo IA
 
-## 6. Decisiones metodológicas mínimas
+## 6. Baseline técnico mínimo
 
-### 6.1 Regla de intervención
-La unidad no se abre para rediseñar por hipótesis, sino para intervenir sobre puntos reales del sistema ya existentes y verificables.
+### 6.1 Flujo válido hasta cerrado
+Ruta funcional objetivo:
 
-### 6.2 Fuente de verdad
-La fuente de verdad de E6-03 será:
+`BORRADOR → EN_ANALISIS → PENDIENTE_REVISION → APROBADO_SUPERVISOR → LISTO_PARA_CLIENTE → CERRADO`
 
-1. implementación real vigente
-2. contrato/API/documentación aplicable
-3. evidencia runtime
-4. cierre de gobierno
+### 6.2 Guarda de cierre
+La transición `listo_para_cliente → cerrado` exige que exista `decision_cliente` documentada en `explicacionCliente`.
 
-### 6.3 Secuencia obligatoria
-La secuencia mínima de trabajo de E6-03 será:
+### 6.3 Guarda AI
+`AIService.query()` debe retornar `409` si el caso está en `EstadoCaso.CERRADO`.
 
-1. baseline técnico
-2. identificación del punto exacto de intervención
-3. decisión de diseño
-4. implementación
-5. runtime
-6. build
-7. cierre documental
+### 6.4 Brecha detectada
+`ClientBriefingService.update()` hoy valida acceso, pero no valida estado del caso.
 
-## 7. Pregunta operativa de apertura
-La pregunta rectora de E6-03 es:
+## 7. Decisión de diseño
 
-**¿Cuál es el siguiente punto crítico del MVP que debe endurecerse o integrarse en esta unidad, y cuál es el lugar exacto de intervención para hacerlo sin introducir regresiones ni desalineación con el MDS?**
+### 7.1 Regla específica para client-briefing
+`client-briefing` tendrá política propia de escritura:
 
-## 8. Entregables mínimos
+**Permitido en:**
+- `en_analisis`
+- `devuelto`
+- `listo_para_cliente`
+
+**Bloqueado en:**
+- `borrador`
+- `pendiente_revision`
+- `aprobado_supervisor`
+- `cerrado`
+
+### 7.2 Justificación de la excepción
+Aunque la política general de escritura bloquea `listo_para_cliente`, este recurso requiere excepción controlada porque el cierre depende de documentar `decision_cliente` precisamente en el tramo final.
+
+### 7.3 Lugar de intervención
+La validación debe implementarse en `ClientBriefingService.update()`, consultando el estado real del caso desde el repository.
+
+## 8. Archivos comprometidos
+- `src/modules/client-briefing/client-briefing.service.ts`
+- `src/modules/client-briefing/client-briefing.repository.ts`
+- `test_e6_03.sh`
+- `docs/00_gobierno/fases/E6/E6-03/...`
+
+## 9. Entregables mínimos
 - checklist de apertura E6-03
 - baseline técnico E6-03
-- decisión de diseño aplicada al foco
-- cambios de implementación en código
-- script de prueba dedicado
+- ajuste de guardas de `client-briefing`
+- script `test_e6_03.sh`
+- evidencia runtime
+- build verde
 - nota de cierre E6-03
 
-## 9. Criterios de aceptación
-E6-03 solo podrá cerrarse si se verifica:
+## 10. Criterios de aceptación
+E6-03 cierra solo si se verifica:
 
-- foco técnico de la unidad claramente delimitado
-- baseline técnico realizado
-- implementación alineada con superficie real
-- runtime dedicado en verde
-- build verde
-- documentación de cierre consistente
-- ausencia de regresión evidente sobre E6-01 y E6-02
+1. el caso puede llegar a `cerrado` por flujo real
+2. `decision_cliente` permite destrabar la transición final
+3. `POST /api/v1/ai/query` sobre caso cerrado retorna `409`
+4. `PUT /client-briefing` en `listo_para_cliente` funciona
+5. `PUT /client-briefing` en `cerrado` retorna `409`
+6. no se rompe el control de acceso existente
+7. build verde
+8. runtime dedicado en verde
 
-## 10. Riesgo principal
-El principal riesgo de E6-03 es abrir una unidad sin delimitar con precisión el punto de intervención, generando:
+## 11. Cobertura runtime sugerida
+Pruebas mínimas:
 
-- implementación sobre supuestos
-- dispersión del alcance
-- deuda documental
-- regresiones innecesarias
-- cierre ambiguo
+1. login admin / supervisor / estudiante
+2. crear cliente y caso
+3. transicionar `borrador → en_analisis`
+4. `PUT /client-briefing` en `en_analisis` → 200
+5. transicionar `en_analisis → pendiente_revision`
+6. crear revisión aprobada
+7. transicionar `pendiente_revision → aprobado_supervisor`
+8. transicionar `aprobado_supervisor → listo_para_cliente`
+9. `PUT /client-briefing` con `decision_cliente` en `listo_para_cliente` → 200
+10. transicionar `listo_para_cliente → cerrado` → 201
+11. `POST /api/v1/ai/query` en caso cerrado → 409
+12. `PUT /client-briefing` en caso cerrado → 409
+13. caso inexistente en AI → 404
+14. build verde
 
-## 11. Dependencias inmediatas
-E6-03 depende funcionalmente de los cierres previos ya consolidados:
+## 12. Riesgo principal
+El principal riesgo de E6-03 es endurecer `client-briefing` sin conservar la excepción funcional necesaria en `listo_para_cliente`, bloqueando de forma artificial el cierre del caso.
 
-- E6-01 — lectura de auditoría por caso
-- E6-02 — instrumentación de eventos case-scoped críticos
+## 13. Siguiente paso inmediato
+Implementar baseline puntual y hardening de `client-briefing` con esta pregunta operativa:
 
-La nueva unidad no debe romper ni degradar estas superficies.
-
-## 12. Siguiente paso inmediato
-Abrir baseline técnico de E6-03 con esta pregunta:
-
-**¿Cuál será exactamente el foco de intervención de E6-03 y qué archivos, servicios, repositories o contratos quedan comprometidos por esa decisión?**
+**¿Cómo bloquear escritura en estados terminales sin impedir la documentación de `decision_cliente` en `listo_para_cliente`?**

@@ -38,4 +38,16 @@ export class ClientBriefingRepository {
     });
     return caso?.responsable_id ?? null;
   }
+
+  /**
+   * E6-03: Obtiene el estado actual del caso.
+   * Usado para validar política de escritura específica de client-briefing.
+   */
+  async getCaseState(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { estado_actual: true },
+    });
+    return caso?.estado_actual ?? null;
+  }
 }

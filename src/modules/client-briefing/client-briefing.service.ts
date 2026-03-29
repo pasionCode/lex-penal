@@ -2,11 +2,23 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { ExplicacionCliente } from '@prisma/client';
 import { ClientBriefingRepository } from './client-briefing.repository';
 import { UpdateClientBriefingDto } from './dto/update-client-briefing.dto';
-import { PerfilUsuario } from '../../types/enums';
+import { PerfilUsuario, EstadoCaso } from '../../types/enums';
+
+/**
+ * E6-03: Estados que permiten escritura en client-briefing.
+ * Excepción controlada: incluye listo_para_cliente porque
+ * decision_cliente debe documentarse antes del cierre.
+ */
+const ESTADOS_ESCRITURA_PERMITIDA_CLIENT_BRIEFING: EstadoCaso[] = [
+  EstadoCaso.EN_ANALISIS,
+  EstadoCaso.DEVUELTO,
+  EstadoCaso.LISTO_PARA_CLIENTE,
+];
 
 @Injectable()
 export class ClientBriefingService {
@@ -38,6 +50,9 @@ export class ClientBriefingService {
     perfil: PerfilUsuario,
   ): Promise<ExplicacionCliente> {
     await this.checkCaseAccess(casoId, userId, perfil);
+
+    // E6-03: Validar estado del caso antes de permitir escritura
+    await this.checkWritePermission(casoId);
 
     let briefing = await this.repository.findByCaseId(casoId);
 
@@ -88,6 +103,23 @@ export class ClientBriefingService {
       if (responsable !== userId) {
         throw new ForbiddenException('Sin acceso a este caso');
       }
+    }
+  }
+
+  /**
+   * E6-03: Valida que el estado del caso permita escritura en client-briefing.
+   * Política específica: permite en_analisis, devuelto y listo_para_cliente.
+   * Bloquea en borrador, pendiente_revision, aprobado_supervisor y cerrado.
+   *
+   * @throws ConflictException (409) si el estado no permite escritura
+   */
+  private async checkWritePermission(casoId: string): Promise<void> {
+    const estado = await this.repository.getCaseState(casoId);
+
+    if (!estado || !ESTADOS_ESCRITURA_PERMITIDA_CLIENT_BRIEFING.includes(estado as EstadoCaso)) {
+      throw new ConflictException(
+        `No se permite modificar client-briefing en estado ${estado ?? 'desconocido'}`,
+      );
     }
   }
 }
