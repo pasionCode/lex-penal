@@ -14,7 +14,7 @@ Define convenciones, recursos, parámetros, respuestas y códigos de error.
 
 | Campo | Valor |
 |---|---|
-| Última revisión | 2026-03-28 (E5-22) |
+| Última revisión | 2026-03-28 (E5-25) |
 | Responsable | Pablo Jaramillo |
 
 ---
@@ -1149,23 +1149,21 @@ Envía una consulta al módulo de IA sobre una herramienta del caso.
 | `409` | Caso en estado cerrado (no permite consultas IA) |
 
 **Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
+---
 
-### 10. Auditoría
+## Módulos diferidos (fuera de MVP)
 
-#### `GET /api/v1/cases/{caseId}/audit`
-Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
+### Auditoría
 
-**Parámetros opcionales**
-- `tipo` — filtra por tipo de evento.
-- `page`, `per_page` — paginación.
+El módulo `audit` (`GET /api/v1/cases/{caseId}/audit`) no está implementado en el MVP actual. El scaffolding existe, pero no tiene lógica funcional ni controles de acceso operativos. Su implementación queda diferida para una fase posterior.
 
 ---
 
 ## Historial de cambios
-
 | Sprint | Fecha | Cambios |
 |--------|-------|---------|
-| E5-22 | 2026-03-28 | Corrección contractual de `basic-info`: se elimina la referencia residual al subrecurso y se explicita que la ficha básica del caso se consulta y actualiza vía `GET/PUT /api/v1/cases/{caseId}`. |
+| E5-25 | 2026-03-28 | Retiro de `audit` del contrato MVP. Módulo diferido por no tener implementación funcional (scaffolding sin lógica). |
+| E5-22 | 2026-03-28 | Corrección contractual de `basic-info`: se elimina la referencia residual al subrecurso y se explicita que la ficha básica se consulta y actualiza vía `GET/PUT /api/v1/cases/{caseId}`. |
 | 21 | 2026-03-27 | Consolidación contractual de `GET /subjects`: integración canónica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion`. |
 | 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
 | 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
@@ -1174,8 +1172,7 @@ Lista los eventos de auditoría del caso. Solo Supervisor y Administrador.
 | 13 | 2026-03-26 | Política append-only para `proceedings`, removidos PUT/DELETE |
 | 12 | 2026-03-26 | Hardening de validaciones en `documents` |
 | 17 | 2026-03-27 | Filtro por `tipo` en `GET /subjects`. Parámetro opcional con validación enum. |
-
 ---
 
-*Documento actualizado: 2026-03-28 (E5-22)*
+*Documento actualizado: 2026-03-28 (E5-25)*
 
