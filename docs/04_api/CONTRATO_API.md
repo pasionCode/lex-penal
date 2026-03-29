@@ -1153,10 +1153,123 @@ Envía una consulta al módulo de IA sobre una herramienta del caso.
 
 ## Módulos diferidos (fuera de MVP)
 
-### Auditoría
+### 10. Auditoría
 
-El módulo `audit` (`GET /api/v1/cases/{caseId}/audit`) no está implementado en el MVP actual. El scaffolding existe, pero no tiene lógica funcional ni controles de acceso operativos. Su implementación queda diferida para una fase posterior.
+#### `GET /api/v1/cases/{caseId}/audit`
 
+Lista los eventos de auditoría del caso. **Solo Supervisor y Administrador.**
+
+**Parámetros de query (opcionales):**
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|---------|-------------|
+| `tipo` | enum | - | Filtra por tipo de evento |
+| `page` | integer | 1 | Número de página |
+| `per_page` | integer | 20 | Items por página (máx 100) |
+
+**Valores válidos de `tipo`:**
+
+`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+
+**Nota:** Este endpoint es case-scoped. Solo lista eventos asociados al `caso_id`. Tipos como `login` y `logout` solo aparecerán si fueron persistidos con referencia al caso.
+
+**Response body:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `data` | array | Lista de eventos |
+| `total` | number | Total de eventos |
+| `page` | number | Página actual |
+| `per_page` | number | Items por página |
+
+**Estructura de evento:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | Identificador del evento |
+| `tipo` | string | Tipo de evento |
+| `descripcion` | string | Descripción legible del evento |
+| `fecha` | ISO date | Fecha y hora del evento |
+| `usuario` | object | Usuario que generó el evento |
+| `usuario.id` | UUID | ID del usuario |
+| `usuario.nombre` | string | Nombre del usuario |
+| `estado_origen` | string? | Estado anterior (solo transiciones) |
+| `estado_destino` | string? | Estado nuevo (solo transiciones) |
+| `resultado` | string | Resultado: `exitoso` o `rechazado` |
+
+**Nota de seguridad:** El endpoint NO expone `metadata` ni contenido sensible de consultas IA (`prompt_enviado`, `respuesta_recibida`).
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "data": [
+    {
+      "id": "a1b2c3d4-...",
+      "tipo": "transicion_estado",
+      "descripcion": "Transición de estado del caso",
+      "fecha": "2026-03-28T20:00:00.000Z",
+      "usuario": {
+        "id": "e5f6g7h8-...",
+        "nombre": "Admin User"
+      },
+      "estado_origen": "borrador",
+      "estado_destino": "en_analisis",
+      "resultado": "exitoso"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "per_page": 20
+}
+```
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista de eventos (puede estar vacía) |
+| `400` | Filtro `tipo` inválido |
+| `401` | No autenticado |
+| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+| `404` | Caso no encontrado |
+
+---
+```
+
+### Si existe sección "Módulos diferidos"
+
+Eliminar la referencia a audit de esa sección, ya que ahora está implementado.
+
+---
+
+## Acción adicional: Agregar entrada al historial de cambios
+
+```markdown
+| E6-01 | 2026-03-28 | Restauración de `audit` como endpoint funcional. Implementación completa con paginación, filtros y control de acceso por rol. |
+```
+
+---
+
+## Resumen de ajustes aplicados
+
+| Ajuste | Estado |
+|--------|--------|
+| Tipado repository con `TipoEvento` de Prisma | ✅ |
+| Metadata eliminada de respuesta | ✅ |
+| Nota de seguridad agregada | ✅ |
+| Nota case-scoped agregada | ✅ |
+
+---
+
+## Trazabilidad
+
+| Aspecto | Valor |
+|---------|-------|
+| Unidad | E6-01 |
+| Tipo | Restauración contractual |
+| Módulo | audit |
+| Fecha | 2026-03-28 |
 ---
 
 ## Historial de cambios
