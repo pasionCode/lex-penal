@@ -487,13 +487,89 @@ Todos los campos son opcionales. Solo se actualizan los campos presentes en el p
 ---
 
 #### 5.2 Pruebas del caso
+
 ```
 POST   /api/v1/cases/{caseId}/evidence
 GET    /api/v1/cases/{caseId}/evidence
 GET    /api/v1/cases/{caseId}/evidence/{evidenceId}
 PUT    /api/v1/cases/{caseId}/evidence/{evidenceId}
+PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/link
+PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/unlink
 ```
 
+Recurso **colección editable sin DELETE**: múltiples pruebas por caso, con capacidad de vincular/desvincular a hechos.
+
+**Comportamiento:**
+- `POST /evidence` crea una prueba.
+- `GET /evidence` lista todas las pruebas del caso.
+- `GET /evidence/:id` obtiene detalle de una prueba.
+- `PUT /evidence/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+- `PATCH /evidence/:id/link` vincula la prueba a un hecho del mismo caso.
+- `PATCH /evidence/:id/unlink` desvincula la prueba del hecho asociado.
+
+**Vínculo con hechos:**
+
+El campo `hecho_id` se gestiona exclusivamente mediante los endpoints `/link` y `/unlink`, no mediante PUT. El hecho debe pertenecer al mismo caso; intentar vincular a un hecho de otro caso retorna error.
+
+**Nota:** El DTO de creación incluye `hecho_id` como campo opcional, pero el comportamiento validado en runtime es el vínculo/desvínculo por PATCH.
+
+**Enums válidos:**
+
+| Enum | Valores |
+|------|---------|
+| `TipoPrueba` | `testimonial`, `documental`, `pericial`, `real`, `otro` |
+| `EvaluacionProbatoria` | `ok`, `cuestionable`, `deficiente` |
+
+**Campos POST (CreateEvidenceDto):**
+
+| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+|-------|------|-----------|-------------|-------------|
+| `descripcion` | string | 2000 | Sí | Descripción de la prueba |
+| `tipo_prueba` | enum | - | Sí | Tipo de prueba |
+| `hecho_id` | UUID | - | No | (Presente en DTO, usar /link para vincular) |
+| `hecho_descripcion_libre` | string | 500 | No | Descripción libre del hecho que soporta |
+| `licitud` | enum | - | Sí | Evaluación de licitud |
+| `legalidad` | enum | - | Sí | Evaluación de legalidad |
+| `suficiencia` | enum | - | Sí | Evaluación de suficiencia |
+| `credibilidad` | enum | - | Sí | Evaluación de credibilidad |
+| `posicion_defensiva` | string | 1000 | No | Posición defensiva respecto a la prueba |
+
+**Campos PUT (UpdateEvidenceDto):**
+
+Todos los campos son opcionales. Solo se actualizan los campos presentes en el payload.
+
+| Campo | Tipo | MaxLength |
+|-------|------|-----------|
+| `descripcion` | string | 2000 |
+| `tipo_prueba` | enum | - |
+| `hecho_descripcion_libre` | string | 500 |
+| `licitud` | enum | - |
+| `legalidad` | enum | - |
+| `suficiencia` | enum | - |
+| `credibilidad` | enum | - |
+| `posicion_defensiva` | string | 1000 |
+
+**Nota:** `hecho_id` no se puede modificar mediante PUT. Usar `/link` y `/unlink`.
+
+**Campos PATCH /link (LinkEvidenceDto):**
+
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|-------------|-------------|
+| `hecho_id` | UUID | Sí | ID del hecho al que vincular (debe ser del mismo caso) |
+
+**PATCH /unlink:** No requiere body.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista, detalle, prueba actualizada, vinculada o desvinculada |
+| `201` | Prueba creada |
+| `400` | Payload inválido (enum incorrecto, campo requerido faltante) |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso o prueba no encontrado |
+| `409` | Conflicto: hecho no pertenece al mismo caso (en /link) |
 ---
 
 #### 5.3 Riesgos del caso
