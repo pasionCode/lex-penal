@@ -1100,19 +1100,55 @@ Retorna el detalle de un informe específico.
 ### 9. Módulo de IA
 
 #### `POST /api/v1/ai/query`
+
 Envía una consulta al módulo de IA sobre una herramienta del caso.
 
-**Valores válidos de `herramienta`**: `basic_info`, `facts`, `evidence`,
-`risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`.
+**Naturaleza MVP:** En la versión actual, el módulo usa un placeholder local sin proveedor IA real. Las respuestas son simuladas para validación funcional.
 
-**Respuestas**
-- `200` — Respuesta del asistente.
-- `400` — Campos ausentes o `herramienta` inválida.
-- `403` — Sin acceso al caso.
-- `404` — Caso no encontrado.
-- `503` — Proveedor de IA no disponible.
+**Request body (AIQueryDto):**
 
----
+| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+|-------|------|-----------|-------------|-------------|
+| `caso_id` | UUID | - | Sí | ID del caso a consultar |
+| `herramienta` | enum | - | Sí | Herramienta del caso sobre la que se consulta |
+| `consulta` | string | 2000 | Sí | Texto de la consulta |
+
+**Valores válidos de `herramienta`:**
+
+`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+
+**Response body (AIResponse):**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `respuesta` | string | Texto de respuesta generado |
+| `tokens_entrada` | number | Tokens consumidos en entrada |
+| `tokens_salida` | number | Tokens generados en salida |
+| `modelo_usado` | string | Identificador del modelo usado |
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "respuesta": "[MVP] Análisis de facts para el caso...",
+  "tokens_entrada": 12,
+  "tokens_salida": 15,
+  "modelo_usado": "placeholder_v1"
+}
+```
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `201` | Consulta procesada correctamente. Retorna respuesta IA y registra trazabilidad de la consulta |
+| `400` | Payload inválido: `caso_id` con formato inválido, `herramienta` inválida, `consulta` vacía o `consulta` mayor a 2000 caracteres |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+| `409` | Caso en estado cerrado (no permite consultas IA) |
+
+**Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
 
 ### 10. Auditoría
 
