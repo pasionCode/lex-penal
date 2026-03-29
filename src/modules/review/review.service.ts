@@ -65,6 +65,11 @@ export class ReviewService {
   /**
    * Crea una nueva revisión.
    * Solo Supervisor/Admin, solo en estado pendiente_revision.
+   * E6-02: Usa transacción atómica que incluye:
+   *   - desvigencia de revisiones anteriores
+   *   - cálculo de versión (dentro de transacción, sin race condition)
+   *   - creación de revisión
+   *   - evento de auditoría
    */
   async create(
     casoId: string,
@@ -87,22 +92,21 @@ export class ReviewService {
       );
     }
 
-    // Marcar anteriores como no vigentes
-    await this.repository.markPreviousAsNotVigente(casoId);
-
-    // Obtener siguiente versión
-    const version = await this.repository.getNextVersion(casoId);
-
-    return this.repository.create({
-      caso_id: casoId,
-      supervisor_id: userId,
-      version_revision: version,
-      vigente: true,
-      observaciones: dto.observaciones,
-      resultado: dto.resultado,
-      fecha_revision: dto.fecha_revision ? new Date(dto.fecha_revision) : new Date(),
-      creado_por: userId,
-    });
+    // E6-02: Operación atómica completa
+    // version_revision se calcula dentro de la transacción
+    return this.repository.createWithAudit(
+      {
+        caso_id: casoId,
+        supervisor_id: userId,
+        vigente: true,
+        observaciones: dto.observaciones,
+        resultado: dto.resultado,
+        fecha_revision: dto.fecha_revision ? new Date(dto.fecha_revision) : new Date(),
+        creado_por: userId,
+      },
+      casoId,
+      userId,
+    );
   }
 
   private async checkCaseExists(casoId: string): Promise<void> {

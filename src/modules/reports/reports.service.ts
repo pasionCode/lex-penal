@@ -7,7 +7,6 @@ import { InformeGenerado } from '@prisma/client';
 import { ReportsRepository } from './reports.repository';
 import { GenerateReportDto } from './dto/generate-report.dto';
 import { PerfilUsuario } from '../../types/enums';
-import { randomUUID } from 'crypto';
 
 @Injectable()
 export class ReportsService {
@@ -22,6 +21,11 @@ export class ReportsService {
     return this.repository.findByCaseId(casoId);
   }
 
+  /**
+   * Genera un nuevo informe.
+   * E6-02: Usa transacción atómica que incluye evento de auditoría.
+   * Solo se registra evento en creación real (no en retorno idempotente).
+   */
   async generate(
     casoId: string,
     dto: GenerateReportDto,
@@ -31,6 +35,7 @@ export class ReportsService {
     await this.checkCaseAccess(casoId, userId, perfil);
 
     // Idempotencia: si existe uno reciente (<5 min), retornar ese
+    // NO registrar evento de auditoría en este caso
     const recent = await this.repository.findRecent(casoId, dto.tipo, dto.formato, 5);
     if (recent) {
       return recent;
@@ -43,14 +48,19 @@ export class ReportsService {
     const filename = `${dto.tipo}_${casoId.slice(0, 8)}_${Date.now()}.${dto.formato}`;
     const ruta = `/reports/${casoId}/${filename}`;
 
-    return this.repository.create({
-      caso_id: casoId,
-      tipo_informe: dto.tipo,
-      formato: dto.formato,
-      ruta_archivo: ruta,
-      estado_caso_al_generar: estado ?? 'desconocido',
-      generado_por: userId,
-    });
+    // E6-02: Operación atómica (create + audit)
+    return this.repository.createWithAudit(
+      {
+        caso_id: casoId,
+        tipo_informe: dto.tipo,
+        formato: dto.formato,
+        ruta_archivo: ruta,
+        estado_caso_al_generar: estado ?? 'desconocido',
+        generado_por: userId,
+      },
+      casoId,
+      userId,
+    );
   }
 
   async findOne(

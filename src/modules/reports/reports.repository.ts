@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
 import { InformeGenerado, Prisma } from '@prisma/client';
+import { TipoEvento, ResultadoAuditoria } from '../../types/enums';
 
 @Injectable()
 export class ReportsRepository {
@@ -37,8 +38,36 @@ export class ReportsRepository {
     });
   }
 
-  async create(data: Prisma.InformeGeneradoUncheckedCreateInput): Promise<InformeGenerado> {
-    return this.prisma.informeGenerado.create({ data });
+  /**
+   * Crea informe y registra evento de auditoría en una sola transacción.
+   * E6-02: Operación atómica para evitar deriva.
+   *
+   * @param data Datos del informe
+   * @param casoId ID del caso
+   * @param usuarioId ID del usuario que genera el informe
+   * @returns InformeGenerado creado
+   */
+  async createWithAudit(
+    data: Prisma.InformeGeneradoUncheckedCreateInput,
+    casoId: string,
+    usuarioId: string,
+  ): Promise<InformeGenerado> {
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Crear informe
+      const informe = await tx.informeGenerado.create({ data });
+
+      // 2. Registrar evento de auditoría
+      await tx.eventoAuditoria.create({
+        data: {
+          caso_id: casoId,
+          usuario_id: usuarioId,
+          tipo_evento: TipoEvento.INFORME_GENERADO,
+          resultado: ResultadoAuditoria.EXITOSO,
+        },
+      });
+
+      return informe;
+    });
   }
 
   async caseExists(casoId: string): Promise<boolean> {
