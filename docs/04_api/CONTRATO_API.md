@@ -678,6 +678,51 @@ GET  /api/v1/cases/{caseId}/timeline
 POST /api/v1/cases/{caseId}/timeline
 ```
 
+Recurso **colección append-only paginada**: múltiples entradas por caso, sin edición ni eliminación.
+
+**Comportamiento:**
+- `GET /timeline` lista entradas con paginación.
+- `POST /timeline` crea una entrada con `orden` asignado automáticamente.
+- No hay endpoint de detalle individual, PUT ni DELETE.
+
+**Paginación:**
+
+La respuesta de GET incluye metadatos de paginación:
+
+```json
+{
+  "data": [...],
+  "total": 25,
+  "page": 1,
+  "per_page": 20
+}
+```
+
+| Query param | Default | Descripción |
+|-------------|---------|-------------|
+| `page` | 1 | Página actual |
+| `per_page` | 20 | Items por página |
+
+**Campos POST (CreateTimelineEntryDto):**
+
+| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+|-------|------|-----------|-------------|-------------|
+| `fecha_evento` | ISO date | - | Sí | Fecha del evento |
+| `descripcion` | string | 1000 | Sí | Descripción del evento |
+
+**Campo `orden`:** Asignado automáticamente por el backend, no editable por cliente. Cada nueva entrada recibe el siguiente número de orden disponible para el caso.
+
+**Respuestas:**
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Lista paginada obtenida |
+| `201` | Entrada creada |
+| `400` | Payload inválido (fecha inválida o campo requerido faltante) |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
+| `404` | Caso no encontrado |
+
 ---
 
 #### 5.10 Actuaciones procesales
