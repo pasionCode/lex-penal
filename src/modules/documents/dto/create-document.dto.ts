@@ -10,11 +10,12 @@ import {
 import { CategoriaDocumento } from '../../../types/enums';
 
 /**
- * DTO para registrar metadatos de un documento.
+ * DTO para registrar un documento referenciado del caso.
  * POST /api/v1/cases/:caseId/documents
  *
- * Nota: Sprint 10 solo registra metadatos, sin subida real de archivos.
- * Sprint 12: Hardening de validaciones.
+ * No realiza subida binaria real. Registra metadatos del documento:
+ * nombre original, nombre almacenado, ruta, mime_type y tamaño.
+ * Sprint 12: hardening de validaciones.
  */
 export class CreateDocumentDto {
   @IsEnum(CategoriaDocumento, {

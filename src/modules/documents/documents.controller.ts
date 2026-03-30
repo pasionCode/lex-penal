@@ -17,13 +17,16 @@ import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { PerfilUsuario } from '../../types/enums';
 
 /**
- * Gestión de metadatos de documentos del caso.
- * GET  /api/v1/cases/:caseId/documents           → Listar
- * POST /api/v1/cases/:caseId/documents           → Registrar metadatos
- * GET  /api/v1/cases/:caseId/documents/:docId    → Detalle
- * 
- * Nota: Sprint 10 — solo metadatos, sin subida real de archivos.
- * Entidad append-only: no hay PUT ni DELETE.
+ * Gestión de documentos referenciados del caso.
+ * GET  /api/v1/cases/:caseId/documents              → Listar
+ * POST /api/v1/cases/:caseId/documents              → Registrar documento referenciado
+ * GET  /api/v1/cases/:caseId/documents/:documentId  → Detalle
+ * PUT  /api/v1/cases/:caseId/documents/:documentId  → Actualizar descripción
+ *
+ * El módulo no realiza subida real de archivos.
+ * Persiste metadatos referenciados del documento (`ruta`, `nombre_almacenado`,
+ * `mime_type`, `tamanio_bytes`) y permite edición limitada solo de `descripcion`.
+ * No hay DELETE ni reemplazo binario.
  */
 @Controller('cases/:caseId/documents')
 @UseGuards(JwtAuthGuard)

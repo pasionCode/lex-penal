@@ -5,11 +5,12 @@ import {
 } from 'class-validator';
 
 /**
- * DTO para actualizar un documento.
+ * DTO para actualización limitada de un documento referenciado.
  * PUT /api/v1/cases/:caseId/documents/:documentId
- * 
- * Política Sprint 11: Solo el campo `descripcion` es editable.
- * Los demás campos permanecen inmutables (append-only estructural).
+ *
+ * Política vigente: solo el campo `descripcion` es editable.
+ * No hay reemplazo de archivo ni modificación de ruta, mime_type,
+ * nombre_original, nombre_almacenado o tamanio_bytes.
  */
 export class UpdateDocumentDto {
   @IsOptional()
