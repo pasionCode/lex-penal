@@ -24,6 +24,14 @@ const ESTADOS_ESCRITURA_PERMITIDA_CLIENT_BRIEFING: EstadoCaso[] = [
 export class ClientBriefingService {
   constructor(private readonly repository: ClientBriefingRepository) {}
 
+  /**
+   * Obtiene la explicación al cliente del caso.
+   * E7-04: Si no existe, valida estado antes de auto-crear.
+   * - Estado permitido + no existe → auto-crea → 200
+   * - Estado permitido + existe → retorna → 200
+   * - Estado no permitido + existe → retorna → 200 (lectura permitida)
+   * - Estado no permitido + no existe → 409
+   */
   async findByCaseId(
     casoId: string,
     userId: string,
@@ -34,6 +42,9 @@ export class ClientBriefingService {
     let briefing = await this.repository.findByCaseId(casoId);
 
     if (!briefing) {
+      // E7-04: Validar estado antes de auto-crear
+      await this.checkWritePermission(casoId);
+
       briefing = await this.repository.create({
         caso_id: casoId,
         creado_por: userId,
