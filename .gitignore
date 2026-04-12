@@ -13,3 +13,6 @@ _review_docs/
 revisar_docs_github.ps1
 scripts_consulta_y_estructura/
 
+
+# secretos o llaves locales
+docs/**/API_key_Claude_Code.txt
