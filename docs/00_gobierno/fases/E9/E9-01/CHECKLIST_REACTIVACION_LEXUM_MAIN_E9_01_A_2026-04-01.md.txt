@@ -1,0 +1,105 @@
+# CHECKLIST DE REACTIVACIÓN TÉCNICA — LEXUM-MAIN — E9-01.A — 2026-04-01
+
+## 1. Identificación
+- Proyecto: LEX_PENAL
+- Fase: E9
+- Unidad asociada: E9-01
+- Subbloque operativo: E9-01.A — Reactivación y verificación técnica de `lexum-main`
+- Fecha: 2026-04-01
+- Estado: PENDIENTE DE EJECUCIÓN
+
+## 2. Objetivo
+Reactivar y validar técnicamente el servidor `lexum-main` (`207.180.248.126`) para determinar su aptitud real como entorno staging formal de LEX_PENAL.
+
+## 3. Checklist operativo
+
+### 3.1 Acceso y control inicial
+- [ ] Confirmar acceso SSH administrativo al host
+- [ ] Confirmar usuario(s) autorizados
+- [ ] Confirmar llaves SSH vigentes
+- [ ] Confirmar que no existan accesos obsoletos o no reconocidos
+- [ ] Registrar fecha y hora de reactivación
+
+### 3.2 Estado general del sistema
+- [ ] Identificar distribución y versión del sistema operativo
+- [ ] Verificar uptime y estado posterior a hibernación
+- [ ] Verificar hostname y dirección IP
+- [ ] Verificar uso de CPU
+- [ ] Verificar memoria disponible
+- [ ] Verificar espacio en disco
+- [ ] Verificar particiones y puntos de montaje
+- [ ] Verificar sincronización horaria
+
+### 3.3 Actualización y parches
+- [ ] Verificar paquetes pendientes de actualización
+- [ ] Aplicar actualización controlada del sistema si corresponde
+- [ ] Verificar que no existan errores post-update
+- [ ] Confirmar reinicio si el sistema lo requiere
+- [ ] Verificar estado posterior al reinicio
+
+### 3.4 Servicios y procesos
+- [ ] Inventariar servicios activos
+- [ ] Inventariar servicios deshabilitados
+- [ ] Identificar servicios heredados que ya no deban ejecutarse
+- [ ] Verificar servicios de red relevantes
+- [ ] Verificar existencia de PM2
+- [ ] Verificar existencia de reverse proxy instalado
+- [ ] Verificar logs de servicios críticos
+
+### 3.5 Red y exposición
+- [ ] Listar puertos en escucha
+- [ ] Identificar puertos expuestos externamente
+- [ ] Verificar reglas de firewall
+- [ ] Verificar NAT/reenvíos si aplican
+- [ ] Verificar superficie pública real
+- [ ] Confirmar si staging operará por IP o subdominio
+- [ ] Confirmar viabilidad de HTTPS
+
+### 3.6 Hardening de repaso
+- [ ] Verificar configuración SSH
+- [ ] Verificar login root
+- [ ] Verificar autenticación por claves
+- [ ] Verificar usuarios con privilegios elevados
+- [ ] Verificar fail2ban o mecanismo equivalente si aplica
+- [ ] Verificar permisos sobre rutas sensibles
+- [ ] Verificar servicios innecesarios y deshabilitarlos
+- [ ] Verificar política básica de logs y rotación
+- [ ] Verificar superficie mínima de ataque
+
+### 3.7 Soporte para despliegue
+- [ ] Verificar instalación de Node.js
+- [ ] Verificar versión de npm
+- [ ] Verificar instalación de Git
+- [ ] Verificar instalación de PM2
+- [ ] Verificar compatibilidad con NestJS runtime
+- [ ] Verificar ubicación objetivo del despliegue
+- [ ] Verificar permisos de escritura en ruta de despliegue
+
+### 3.8 Base de datos
+- [ ] Verificar si PostgreSQL staging vivirá en el mismo host o fuera de él
+- [ ] Verificar si PostgreSQL ya existe instalado
+- [ ] Verificar versión de PostgreSQL si existe
+- [ ] Verificar puertos y exposición de base de datos
+- [ ] Verificar estrategia de credenciales
+- [ ] Verificar conectividad esperada backend → DB
+
+### 3.9 Evidencia y cierre técnico
+- [ ] Registrar inventario del host
+- [ ] Registrar hallazgos críticos
+- [ ] Registrar brechas de hardening si existen
+- [ ] Registrar decisión sobre aptitud del host para staging
+- [ ] Registrar pendientes que bloqueen despliegue
+- [ ] Emitir nota técnica de reactivación
+
+## 4. Criterio de cumplimiento
+El checklist se considerará cumplido cuando exista evidencia suficiente para afirmar una de estas dos conclusiones:
+
+1. `lexum-main` es apto para recibir el staging de LEX_PENAL, con o sin ajustes menores pendientes; o
+2. `lexum-main` no es apto todavía y requiere remediación previa.
+
+## 5. Resultado esperado
+Al finalizar este checklist deberá quedar resuelto:
+- el estado real del servidor;
+- su nivel actual de endurecimiento;
+- su capacidad para alojar el backend;
+- la ruta técnica concreta para continuar E9-01.
