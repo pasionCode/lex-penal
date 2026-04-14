@@ -653,16 +653,17 @@ Todos los campos son opcionales en `PUT`.
 ---
 
 #### 5.5 Explicación al cliente
-```
-GET  /api/v1/cases/{caseId}/client-briefing
-PUT  /api/v1/cases/{caseId}/client-briefing
-```
 
 Recurso **singleton**: existe exactamente una explicación al cliente por caso.
 
 **Comportamiento especial:**
-- Si `GET /client-briefing` se invoca y no existe aún una explicación para el caso, el sistema la crea automáticamente y retorna el recurso resultante.
+- Si `GET /client-briefing` se invoca y no existe aún una explicación para el caso:
+  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+- Si `GET /client-briefing` se invoca y ya existe la explicación, retorna el recurso sin importar el estado del caso (200).
 - `PUT /client-briefing` actualiza la explicación existente del caso.
+- Si `PUT /client-briefing` se invoca y no existe aún explicación, el sistema la crea con los datos suministrados.
+- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
 
 **Respuestas:**
 
@@ -673,6 +674,7 @@ Recurso **singleton**: existe exactamente una explicación al cliente por caso.
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso no encontrado |
+| `409` | El estado actual del caso no permite auto-creación o modificación |
 ```
 
 ---

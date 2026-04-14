@@ -1,0 +1,240 @@
+=== FECHA ===
+2026-04-14T18:48:00-05:00
+
+=== CLIENT BRIEFING CONTROLLER ===
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ClientBriefingService } from './client-briefing.service';
+import { UpdateClientBriefingDto } from './dto/update-client-briefing.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
+
+/**
+ * Explicación al cliente — recurso único por caso.
+ * GET  /api/v1/cases/:caseId/client-briefing
+ * PUT  /api/v1/cases/:caseId/client-briefing
+ */
+@Controller('cases/:caseId/client-briefing')
+@UseGuards(JwtAuthGuard)
+export class ClientBriefingController {
+  constructor(private readonly service: ClientBriefingService) {}
+
+  @Get()
+  async findOne(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Put()
+  async update(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: UpdateClientBriefingDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.update(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+  }
+}
+
+=== CLIENT BRIEFING SERVICE ===
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
+import { ExplicacionCliente } from '@prisma/client';
+import { ClientBriefingRepository } from './client-briefing.repository';
+import { UpdateClientBriefingDto } from './dto/update-client-briefing.dto';
+import { PerfilUsuario, EstadoCaso } from '../../types/enums';
+
+/**
+ * E6-03: Estados que permiten escritura en client-briefing.
+ * Excepción controlada: incluye listo_para_cliente porque
+ * decision_cliente debe documentarse antes del cierre.
+ */
+const ESTADOS_ESCRITURA_PERMITIDA_CLIENT_BRIEFING: EstadoCaso[] = [
+  EstadoCaso.EN_ANALISIS,
+  EstadoCaso.DEVUELTO,
+  EstadoCaso.LISTO_PARA_CLIENTE,
+];
+
+@Injectable()
+export class ClientBriefingService {
+  constructor(private readonly repository: ClientBriefingRepository) {}
+
+  /**
+   * Obtiene la explicación al cliente del caso.
+   * E7-04: Si no existe, valida estado antes de auto-crear.
+   * - Estado permitido + no existe → auto-crea → 200
+   * - Estado permitido + existe → retorna → 200
+   * - Estado no permitido + existe → retorna → 200 (lectura permitida)
+   * - Estado no permitido + no existe → 409
+   */
+  async findByCaseId(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<ExplicacionCliente> {
+    await this.checkCaseAccess(casoId, userId, perfil);
+
+    let briefing = await this.repository.findByCaseId(casoId);
+
+    if (!briefing) {
+      // E7-04: Validar estado antes de auto-crear
+      await this.checkWritePermission(casoId);
+
+      briefing = await this.repository.create({
+        caso_id: casoId,
+        creado_por: userId,
+      });
+    }
+
+    return briefing;
+  }
+
+  async update(
+    casoId: string,
+    dto: UpdateClientBriefingDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<ExplicacionCliente> {
+    await this.checkCaseAccess(casoId, userId, perfil);
+
+    // E6-03: Validar estado del caso antes de permitir escritura
+    await this.checkWritePermission(casoId);
+
+    let briefing = await this.repository.findByCaseId(casoId);
+
+    if (!briefing) {
+      return this.repository.create({
+        caso_id: casoId,
+        delito_explicado: dto.delito_explicado ?? null,
+        riesgos_informados: dto.riesgos_informados ?? null,
+        panorama_probatorio: dto.panorama_probatorio ?? null,
+        beneficios_informados: dto.beneficios_informados ?? null,
+        opciones_explicadas: dto.opciones_explicadas ?? null,
+        recomendacion: dto.recomendacion ?? null,
+        decision_cliente: dto.decision_cliente ?? null,
+        fecha_explicacion: dto.fecha_explicacion ? new Date(dto.fecha_explicacion) : null,
+        creado_por: userId,
+        actualizado_por: userId,
+      });
+    }
+
+    const updateData: Record<string, unknown> = {
+      actualizado_por: userId,
+    };
+
+    if (dto.delito_explicado !== undefined) updateData.delito_explicado = dto.delito_explicado;
+    if (dto.riesgos_informados !== undefined) updateData.riesgos_informados = dto.riesgos_informados;
+    if (dto.panorama_probatorio !== undefined) updateData.panorama_probatorio = dto.panorama_probatorio;
+    if (dto.beneficios_informados !== undefined) updateData.beneficios_informados = dto.beneficios_informados;
+    if (dto.opciones_explicadas !== undefined) updateData.opciones_explicadas = dto.opciones_explicadas;
+    if (dto.recomendacion !== undefined) updateData.recomendacion = dto.recomendacion;
+    if (dto.decision_cliente !== undefined) updateData.decision_cliente = dto.decision_cliente;
+    if (dto.fecha_explicacion !== undefined) updateData.fecha_explicacion = new Date(dto.fecha_explicacion);
+
+    return this.repository.update(casoId, updateData);
+  }
+
+  private async checkCaseAccess(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<void> {
+    const exists = await this.repository.caseExists(casoId);
+    if (!exists) {
+      throw new NotFoundException(`Caso ${casoId} no encontrado`);
+    }
+
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      const responsable = await this.repository.getCaseResponsable(casoId);
+      if (responsable !== userId) {
+        throw new ForbiddenException('Sin acceso a este caso');
+      }
+    }
+  }
+
+  /**
+   * E6-03: Valida que el estado del caso permita escritura en client-briefing.
+   * Política específica: permite en_analisis, devuelto y listo_para_cliente.
+   * Bloquea en borrador, pendiente_revision, aprobado_supervisor y cerrado.
+   *
+   * @throws ConflictException (409) si el estado no permite escritura
+   */
+  private async checkWritePermission(casoId: string): Promise<void> {
+    const estado = await this.repository.getCaseState(casoId);
+
+    if (!estado || !ESTADOS_ESCRITURA_PERMITIDA_CLIENT_BRIEFING.includes(estado as EstadoCaso)) {
+      throw new ConflictException(
+        `No se permite modificar client-briefing en estado ${estado ?? 'desconocido'}`,
+      );
+    }
+  }
+}
+
+=== CLIENT BRIEFING REPOSITORY ===
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+import { ExplicacionCliente, Prisma } from '@prisma/client';
+
+@Injectable()
+export class ClientBriefingRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByCaseId(casoId: string): Promise<ExplicacionCliente | null> {
+    return this.prisma.explicacionCliente.findUnique({
+      where: { caso_id: casoId },
+    });
+  }
+
+  async create(data: Prisma.ExplicacionClienteUncheckedCreateInput): Promise<ExplicacionCliente> {
+    return this.prisma.explicacionCliente.create({ data });
+  }
+
+  async update(casoId: string, data: Prisma.ExplicacionClienteUncheckedUpdateInput): Promise<ExplicacionCliente> {
+    return this.prisma.explicacionCliente.update({
+      where: { caso_id: casoId },
+      data,
+    });
+  }
+
+  async caseExists(casoId: string): Promise<boolean> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { id: true },
+    });
+    return !!caso;
+  }
+
+  async getCaseResponsable(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { responsable_id: true },
+    });
+    return caso?.responsable_id ?? null;
+  }
+
+  /**
+   * E6-03: Obtiene el estado actual del caso.
+   * Usado para validar política de escritura específica de client-briefing.
+   */
+  async getCaseState(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { estado_actual: true },
+    });
+    return caso?.estado_actual ?? null;
+  }
+}
