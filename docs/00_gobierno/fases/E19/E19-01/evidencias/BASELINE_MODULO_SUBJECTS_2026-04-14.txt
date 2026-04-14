@@ -1,0 +1,430 @@
+=== FECHA ===
+2026-04-14T15:39:22-05:00
+
+=== CONTRATO SUBJECTS ===
+883-| `201` | Documento registrado |
+884-| `400` | Payload inválido (campo requerido faltante o valor fuera de rango) |
+885-| `401` | No autenticado |
+886-| `403` | Estudiante sin acceso al caso |
+887-| `404` | Caso o documento no encontrado |
+888-
+889----
+890-
+891:### 6. Sujetos procesales
+892-
+893-Entidad con **política append-only**. No se permite edición ni eliminación.
+894-
+895:#### 6.1 Listar sujetos de un caso
+896-```
+897-GET /api/v1/cases/{caseId}/subjects
+898-Authorization: Bearer {token}
+899-```
+900-
+901-**Parámetros de query:**
+902-
+903-| Parámetro | Tipo | Default | Descripción |
+904-|-----------|------|---------|-------------|
+905-| `page` | number | 1 | Página actual (1-indexed) |
+906-| `per_page` | number | 20 | Elementos por página (1-100) |
+907-| `tipo` | enum | — | Filtra por tipo de sujeto procesal |
+908-| `nombre` | string | — | Filtra por coincidencia parcial case-insensitive en `nombre` |
+909-| `identificacion` | string | — | Filtra por coincidencia exacta en `identificacion` |
+910-| `tipo_identificacion` | enum | — | Filtra por coincidencia exacta en `tipo_identificacion` |
+911-
+912-**Valores válidos de `tipo`:** `victima`, `imputado`, `testigo`, `apoderado`, `otro`
+913-
+914-**Valores válidos de `tipo_identificacion`:** `CC`, `TI`, `CE`, `PAS`, `NIT`, `otro`
+915-
+916-#### Reglas de comportamiento
+917-- Los filtros se aplican antes de la paginación.
+918-- `tipo`, `nombre`, `identificacion` y `tipo_identificacion` pueden combinarse entre sí.
+919-- `nombre` aplica búsqueda parcial case-insensitive.
+920-- `identificacion` aplica comparación exacta.
+921-- `tipo_identificacion` aplica comparación exacta.
+922-- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
+923-- Si `tipo` es inválido, la respuesta es `400 Bad Request`.
+924-- Si `nombre` es vacío o contiene solo espacios, la respuesta es `400 Bad Request`.
+925-- Si `identificacion` es vacía o contiene solo espacios, la respuesta es `400 Bad Request`.
+926-- Si `tipo_identificacion` es inválido, la respuesta es `400 Bad Request`.
+927-- Si `tipo_identificacion` es vacío, la respuesta es `400 Bad Request`.
+928-
+929-**Respuesta exitosa:** `200 OK`
+930-```json
+931-{
+932-  "data": [
+933-    {
+934-      "id": "uuid",
+935-      "caso_id": "uuid",
+936-      "tipo": "victima | imputado | testigo | apoderado | otro",
+937-      "nombre": "string",
+938-      "identificacion": "string | null",
+939-      "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro | null",
+940-      "contacto": "string | null",
+941-      "direccion": "string | null",
+942-      "notas": "string | null",
+943-      "creado_en": "datetime",
+944-      "actualizado_en": "datetime",
+945-      "creado_por": "uuid",
+946-      "actualizado_por": "uuid | null"
+947-    }
+948-  ],
+949-  "total": 45,
+950-  "page": 1,
+951-  "per_page": 20
+952-}
+953-```
+954-
+955-**Comportamiento de página fuera de rango:** Si `page` excede el total de páginas disponibles, la respuesta es `200 OK` con `data: []`. Los campos `total`, `page` y `per_page` se mantienen informativos.
+956-
+957-**Errores:**
+958-- `400` — Parámetros de paginación o filtro inválidos
+959-- `404` — Caso no encontrado
+960-
+961-> **Consolidación contractual (Sprint 21):** Se integra en bloque único la semántica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion` para `GET /subjects`.
+962-
+963-
+964:#### 6.2 Crear sujeto
+965-
+966-```
+967-POST /api/v1/cases/{caseId}/subjects
+968-Authorization: Bearer {token}
+969-Content-Type: application/json
+970-```
+971-
+972-**Body:**
+973-
+974-```json
+975-{
+976-  "tipo": "victima | imputado | testigo | apoderado | otro",
+977-  "nombre": "string (requerido, max 120)",
+978-  "identificacion": "string (opcional, max 40)",
+979-  "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro (opcional)",
+980-  "contacto": "string (opcional, max 120)",
+981-  "direccion": "string (opcional, max 255)",
+982-  "notas": "string (opcional)"
+983-}
+984-```
+985-
+986-**Campos del sujeto:**
+987-
+988-| Campo | Tipo | Obligatorio | Descripción |
+989-|-------|------|-------------|-------------|
+990-| `tipo` | enum | Sí | `victima` \| `imputado` \| `testigo` \| `apoderado` \| `otro` |
+991-| `nombre` | string | Sí | Nombre completo (max 120 caracteres) |
+992-| `identificacion` | string | No | Número de documento (max 40 caracteres) |
+993-| `tipo_identificacion` | enum | No | `CC` \| `TI` \| `CE` \| `PAS` \| `NIT` \| `otro` |
+994-| `contacto` | string | No | Teléfono, email u otro (max 120 caracteres) |
+995-| `direccion` | string | No | Dirección física (max 255 caracteres) |
+996-| `notas` | string | No | Observaciones adicionales |
+997-
+998-**Respuesta exitosa:** `201 Created`
+999-
+1000-**Errores:**
+1001-- `400` — Validación fallida
+1002-- `404` — Caso no encontrado
+1003-
+1004----
+1005-
+1006:#### 6.3 Obtener sujeto por ID
+1007-
+1008-```
+1009-GET /api/v1/cases/{caseId}/subjects/{subjectId}
+1010-Authorization: Bearer {token}
+1011-```
+1012-
+1013-**Respuesta exitosa:** `200 OK`
+1014-
+1015-**Errores:**
+1016-- `404` — Caso no encontrado
+1017-- `404` — Sujeto no encontrado
+1018-
+1019----
+1020-
+1021-> **Nota de implementación (Sprint 15):** Subrecurso `subjects` implementado con
+1022-> política append-only (GET lista, POST, GET detalle). PUT y DELETE no expuestos.
+1023-
+1024----
+1025-
+1026-### 7. Revision del supervisor
+1027-
+1028-#### `GET /api/v1/cases/{caseId}/review`
+1029-Retorna el historial completo de revisiones del caso.
+1030-
+1031-**Acceso:** Solo Supervisor y Administrador.
+1032-
+1033-#### `GET /api/v1/cases/{caseId}/review/feedback`
+1034-Retorna la vista filtrada de la revision vigente para el responsable del caso.
+1035-Retorna `null` si no existe revision vigente.
+1036-
+1037-**Acceso:** Estudiante responsable del caso, Supervisor y Administrador.
+1038-
+1039-#### `POST /api/v1/cases/{caseId}/review`
+1040-Registra una nueva revision del caso.
+1041-
+1042-**Restricciones:**
+1043-- Solo Supervisor y Administrador
+1044-- Solo cuando el caso esta en estado `pendiente_revision`
+1045-
+1046-**Comportamiento:**
+1047-- Incrementa `version_revision`
+1048-- Marca la nueva revision como `vigente: true`
+1049-- Marca revisiones anteriores como `vigente: false`
+1050-
+1051-**Campos requeridos:**
+1052-
+1053-| Campo | Tipo | Descripcion |
+1054-|-------|------|-------------|
+1055-| `resultado` | enum | `aprobado` o `devuelto` |
+1056-| `observaciones` | string | Observaciones del supervisor (max 3000) |
+1057-| `fecha_revision` | datetime | Opcional, default: ahora |
+1058-
+1059-**Respuestas (todos los endpoints):**
+1060-
+1061-| Codigo | Descripcion |
+1062-|--------|-------------|
+1063-| `200` | Historial, feedback o revision obtenida |
+1064-| `201` | Revision creada |
+1065-| `401` | No autenticado |
+1066-| `403` | Estudiante sin acceso o perfil insuficiente |
+1067-| `404` | Caso no encontrado |
+1068-| `409` | Caso no esta en estado `pendiente_revision` |
+1069----
+1070-
+1071-### 8. Informes
+1072-
+1073-#### `GET /api/v1/cases/{caseId}/reports`
+1074-Lista los informes generados para el caso.
+1075-
+1076-#### `POST /api/v1/cases/{caseId}/reports`
+1077-Solicita la generación de un informe del caso.
+1078-
+1079-**Tipos disponibles:** `resumen_ejecutivo`, `conclusion_operativa`, `control_calidad`,
+1080-`riesgos`, `cronologico`, `revision_supervisor`, `agenda_vencimientos`
+1081-
+1082-**Formatos disponibles:** `pdf`, `docx`
+1083-
+1084-**Idempotencia:** Si existe un informe del mismo tipo y formato generado en los últimos 5 minutos, se retorna ese informe en lugar de crear uno nuevo.
+1085-
+1086-#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+1087-Retorna el detalle de un informe específico.
+1088-
+1089-**Respuestas (todos los endpoints):**
+1090-
+1091-| Código | Descripción |
+1092-|--------|-------------|
+1093-| `200` | Lista o detalle de informes |
+1094-| `201` | Informe generado |
+1095-| `400` | Payload inválido (tipo o formato no válido) |
+1096-| `401` | No autenticado |
+1097-| `403` | Estudiante sin acceso al caso |
+1098-| `404` | Caso o informe no encontrado |
+1099-
+1100----
+1101-
+1102-### 9. Módulo de IA
+1103-
+1104-#### `POST /api/v1/ai/query`
+1105-
+1106-Envía una consulta al módulo de IA sobre una herramienta del caso.
+1107-
+1108-**Naturaleza MVP:** En la versión actual, el módulo usa un placeholder local sin proveedor IA real. Las respuestas son simuladas para validación funcional.
+1109-
+1110-**Nota de implementación MVP:** En esta etapa `POST /api/v1/ai/query` no consume aún `context-builders` ni `prompt-templates`; esos artefactos permanecen como scaffolding preparatorio para una integración futura de proveedor IA.
+1111-
+1112-**Request body (AIQueryDto):**
+1113-
+1114-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+1115-|-------|------|-----------|-------------|-------------|
+1116-| `caso_id` | UUID | - | Sí | ID del caso a consultar |
+1117-| `herramienta` | enum | - | Sí | Herramienta del caso sobre la que se consulta |
+1118-| `consulta` | string | 2000 | Sí | Texto de la consulta |
+1119-
+1120-**Valores válidos de `herramienta`:**
+1121-
+1122-`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+1123-
+1124-**Response body (AIResponse):**
+1125-
+1126-| Campo | Tipo | Descripción |
+
+=== ARCHIVOS MODULO SUBJECTS ===
+src/modules/subjects/dto/create-subject.dto.ts
+src/modules/subjects/dto/index.ts
+src/modules/subjects/dto/list-subjects-query.dto.ts
+src/modules/subjects/dto/subject-response.dto.ts
+src/modules/subjects/subjects.controller.ts
+src/modules/subjects/subjects.module.ts
+src/modules/subjects/subjects.repository.ts
+src/modules/subjects/subjects.service.ts
+
+=== REFERENCIAS SUBJECTS ===
+src/modules/subjects/dto/create-subject.dto.ts:7:} from 'class-validator';
+src/modules/subjects/dto/create-subject.dto.ts:28:  @IsEnum(TipoSujeto, { message: 'tipo debe ser: victima, imputado, testigo, apoderado, otro' })
+src/modules/subjects/dto/create-subject.dto.ts:29:  tipo!: TipoSujeto;
+src/modules/subjects/dto/create-subject.dto.ts:44:  @IsEnum(TipoIdentificacion, { message: 'tipo_identificacion debe ser: CC, TI, CE, PAS, NIT, otro' })
+src/modules/subjects/dto/create-subject.dto.ts:45:  tipo_identificacion?: TipoIdentificacion;
+src/modules/subjects/dto/index.ts:3:export * from './list-subjects-query.dto';
+src/modules/subjects/dto/list-subjects-query.dto.ts:2:import {IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min} from 'class-validator';
+src/modules/subjects/dto/list-subjects-query.dto.ts:21:  tipo?: TipoSujeto;
+src/modules/subjects/dto/list-subjects-query.dto.ts:46:    message: 'tipo_identificacion debe ser: CC, TI, CE, PAS, NIT, otro',
+src/modules/subjects/dto/list-subjects-query.dto.ts:49:  tipo_identificacion?: TipoIdentificacion;
+src/modules/subjects/dto/subject-response.dto.ts:4:  tipo!: string;
+src/modules/subjects/dto/subject-response.dto.ts:7:  tipo_identificacion?: string | null;
+src/modules/subjects/subjects.controller.ts:2:  Controller,
+src/modules/subjects/subjects.controller.ts:14:import { SubjectsService } from './subjects.service';
+src/modules/subjects/subjects.controller.ts:18:@Controller('cases/:caseId/subjects')
+src/modules/subjects/subjects.controller.ts:20:export class SubjectsController {
+src/modules/subjects/subjects.controller.ts:21:  constructor(private readonly service: SubjectsService) {}
+src/modules/subjects/subjects.controller.ts:25:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/subjects/subjects.controller.ts:31:    return this.service.findAllByCaseId(
+src/modules/subjects/subjects.controller.ts:32:      caseId,
+src/modules/subjects/subjects.controller.ts:35:      query.tipo,
+src/modules/subjects/subjects.controller.ts:38:      query.tipo_identificacion,
+src/modules/subjects/subjects.controller.ts:45:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/subjects/subjects.controller.ts:49:    return this.service.create(caseId, dto, req.user.sub);
+src/modules/subjects/subjects.controller.ts:52:  @Get(':subjectId')
+src/modules/subjects/subjects.controller.ts:54:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/subjects/subjects.controller.ts:55:    @Param('subjectId', ParseUUIDPipe) subjectId: string,
+src/modules/subjects/subjects.controller.ts:57:    return this.service.findOne(caseId, subjectId);
+src/modules/subjects/subjects.module.ts:2:import { SubjectsController } from './subjects.controller';
+src/modules/subjects/subjects.module.ts:3:import { SubjectsService } from './subjects.service';
+src/modules/subjects/subjects.module.ts:4:import { SubjectsRepository } from './subjects.repository';
+src/modules/subjects/subjects.module.ts:9:  controllers: [SubjectsController],
+src/modules/subjects/subjects.repository.ts:3:import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+src/modules/subjects/subjects.repository.ts:11:    caseId: string,
+src/modules/subjects/subjects.repository.ts:14:    tipo?: TipoSujeto,
+src/modules/subjects/subjects.repository.ts:17:    tipoIdentificacion?: TipoIdentificacion,
+src/modules/subjects/subjects.repository.ts:22:      caso_id: caseId,
+src/modules/subjects/subjects.repository.ts:25:    if (tipo) {
+src/modules/subjects/subjects.repository.ts:26:      whereClause.tipo = tipo;
+src/modules/subjects/subjects.repository.ts:40:    if (tipoIdentificacion) {
+src/modules/subjects/subjects.repository.ts:41:      whereClause.tipo_identificacion = tipoIdentificacion;
+src/modules/subjects/subjects.repository.ts:59:  async findById(subjectId: string) {
+src/modules/subjects/subjects.repository.ts:61:      where: { id: subjectId },
+src/modules/subjects/subjects.repository.ts:65:  async create(caseId: string, dto: CreateSubjectDto, userId: string) {
+src/modules/subjects/subjects.repository.ts:68:        caso_id: caseId,
+src/modules/subjects/subjects.repository.ts:69:        tipo: dto.tipo,
+src/modules/subjects/subjects.repository.ts:72:        tipo_identificacion: dto.tipo_identificacion,
+src/modules/subjects/subjects.repository.ts:81:  async caseExists(caseId: string): Promise<boolean> {
+src/modules/subjects/subjects.repository.ts:83:      where: { id: caseId },
+src/modules/subjects/subjects.service.ts:2:import { SubjectsRepository } from './subjects.repository';
+src/modules/subjects/subjects.service.ts:15:  constructor(private readonly repository: SubjectsRepository) {}
+src/modules/subjects/subjects.service.ts:18:    caseId: string,
+src/modules/subjects/subjects.service.ts:21:    tipo?: TipoSujeto,
+src/modules/subjects/subjects.service.ts:24:    tipoIdentificacion?: TipoIdentificacion,
+src/modules/subjects/subjects.service.ts:26:    const caseExists = await this.repository.caseExists(caseId);
+src/modules/subjects/subjects.service.ts:31:    const { data, total } = await this.repository.findAllByCaseId(
+src/modules/subjects/subjects.service.ts:32:      caseId,
+src/modules/subjects/subjects.service.ts:35:      tipo,
+src/modules/subjects/subjects.service.ts:38:      tipoIdentificacion,
+src/modules/subjects/subjects.service.ts:49:  async findOne(caseId: string, subjectId: string) {
+src/modules/subjects/subjects.service.ts:50:    const caseExists = await this.repository.caseExists(caseId);
+src/modules/subjects/subjects.service.ts:55:    const subject = await this.repository.findById(subjectId);
+src/modules/subjects/subjects.service.ts:56:    if (!subject || subject.caso_id !== caseId) {
+src/modules/subjects/subjects.service.ts:62:  async create(caseId: string, dto: CreateSubjectDto, userId: string) {
+src/modules/subjects/subjects.service.ts:63:    const caseExists = await this.repository.caseExists(caseId);
+src/modules/subjects/subjects.service.ts:67:    return this.repository.create(caseId, dto, userId);
+src/app.module.ts:40:import { SubjectsModule } from './modules/subjects/subjects.module';
+docs/04_api/CONTRATO_API.md:25:- **Regla de controllers**: los decorators `@Controller(...)` deben declarar rutas relativas al recurso. Queda prohibido repetir `api/v1` dentro del controller.
+docs/04_api/CONTRATO_API.md:40:| Colección — representa múltiples elementos | Plural | `/facts`, `/evidence`, `/risks`, `/subjects` |
+docs/04_api/CONTRATO_API.md:43:Esta convención aplica a todos los subrecursos de `/api/v1/cases/{caseId}/*`.
+docs/04_api/CONTRATO_API.md:54:| Next.js middleware y SSR | Cookie HttpOnly | Protección de rutas, validación inicial de sesión, rehidratación |
+docs/04_api/CONTRATO_API.md:57:El backend valida el mecanismo correcto según la ruta.
+docs/04_api/CONTRATO_API.md:143:Cierra sesión. Invalida el token de acceso y elimina la cookie de sesión.
+docs/04_api/CONTRATO_API.md:229:  "tipo_documento": "CC",
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:325:#### `GET /api/v1/cases/{caseId}`
+docs/04_api/CONTRATO_API.md:346:La ficha básica del caso se consulta oficialmente a través del agregado raíz `GET /api/v1/cases/{caseId}`.
+docs/04_api/CONTRATO_API.md:347:No existe el subrecurso `GET /api/v1/cases/{caseId}/basic-info`.
+docs/04_api/CONTRATO_API.md:356:#### `PUT /api/v1/cases/{caseId}`
+docs/04_api/CONTRATO_API.md:362:La ficha básica del caso se actualiza oficialmente a través del agregado raíz `PUT /api/v1/cases/{caseId}`.
+docs/04_api/CONTRATO_API.md:363:No existe el subrecurso `PUT /api/v1/cases/{caseId}/basic-info`.
+docs/04_api/CONTRATO_API.md:394:#### `POST /api/v1/cases/{caseId}/transition`
+docs/04_api/CONTRATO_API.md:432:POST   /api/v1/cases/{caseId}/facts
+docs/04_api/CONTRATO_API.md:433:GET    /api/v1/cases/{caseId}/facts
+docs/04_api/CONTRATO_API.md:434:GET    /api/v1/cases/{caseId}/facts/{factId}
+docs/04_api/CONTRATO_API.md:435:PUT    /api/v1/cases/{caseId}/facts/{factId}
+docs/04_api/CONTRATO_API.md:444:- `PUT /facts/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+docs/04_api/CONTRATO_API.md:475:**Dependencia funcional:** Al menos 1 hecho registrado es requisito para la transición `en_analisis → pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones.
+docs/04_api/CONTRATO_API.md:492:POST   /api/v1/cases/{caseId}/evidence
+docs/04_api/CONTRATO_API.md:493:GET    /api/v1/cases/{caseId}/evidence
+docs/04_api/CONTRATO_API.md:494:GET    /api/v1/cases/{caseId}/evidence/{evidenceId}
+docs/04_api/CONTRATO_API.md:495:PUT    /api/v1/cases/{caseId}/evidence/{evidenceId}
+docs/04_api/CONTRATO_API.md:496:PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/link
+docs/04_api/CONTRATO_API.md:497:PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/unlink
+docs/04_api/CONTRATO_API.md:506:- `PUT /evidence/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+docs/04_api/CONTRATO_API.md:514:**Nota:** El DTO de creación incluye `hecho_id` como campo opcional, pero el comportamiento validado en runtime es el vínculo/desvínculo por PATCH.
+docs/04_api/CONTRATO_API.md:528:| `tipo_prueba` | enum | - | Sí | Tipo de prueba |
+docs/04_api/CONTRATO_API.md:544:| `tipo_prueba` | enum | - |
+docs/04_api/CONTRATO_API.md:577:POST   /api/v1/cases/{caseId}/risks
+docs/04_api/CONTRATO_API.md:578:GET    /api/v1/cases/{caseId}/risks
+docs/04_api/CONTRATO_API.md:579:GET    /api/v1/cases/{caseId}/risks/{riskId}
+docs/04_api/CONTRATO_API.md:580:PUT    /api/v1/cases/{caseId}/risks/{riskId}
+docs/04_api/CONTRATO_API.md:585:**Enums validos:**
+docs/04_api/CONTRATO_API.md:602:| `400` | Payload invalido o prioridad critica sin estrategia |
+docs/04_api/CONTRATO_API.md:611:GET  /api/v1/cases/{caseId}/strategy
+docs/04_api/CONTRATO_API.md:612:PUT  /api/v1/cases/{caseId}/strategy
+docs/04_api/CONTRATO_API.md:638:**Dependencia funcional:** El campo `linea_principal` es obligatorio para la transición `en_analisis -> pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones, no en este endpoint.
+docs/04_api/CONTRATO_API.md:645:| `400` | Payload inválido o incumplimiento de validaciones del DTO en `PUT` |
+docs/04_api/CONTRATO_API.md:654:GET  /api/v1/cases/{caseId}/client-briefing
+docs/04_api/CONTRATO_API.md:655:PUT  /api/v1/cases/{caseId}/client-briefing
+docs/04_api/CONTRATO_API.md:679:GET  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:680:PUT  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:735:GET  /api/v1/cases/{caseId}/conclusion
+docs/04_api/CONTRATO_API.md:736:PUT  /api/v1/cases/{caseId}/conclusion
+docs/04_api/CONTRATO_API.md:759:GET  /api/v1/cases/{caseId}/timeline
+docs/04_api/CONTRATO_API.md:760:POST /api/v1/cases/{caseId}/timeline
+docs/04_api/CONTRATO_API.md:813:GET    /api/v1/cases/{caseId}/proceedings
+docs/04_api/CONTRATO_API.md:814:POST   /api/v1/cases/{caseId}/proceedings
+docs/04_api/CONTRATO_API.md:815:GET    /api/v1/cases/{caseId}/proceedings/{proceedingId}
+docs/04_api/CONTRATO_API.md:837:GET    /api/v1/cases/{caseId}/documents
+docs/04_api/CONTRATO_API.md:838:POST   /api/v1/cases/{caseId}/documents
+docs/04_api/CONTRATO_API.md:839:GET    /api/v1/cases/{caseId}/documents/{documentId}
+docs/04_api/CONTRATO_API.md:840:PUT    /api/v1/cases/{caseId}/documents/{documentId}
+docs/04_api/CONTRATO_API.md:897:GET /api/v1/cases/{caseId}/subjects
+docs/04_api/CONTRATO_API.md:907:| `tipo` | enum | — | Filtra por tipo de sujeto procesal |
+docs/04_api/CONTRATO_API.md:910:| `tipo_identificacion` | enum | — | Filtra por coincidencia exacta en `tipo_identificacion` |
+docs/04_api/CONTRATO_API.md:912:**Valores válidos de `tipo`:** `victima`, `imputado`, `testigo`, `apoderado`, `otro`
+docs/04_api/CONTRATO_API.md:914:**Valores válidos de `tipo_identificacion`:** `CC`, `TI`, `CE`, `PAS`, `NIT`, `otro`
+docs/04_api/CONTRATO_API.md:918:- `tipo`, `nombre`, `identificacion` y `tipo_identificacion` pueden combinarse entre sí.
+docs/04_api/CONTRATO_API.md:921:- `tipo_identificacion` aplica comparación exacta.
+docs/04_api/CONTRATO_API.md:923:- Si `tipo` es inválido, la respuesta es `400 Bad Request`.
+docs/04_api/CONTRATO_API.md:926:- Si `tipo_identificacion` es inválido, la respuesta es `400 Bad Request`.
+docs/04_api/CONTRATO_API.md:927:- Si `tipo_identificacion` es vacío, la respuesta es `400 Bad Request`.
+docs/04_api/CONTRATO_API.md:936:      "tipo": "victima | imputado | testigo | apoderado | otro",
+docs/04_api/CONTRATO_API.md:939:      "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro | null",
+docs/04_api/CONTRATO_API.md:961:> **Consolidación contractual (Sprint 21):** Se integra en bloque único la semántica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion` para `GET /subjects`.
+docs/04_api/CONTRATO_API.md:967:POST /api/v1/cases/{caseId}/subjects
+docs/04_api/CONTRATO_API.md:976:  "tipo": "victima | imputado | testigo | apoderado | otro",
+docs/04_api/CONTRATO_API.md:979:  "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro (opcional)",
+docs/04_api/CONTRATO_API.md:990:| `tipo` | enum | Sí | `victima` \| `imputado` \| `testigo` \| `apoderado` \| `otro` |
+docs/04_api/CONTRATO_API.md:993:| `tipo_identificacion` | enum | No | `CC` \| `TI` \| `CE` \| `PAS` \| `NIT` \| `otro` |
+docs/04_api/CONTRATO_API.md:1009:GET /api/v1/cases/{caseId}/subjects/{subjectId}
+docs/04_api/CONTRATO_API.md:1021:> **Nota de implementación (Sprint 15):** Subrecurso `subjects` implementado con
+docs/04_api/CONTRATO_API.md:1028:#### `GET /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1033:#### `GET /api/v1/cases/{caseId}/review/feedback`
+docs/04_api/CONTRATO_API.md:1039:#### `POST /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1073:#### `GET /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1076:#### `POST /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1079:**Tipos disponibles:** `resumen_ejecutivo`, `conclusion_operativa`, `control_calidad`,
+docs/04_api/CONTRATO_API.md:1084:**Idempotencia:** Si existe un informe del mismo tipo y formato generado en los últimos 5 minutos, se retorna ese informe en lugar de crear uno nuevo.
+docs/04_api/CONTRATO_API.md:1086:#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+docs/04_api/CONTRATO_API.md:1095:| `400` | Payload inválido (tipo o formato no válido) |
+docs/04_api/CONTRATO_API.md:1108:**Naturaleza MVP:** En la versión actual, el módulo usa un placeholder local sin proveedor IA real. Las respuestas son simuladas para validación funcional.
+docs/04_api/CONTRATO_API.md:1160:#### `GET /api/v1/cases/{caseId}/audit`
+docs/04_api/CONTRATO_API.md:1168:| `tipo` | enum | - | Filtra por tipo de evento |
+docs/04_api/CONTRATO_API.md:1172:**Valores válidos de `tipo`:**
+docs/04_api/CONTRATO_API.md:1192:| `tipo` | string | Tipo de evento |
+docs/04_api/CONTRATO_API.md:1211:      "tipo": "transicion_estado",
+docs/04_api/CONTRATO_API.md:1234:| `400` | Filtro `tipo` inválido |
+docs/04_api/CONTRATO_API.md:1251:| E6-01 | 2026-03-28 | Restauración de `audit` como endpoint funcional. Implementación completa con paginación, filtros y control de acceso por rol. |
+docs/04_api/CONTRATO_API.md:1260:| Tipado repository con `TipoEvento` de Prisma | ✅ |
+docs/04_api/CONTRATO_API.md:1281:| E5-22 | 2026-03-28 | Corrección contractual de `basic-info`: se elimina la referencia residual al subrecurso y se explicita que la ficha básica se consulta y actualiza vía `GET/PUT /api/v1/cases/{caseId}`. |
+docs/04_api/CONTRATO_API.md:1282:| 21 | 2026-03-27 | Consolidación contractual de `GET /subjects`: integración canónica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion`. |
+docs/04_api/CONTRATO_API.md:1283:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
+docs/04_api/CONTRATO_API.md:1284:| 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
+docs/04_api/CONTRATO_API.md:1285:| 15 | 2026-03-27 | Agregado subrecurso `subjects` (sección 6) con política append-only |
+docs/04_api/CONTRATO_API.md:1286:| 14 | 2026-03-27 | Hardening de validaciones en `proceedings` |
+docs/04_api/CONTRATO_API.md:1288:| 12 | 2026-03-26 | Hardening de validaciones en `documents` |
+docs/04_api/CONTRATO_API.md:1289:| 17 | 2026-03-27 | Filtro por `tipo` en `GET /subjects`. Parámetro opcional con validación enum. |
+docs/04_api/CONTRATO_API.md:1309:  "service": "lex-penal",
