@@ -65,16 +65,12 @@ sleep 4
 systemctl status lex-penal.service --no-pager
 
 echo
-echo "=== SMOKE LOCAL LOGIN ==="
-curl -sS -i -X POST http://127.0.0.1:3010/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{}" || true
+echo "=== SMOKE LOCAL HEALTH ==="
+curl -sS -i http://127.0.0.1:3010/api/v1/health || true
 
 echo
-echo "=== SMOKE NGINX LOGIN ==="
-curl -k -sS -i -X POST https://127.0.0.1/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{}" || true
+echo "=== SMOKE NGINX HEALTH ==="
+curl -k -sS -i https://127.0.0.1/api/v1/health || true
 
 echo
 echo "=== COMMIT FINAL ==="

@@ -38,6 +38,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { AIModule } from './modules/ai/ai.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
+import { HealthModule } from './modules/health/health.module';
 
 /**
  * Módulo raíz de LexPenal backend.
@@ -75,6 +76,7 @@ import { SubjectsModule } from './modules/subjects/subjects.module';
     AIModule,
     AuditModule,
     SubjectsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

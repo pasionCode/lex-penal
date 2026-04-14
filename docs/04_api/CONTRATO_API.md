@@ -1291,3 +1291,26 @@ Eliminar la referencia a audit de esa sección, ya que ahora está implementado.
 
 *Documento actualizado: 2026-03-28 (E5-25)*
 
+
+---
+
+## Endpoint técnico de salud
+
+### GET `/api/v1/health`
+
+**Propósito:** verificación mínima de salud operativa del backend para smoke test y readiness básica post-despliegue.
+
+**Autenticación:** no requiere.
+
+**Respuesta esperada `200 OK`:**
+
+{
+  "status": "ok",
+  "service": "lex-penal",
+  "timestamp": "2026-04-13T00:00:00.000Z"
+}
+
+**Notas operativas:**
+- Debe responder localmente en `http://127.0.0.1:3010/api/v1/health`.
+- Debe responder vía Nginx en `https://127.0.0.1/api/v1/health`.
+- Sustituye el uso de `POST /api/v1/auth/login` como smoke técnico mínimo.
