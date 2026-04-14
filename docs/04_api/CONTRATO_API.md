@@ -615,11 +615,13 @@ PUT  /api/v1/cases/{caseId}/strategy
 Recurso **singleton**: existe exactamente una instancia de estrategia por cada caso.
 
 **Comportamiento especial:**
-- Si `GET /client-briefing` se invoca y no existe aún una explicación para el caso:
+- Si `GET /strategy` se invoca y no existe aún una estrategia para el caso:
   - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
   - Si el estado del caso no permite escritura, retorna `409 Conflict`.
-- Si `GET /client-briefing` se invoca y ya existe la explicación, retorna el recurso sin importar el estado del caso (200).
-- `PUT /client-briefing` actualiza la explicación existente del caso. Solo permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+- Si `GET /strategy` se invoca y ya existe la estrategia, retorna el recurso sin importar el estado del caso (200).
+- `PUT /strategy` actualiza la estrategia existente del caso.
+- Si `PUT /strategy` se invoca y no existe aún estrategia, el sistema la crea con los datos suministrados.
+- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
 
 **Campos:**
 
@@ -646,6 +648,7 @@ Todos los campos son opcionales en `PUT`.
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso no encontrado |
+| `409` | El estado actual del caso no permite auto-creación o modificación |
 
 ---
 

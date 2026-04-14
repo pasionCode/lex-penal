@@ -1,0 +1,190 @@
+]633;E;{   echo "=== FECHA ==="\x3b   date -Is\x3b   echo\x3b   echo "=== STRATEGY CONTROLLER ==="\x3b   sed -n '1,260p' src/modules/strategy/strategy.controller.ts\x3b   echo\x3b   echo "=== STRATEGY SERVICE ==="\x3b   sed -n '1,340p' src/modules/strategy/strategy.service.ts\x3b   echo\x3b   echo "=== STRATEGY REPOSITORY ==="\x3b   sed -n '1,340p' src/modules/strategy/strategy.repository.ts\x3b } > docs/00_gobierno/fases/E22/E22-02/evidencias/INSPECCION_STRATEGY_2026-04-14.txt;7a9149cd-955e-48e0-a048-f657747d855d]633;C=== FECHA ===
+2026-04-14T18:39:22-05:00
+
+=== STRATEGY CONTROLLER ===
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { StrategyService } from './strategy.service';
+import { UpdateStrategyDto } from './dto/update-strategy.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
+
+/**
+ * Estrategia de defensa — recurso único por caso.
+ * GET  /api/v1/cases/:caseId/strategy
+ * PUT  /api/v1/cases/:caseId/strategy
+ */
+@Controller('cases/:caseId/strategy')
+@UseGuards(JwtAuthGuard)
+export class StrategyController {
+  constructor(private readonly service: StrategyService) {}
+
+  @Get()
+  async findOne(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Put()
+  async update(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: UpdateStrategyDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.update(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+  }
+}
+=== STRATEGY SERVICE ===
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Estrategia } from '@prisma/client';
+import { StrategyRepository } from './strategy.repository';
+import { UpdateStrategyDto } from './dto/update-strategy.dto';
+import { PerfilUsuario } from '../../types/enums';
+
+@Injectable()
+export class StrategyService {
+  constructor(private readonly repository: StrategyRepository) {}
+
+  /**
+   * Obtiene la estrategia del caso.
+   * Si no existe, la crea vacía (lazy initialization).
+   */
+  async findByCaseId(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Estrategia> {
+    await this.checkCaseAccess(casoId, userId, perfil);
+
+    let estrategia = await this.repository.findByCaseId(casoId);
+
+    if (!estrategia) {
+      estrategia = await this.repository.create({
+        caso_id: casoId,
+        creado_por: userId,
+      });
+    }
+
+    return estrategia;
+  }
+
+  /**
+   * Actualiza la estrategia del caso.
+   * Si no existe, la crea primero.
+   */
+  async update(
+    casoId: string,
+    dto: UpdateStrategyDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Estrategia> {
+    await this.checkCaseAccess(casoId, userId, perfil);
+
+    let estrategia = await this.repository.findByCaseId(casoId);
+
+    if (!estrategia) {
+      // Crear con los datos del DTO
+      return this.repository.create({
+        caso_id: casoId,
+        linea_principal: dto.linea_principal ?? null,
+        fundamento_juridico: dto.fundamento_juridico ?? null,
+        fundamento_probatorio: dto.fundamento_probatorio ?? null,
+        linea_subsidiaria: dto.linea_subsidiaria ?? null,
+        posicion_allanamiento: dto.posicion_allanamiento ?? null,
+        posicion_preacuerdo: dto.posicion_preacuerdo ?? null,
+        posicion_juicio: dto.posicion_juicio ?? null,
+        creado_por: userId,
+        actualizado_por: userId,
+      });
+    }
+
+    const updateData: Record<string, unknown> = {
+      actualizado_por: userId,
+    };
+
+    if (dto.linea_principal !== undefined) updateData.linea_principal = dto.linea_principal;
+    if (dto.fundamento_juridico !== undefined) updateData.fundamento_juridico = dto.fundamento_juridico;
+    if (dto.fundamento_probatorio !== undefined) updateData.fundamento_probatorio = dto.fundamento_probatorio;
+    if (dto.linea_subsidiaria !== undefined) updateData.linea_subsidiaria = dto.linea_subsidiaria;
+    if (dto.posicion_allanamiento !== undefined) updateData.posicion_allanamiento = dto.posicion_allanamiento;
+    if (dto.posicion_preacuerdo !== undefined) updateData.posicion_preacuerdo = dto.posicion_preacuerdo;
+    if (dto.posicion_juicio !== undefined) updateData.posicion_juicio = dto.posicion_juicio;
+
+    return this.repository.update(casoId, updateData);
+  }
+
+  private async checkCaseAccess(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<void> {
+    const exists = await this.repository.caseExists(casoId);
+    if (!exists) {
+      throw new NotFoundException(`Caso ${casoId} no encontrado`);
+    }
+
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      const responsable = await this.repository.getCaseResponsable(casoId);
+      if (responsable !== userId) {
+        throw new ForbiddenException('Sin acceso a este caso');
+      }
+    }
+  }
+}
+=== STRATEGY REPOSITORY ===
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+import { Estrategia, Prisma } from '@prisma/client';
+
+@Injectable()
+export class StrategyRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByCaseId(casoId: string): Promise<Estrategia | null> {
+    return this.prisma.estrategia.findUnique({
+      where: { caso_id: casoId },
+    });
+  }
+
+  async create(data: Prisma.EstrategiaUncheckedCreateInput): Promise<Estrategia> {
+    return this.prisma.estrategia.create({ data });
+  }
+
+  async update(casoId: string, data: Prisma.EstrategiaUncheckedUpdateInput): Promise<Estrategia> {
+    return this.prisma.estrategia.update({
+      where: { caso_id: casoId },
+      data,
+    });
+  }
+
+  async caseExists(casoId: string): Promise<boolean> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { id: true },
+    });
+    return !!caso;
+  }
+
+  async getCaseResponsable(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { responsable_id: true },
+    });
+    return caso?.responsable_id ?? null;
+  }
+}

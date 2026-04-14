@@ -2,19 +2,26 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { Estrategia } from '@prisma/client';
 import { StrategyRepository } from './strategy.repository';
 import { UpdateStrategyDto } from './dto/update-strategy.dto';
-import { PerfilUsuario } from '../../types/enums';
+import { PerfilUsuario, EstadoCaso } from '../../types/enums';
 
 @Injectable()
 export class StrategyService {
   constructor(private readonly repository: StrategyRepository) {}
 
+  private readonly estadosConEscritura = [
+    EstadoCaso.EN_ANALISIS,
+    EstadoCaso.DEVUELTO,
+    EstadoCaso.LISTO_PARA_CLIENTE,
+  ];
+
   /**
    * Obtiene la estrategia del caso.
-   * Si no existe, la crea vacía (lazy initialization).
+   * Si no existe, la crea vacía solo cuando el estado permite escritura.
    */
   async findByCaseId(
     casoId: string,
@@ -24,20 +31,27 @@ export class StrategyService {
     await this.checkCaseAccess(casoId, userId, perfil);
 
     let estrategia = await this.repository.findByCaseId(casoId);
-
-    if (!estrategia) {
-      estrategia = await this.repository.create({
-        caso_id: casoId,
-        creado_por: userId,
-      });
+    if (estrategia) {
+      return estrategia;
     }
 
-    return estrategia;
+    const estado = await this.repository.getCaseState(casoId);
+    if (!this.estadosConEscritura.includes(estado as EstadoCaso)) {
+      throw new ConflictException(
+        `El caso en estado "${estado}" no permite autocreación de estrategia.`,
+      );
+    }
+
+    return this.repository.create({
+      caso_id: casoId,
+      creado_por: userId,
+    });
   }
 
   /**
    * Actualiza la estrategia del caso.
    * Si no existe, la crea primero.
+   * Solo permitido en estados con escritura habilitada.
    */
   async update(
     casoId: string,
@@ -47,10 +61,16 @@ export class StrategyService {
   ): Promise<Estrategia> {
     await this.checkCaseAccess(casoId, userId, perfil);
 
+    const estado = await this.repository.getCaseState(casoId);
+    if (!this.estadosConEscritura.includes(estado as EstadoCaso)) {
+      throw new ConflictException(
+        `El caso en estado "${estado}" no permite modificar estrategia.`,
+      );
+    }
+
     let estrategia = await this.repository.findByCaseId(casoId);
 
     if (!estrategia) {
-      // Crear con los datos del DTO
       return this.repository.create({
         caso_id: casoId,
         linea_principal: dto.linea_principal ?? null,
