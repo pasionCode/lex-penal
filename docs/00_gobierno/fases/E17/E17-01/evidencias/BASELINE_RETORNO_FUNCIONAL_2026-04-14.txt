@@ -1,0 +1,228 @@
+=== FECHA ===
+2026-04-14T15:21:29-05:00
+
+=== MODULOS BACKEND ===
+src/modules/ai
+src/modules/audit
+src/modules/auth
+src/modules/cases
+src/modules/checklist
+src/modules/client-briefing
+src/modules/clients
+src/modules/conclusion
+src/modules/documents
+src/modules/evidence
+src/modules/facts
+src/modules/health
+src/modules/proceedings
+src/modules/reports
+src/modules/review
+src/modules/risks
+src/modules/strategy
+src/modules/subjects
+src/modules/timeline
+src/modules/users
+
+=== CONTRATO API TITULOS ===
+22:## Convenciones generales
+34:### Convención de nomenclatura de subrecursos
+48:### Autenticación de solicitudes
+64:## Códigos de respuesta estándar
+82:## Estructura estándar de error
+101:## Recursos
+105:### 1. Autenticación
+107:#### `POST /api/v1/auth/login`
+142:#### `POST /api/v1/auth/logout`
+153:### 2. Usuarios
+155:#### `GET /api/v1/users`
+169:#### `POST /api/v1/users`
+189:#### `GET /api/v1/users/{id}`
+201:#### `PUT /api/v1/users/{id}`
+211:### 3. Clientes
+213:#### `GET /api/v1/clients`
+222:#### `POST /api/v1/clients`
+245:#### `GET /api/v1/clients/{id}`
+250:#### `PUT /api/v1/clients/{id}`
+255:### 4. Casos
+257:#### `GET /api/v1/cases`
+290:#### `POST /api/v1/cases`
+325:#### `GET /api/v1/cases/{caseId}`
+356:#### `PUT /api/v1/cases/{caseId}`
+392:### 4.1 Transición de estado del caso
+394:#### `POST /api/v1/cases/{caseId}/transition`
+416:### 5. Herramientas operativas del caso
+429:#### 5.1 Hechos del caso
+489:#### 5.2 Pruebas del caso
+575:#### 5.3 Riesgos del caso
+608:#### 5.4 Estrategia de defensa
+652:#### 5.5 Explicación al cliente
+677:#### 5.6 Checklist de calidad
+733:#### 5.7 Conclusión operativa
+756:#### 5.8 Línea de tiempo
+810:#### 5.9 Actuaciones procesales
+834:#### 5.10 Documentos del caso
+891:### 6. Sujetos procesales
+895:#### 6.1 Listar sujetos de un caso
+916:#### Reglas de comportamiento
+964:#### 6.2 Crear sujeto
+1006:#### 6.3 Obtener sujeto por ID
+1026:### 7. Revision del supervisor
+1028:#### `GET /api/v1/cases/{caseId}/review`
+1033:#### `GET /api/v1/cases/{caseId}/review/feedback`
+1039:#### `POST /api/v1/cases/{caseId}/review`
+1071:### 8. Informes
+1073:#### `GET /api/v1/cases/{caseId}/reports`
+1076:#### `POST /api/v1/cases/{caseId}/reports`
+1086:#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+1102:### 9. Módulo de IA
+1104:#### `POST /api/v1/ai/query`
+1156:## Módulos diferidos (fuera de MVP)
+1158:### 10. Auditoría
+1160:#### `GET /api/v1/cases/{caseId}/audit`
+1242:### Si existe sección "Módulos diferidos"
+1248:## Acción adicional: Agregar entrada al historial de cambios
+1256:## Resumen de ajustes aplicados
+1267:## Trazabilidad
+1277:## Historial de cambios
+1297:## Endpoint técnico de salud
+1299:### GET `/api/v1/health`
+
+=== BUSQUEDA DEUDAS ===
+src/modules/cases/constants/caso-estado.constants.ts:13:  [EstadoCaso.EN_ANALISIS]: [EstadoCaso.PENDIENTE_REVISION],
+src/modules/cases/constants/caso-estado.constants.ts:14:  [EstadoCaso.PENDIENTE_REVISION]: [EstadoCaso.DEVUELTO, EstadoCaso.APROBADO_SUPERVISOR],
+src/modules/cases/constants/caso-estado.constants.ts:76:  EstadoCaso.PENDIENTE_REVISION,
+src/modules/cases/services/caso-estado.service.ts:80:  // MÉTODO PRINCIPAL: transicionar()
+src/modules/cases/services/caso-estado.service.ts:171:          (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
+src/modules/cases/services/caso-estado.service.ts:173:          (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
+src/modules/review/review.service.ts:89:    if (estado !== EstadoCaso.PENDIENTE_REVISION) {
+src/modules/users/users.repository.ts:41:  // MÉTODOS EXISTENTES (no modificar)
+src/modules/users/users.repository.ts:110:  // MÉTODOS E5-06: Administración de usuarios
+src/modules/users/users.service.ts:62:  // MÉTODOS EXISTENTES (no modificar interfaz pública)
+src/modules/users/users.service.ts:184:  // MÉTODOS E5-06: Administración de usuarios
+src/types/enums.ts:9:  PENDIENTE_REVISION = 'pendiente_revision',
+src/types/enums.ts:74:  PENDIENTE = 'pendiente',
+docs/00_gobierno/auditorias/J08A_INFORME_2026-03-22.md:4:Auditoría sobre snapshot del repositorio `LEX_PENAL.zip`, contrastado contra `METODOLOGIA_DESARROLLO_SOFTWARE_v2.1.md`.
+docs/00_gobierno/auditorias/J08A_INFORME_2026-03-22.md:36:- `METODOLOGIA_DESARROLLO_SOFTWARE_v2.1.md:50-54`
+docs/00_gobierno/auditorias/J08A_INFORME_2026-03-22.md:78:- `METODOLOGIA_DESARROLLO_SOFTWARE_v2.1.md:1010-1021`
+docs/00_gobierno/auditorias/J08A_INFORME_2026-03-22.md:85:- `METODOLOGIA_DESARROLLO_SOFTWARE_v2.1.md:315-339`
+docs/00_gobierno/auditorias/J08A_INFORME_2026-03-22.md:146:2. Emitir `ACTA_CIERRE_GATE_01` y `ACTA_CIERRE_GATE_02`, o un `ACTA_ESTADO_METODOLOGICO_J08A` que consolide ambos con referencia a J04/J05.
+docs/00_gobierno/auditorias/J08A_PAUSA_2026-03-22.md:1:\# ACTA DE PAUSA METODOLÓGICA — J08-A
+docs/00_gobierno/auditorias/verificaciones/AUD02_CIERRE.md:70:**Pendiente**: Definir ítems específicos del checklist por bloque (marcado como TODO en código).
+docs/00_gobierno/CIERRE_MVP_LEX_PENAL_2026-03-30.md:50:BORRADOR → EN_ANALISIS → PENDIENTE_REVISION → APROBADO_SUPERVISOR → LISTO_PARA_CLIENTE → CERRADO
+docs/00_gobierno/conduccion/LEX_PENAL_SISTEMA_CONDUCCION.md:35:- **METODOLOGIA_DESARROLLO_SOFTWARE_v2.2.md** — Manual metodológico institucional
+docs/00_gobierno/fases/CORTE_DEUDAS_POST_E5-05.md:1:CORTE BREVE FINAL DE DEUDAS POST E5-05
+docs/00_gobierno/fases/E17/E17-01/CHECKLIST_APERTURA_UNIDAD_E17_01_2026-04-14.md:28:- Búsqueda de TODO, FIXME, DEUDA, PENDIENTE
+docs/00_gobierno/fases/E5/E5-04/BASELINE_COMPARATIVO_E5_04_2026-03-28.md:140:| `caso-estado.service` (ahora) | 12 | 0 (TODO) | estrategia, explicación, conclusión |
+docs/00_gobierno/fases/E5/E5-04/BASELINE_COMPARATIVO_E5_04_2026-03-28.md:365:| Estado items | `// TODO` en código |
+docs/00_gobierno/fases/E5/E5-04/NOTA_CIERRE_PARCIAL_E5_04_2026-03-28.md:133:| Items en TODO | Sí (código tiene `// TODO`) |
+docs/00_gobierno/fases/E5/NOTA_CONSOLIDACION_FASE_E5_2026-03-28.md:93:## 4. REGLAS METODOLÓGICAS ACUMULADAS
+docs/00_gobierno/fases/E5/NOTA_CONSOLIDACION_FASE_E5_2026-03-28.md:121:## 5. DEUDA TÉCNICA IDENTIFICADA
+docs/00_gobierno/fases/E5/sprints/sprint_12/BASELINE_DOCUMENTS_SPRINT_12_2026-03-26.md:328:| Mensaje ruidoso en campo ausente | ⚠️ DEUDA TÉCNICA — fuera de alcance Sprint 12 |
+docs/00_gobierno/fases/E5/sprints/sprint_12/NOTA_APERTURA_SPRINT_12_2026-03-26.md:158:| 3 | Verificación higiene de arranque | PENDIENTE |
+docs/00_gobierno/fases/E5/sprints/sprint_12/NOTA_APERTURA_SPRINT_12_2026-03-26.md:159:| 4 | Baseline funcional capturado | PENDIENTE |
+docs/00_gobierno/fases/E6/E6-02/NOTA_CIERRE_UNIDAD_E6_02_2026-03-28.md:77:## 6. LIMITACIONES Y DEUDA TÉCNICA
+docs/00_gobierno/fases/E6/E6-03/CHECKLIST_APERTURA_E6_03_2026-03-29.md:55:`BORRADOR → EN_ANALISIS → PENDIENTE_REVISION → APROBADO_SUPERVISOR → LISTO_PARA_CLIENTE → CERRADO`
+docs/00_gobierno/fases/E6/E6-03/NOTA_CIERRE_UNIDAD_E6_03_2026-03-29.md:44:BORRADOR → EN_ANALISIS → PENDIENTE_REVISION → APROBADO_SUPERVISOR → LISTO_PARA_CLIENTE → CERRADO
+docs/00_gobierno/fases/E6/E6-03/NOTA_CIERRE_UNIDAD_E6_03_2026-03-29.md:106:## 7. DEUDAS Y SALVEDADES
+docs/00_gobierno/fases/E7/E7-04/BASELINE_TECNICO_E7_04_2026-03-30.md:55:| PENDIENTE_REVISION | ❌ 409 | ✅ Auto-crea | ⚠️ |
+docs/00_gobierno/fases/E7/E7-04/BASELINE_TECNICO_E7_04_2026-03-30.md:96:PENDIENTE_REVISION ────────────────────────────────────────┤
+docs/00_gobierno/fases/E7/E7-04/NOTA_CIERRE_UNIDAD_E7_04_2026-03-30.md:77:| PENDIENTE_REVISION | 409 | 200 | 409 |
+docs/00_gobierno/fases/E9/E9-01/CHECKLIST_REACTIVACION_LEXUM_MAIN_E9_01_A_2026-04-01.md.txt:9:- Estado: PENDIENTE DE EJECUCIÓN
+docs/00_gobierno/fases/NOTA_CIERRE_DEUDA_POST_E5_05.md:3:BLOQUE DE DEUDAS POST E5-05
+docs/00_gobierno/gates/GATE-00_2026-03-20.md:163:| GATE-01 | PENDIENTE DE VERIFICACIÓN TÉCNICA |
+docs/00_gobierno/herramientas/PROMPT_AUDITOR_MDS.md:41:METODOLOGIA\_DESARROLLO\_SOFTWARE\_v2.1.md
+docs/00_gobierno/historico/AUDITORIA_SCAFFOLD_v1.2_2026-03-09.md:112:| `documentos` | (sin módulo) | ❌ No existe | DECISIÓN PENDIENTE |
+docs/00_gobierno/historico/AUDITORIA_SCAFFOLD_v1.2_2026-03-09.md:223:| AUD-01 | infrastructure/prisma | MODELO_DATOS_v3, ADR-002, ADR-006 | Schema Prisma no existe | FALTANTE | DEUDA_TECNICA | P1 | `src/infrastructure/database/prisma/` — solo tiene module, service y helper | Generar schema.prisma |
+docs/00_gobierno/historico/AUDITORIA_SCAFFOLD_v1.2_2026-03-09.md:225:| AUD-03 | (sin módulo) | MODELO_DATOS_v3 | Módulo documentos no existe | DECISIÓN PENDIENTE | VACIO_DE_DISENO | P2 | No hay directorio `src/modules/documents/` | Decidir alcance MVP |
+docs/00_gobierno/historico/AUDITORIA_SCAFFOLD_v1.2_2026-03-09.md:226:| AUD-04 | types | MODELO_DATOS_v3 | Enums faltantes | PARCIALMENTE_ALINEADO | DEUDA_TECNICA | P2 | `src/types/enums.ts` — faltan CategoriaDocumento, TipoEvento | Agregar enums |
+docs/00_gobierno/historico/conduccion/LEX_PENAL_SISTEMA_CONDUCCION_v1.0_2026-03-09.md:35:- **METODOLOGIA_DESARROLLO_SOFTWARE_v2.1.md** — Manual metodológico institucional
+docs/00_gobierno/historico/sprints/sprint_07/NOTA_APERTURA_SPRINT_07_2026-03-25.md:21:| E4 | ⏳ PENDIENTE | Post-MVP / Consolidación |
+
+=== FASES EXISTENTES ===
+docs/00_gobierno/fases
+docs/00_gobierno/fases/E10
+docs/00_gobierno/fases/E10/E10-01
+docs/00_gobierno/fases/E10/E10-02
+docs/00_gobierno/fases/E10/E10-03
+docs/00_gobierno/fases/E10/E10-04
+docs/00_gobierno/fases/E10/E10-05
+docs/00_gobierno/fases/E10/E10-06
+docs/00_gobierno/fases/E10/E10-07
+docs/00_gobierno/fases/E10/E10-08
+docs/00_gobierno/fases/E11
+docs/00_gobierno/fases/E11/E11-01
+docs/00_gobierno/fases/E11/E11-02
+docs/00_gobierno/fases/E11/E11-03
+docs/00_gobierno/fases/E11/E11-04
+docs/00_gobierno/fases/E11/E11-05
+docs/00_gobierno/fases/E12
+docs/00_gobierno/fases/E12/E12-01
+docs/00_gobierno/fases/E12/E12-02
+docs/00_gobierno/fases/E12/E12-03
+docs/00_gobierno/fases/E13
+docs/00_gobierno/fases/E13/E13-01
+docs/00_gobierno/fases/E13/E13-02
+docs/00_gobierno/fases/E13/E13-03
+docs/00_gobierno/fases/E14
+docs/00_gobierno/fases/E14/E14-01
+docs/00_gobierno/fases/E14/E14-02
+docs/00_gobierno/fases/E14/E14-03
+docs/00_gobierno/fases/E15
+docs/00_gobierno/fases/E15/E15-01
+docs/00_gobierno/fases/E15/E15-02
+docs/00_gobierno/fases/E15/E15-03
+docs/00_gobierno/fases/E16
+docs/00_gobierno/fases/E16/E16-01
+docs/00_gobierno/fases/E16/E16-02
+docs/00_gobierno/fases/E16/E16-03
+docs/00_gobierno/fases/E17
+docs/00_gobierno/fases/E17/E17-01
+docs/00_gobierno/fases/E4
+docs/00_gobierno/fases/E4/sprints
+docs/00_gobierno/fases/E5
+docs/00_gobierno/fases/E5/E5-01
+docs/00_gobierno/fases/E5/E5-02
+docs/00_gobierno/fases/E5/E5-03
+docs/00_gobierno/fases/E5/E5-04
+docs/00_gobierno/fases/E5/E5-05
+docs/00_gobierno/fases/E5/E5-06
+docs/00_gobierno/fases/E5/E5-08
+docs/00_gobierno/fases/E5/E5-09
+docs/00_gobierno/fases/E5/E5-10
+docs/00_gobierno/fases/E5/E5-11
+docs/00_gobierno/fases/E5/E5-12
+docs/00_gobierno/fases/E5/E5-13
+docs/00_gobierno/fases/E5/E5-14
+docs/00_gobierno/fases/E5/E5-15
+docs/00_gobierno/fases/E5/E5-16
+docs/00_gobierno/fases/E5/E5-17
+docs/00_gobierno/fases/E5/E5-18
+docs/00_gobierno/fases/E5/E5-19
+docs/00_gobierno/fases/E5/E5-20
+docs/00_gobierno/fases/E5/E5-21
+docs/00_gobierno/fases/E5/E5-22
+docs/00_gobierno/fases/E5/E5-23
+docs/00_gobierno/fases/E5/E5-24
+docs/00_gobierno/fases/E5/E5-25
+docs/00_gobierno/fases/E5/Nueva carpeta
+docs/00_gobierno/fases/E5/sprints
+docs/00_gobierno/fases/E6
+docs/00_gobierno/fases/E6/E6-01
+docs/00_gobierno/fases/E6/E6-02
+docs/00_gobierno/fases/E6/E6-03
+docs/00_gobierno/fases/E7
+docs/00_gobierno/fases/E7/E7-01
+docs/00_gobierno/fases/E7/E7-02
+docs/00_gobierno/fases/E7/E7-03
+docs/00_gobierno/fases/E7/E7-04
+docs/00_gobierno/fases/E8
+docs/00_gobierno/fases/E8/E8-03
+docs/00_gobierno/fases/E8/E8-04
+docs/00_gobierno/fases/E8/E8-05
+docs/00_gobierno/fases/E9
+docs/00_gobierno/fases/E9/E9-01
+docs/00_gobierno/fases/E9/E9-02
+docs/00_gobierno/fases/E9/E9-03
+docs/00_gobierno/fases/E9/E9-04
+docs/00_gobierno/fases/E9/E9-05
+docs/00_gobierno/fases/E9/E9-06
