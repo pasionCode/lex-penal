@@ -1,0 +1,321 @@
+=== FECHA ===
+2026-04-14T18:20:06-05:00
+
+=== CONTRATO REPORTS ===
+1071-| `200` | Historial, feedback o revision obtenida |
+1072-| `201` | Revision creada |
+1073-| `401` | No autenticado |
+1074-| `403` | Estudiante sin acceso o perfil insuficiente |
+1075-| `404` | Caso no encontrado |
+1076-| `409` | Caso no esta en estado `pendiente_revision` |
+1077----
+1078-
+1079:### 8. Informes
+1080-
+1081:#### `GET /api/v1/cases/{caseId}/reports`
+1082-Lista los informes generados para el caso.
+1083-
+1084:#### `POST /api/v1/cases/{caseId}/reports`
+1085-Solicita la generación de un informe del caso.
+1086-
+1087-**Tipos disponibles:** `resumen_ejecutivo`, `conclusion_operativa`, `control_calidad`,
+1088-`riesgos`, `cronologico`, `revision_supervisor`, `agenda_vencimientos`
+1089-
+1090-**Formatos disponibles:** `pdf`, `docx`
+1091-
+1092-**Idempotencia:** Si existe un informe del mismo tipo y formato generado en los últimos 5 minutos, se retorna ese informe en lugar de crear uno nuevo.
+1093-
+1094:#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+1095-Retorna el detalle de un informe específico.
+1096-
+1097-**Respuestas (todos los endpoints):**
+1098-
+1099-| Código | Descripción |
+1100-|--------|-------------|
+1101-| `200` | Lista o detalle de informes |
+1102-| `201` | Informe generado |
+1103-| `400` | Payload inválido (tipo o formato no válido) |
+1104-| `401` | No autenticado |
+1105-| `403` | Estudiante sin acceso al caso |
+1106-| `404` | Caso o informe no encontrado |
+1107-
+1108----
+1109-
+1110-### 9. Módulo de IA
+1111-
+1112-#### `POST /api/v1/ai/query`
+1113-
+1114-Envía una consulta al módulo de IA sobre una herramienta del caso.
+1115-
+1116-**Naturaleza MVP:** En la versión actual, el módulo usa un placeholder local sin proveedor IA real. Las respuestas son simuladas para validación funcional.
+1117-
+1118-**Nota de implementación MVP:** En esta etapa `POST /api/v1/ai/query` no consume aún `context-builders` ni `prompt-templates`; esos artefactos permanecen como scaffolding preparatorio para una integración futura de proveedor IA.
+1119-
+1120-**Request body (AIQueryDto):**
+1121-
+1122-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+1123-|-------|------|-----------|-------------|-------------|
+1124-| `caso_id` | UUID | - | Sí | ID del caso a consultar |
+1125-| `herramienta` | enum | - | Sí | Herramienta del caso sobre la que se consulta |
+1126-| `consulta` | string | 2000 | Sí | Texto de la consulta |
+1127-
+1128-**Valores válidos de `herramienta`:**
+1129-
+1130-`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+1131-
+1132-**Response body (AIResponse):**
+1133-
+1134-| Campo | Tipo | Descripción |
+1135-|-------|------|-------------|
+1136-| `respuesta` | string | Texto de respuesta generado |
+1137-| `tokens_entrada` | number | Tokens consumidos en entrada |
+1138-| `tokens_salida` | number | Tokens generados en salida |
+1139-| `modelo_usado` | string | Identificador del modelo usado |
+1140-
+1141-**Ejemplo de respuesta:**
+1142-
+1143-```json
+1144-{
+1145-  "respuesta": "[MVP] Análisis de facts para el caso...",
+1146-  "tokens_entrada": 12,
+1147-  "tokens_salida": 15,
+1148-  "modelo_usado": "placeholder_v1"
+1149-}
+1150-```
+1151-
+1152-**Respuestas:**
+1153-
+1154-| Código | Descripción |
+1155-|--------|-------------|
+1156-| `201` | Consulta procesada correctamente. Retorna respuesta IA y registra trazabilidad de la consulta |
+1157-| `400` | Payload inválido: `caso_id` con formato inválido, `herramienta` inválida, `consulta` vacía o `consulta` mayor a 2000 caracteres |
+1158-| `401` | No autenticado |
+1159-| `403` | Estudiante sin acceso al caso |
+1160-| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+1161-| `409` | Caso en estado cerrado (no permite consultas IA) |
+1162-
+1163-**Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
+1164----
+1165-
+1166-### 10. Auditoría
+1167-
+1168-#### `GET /api/v1/cases/{caseId}/audit`
+1169-
+1170-Lista los eventos de auditoría del caso. **Solo Supervisor y Administrador.**
+1171-
+1172-**Parámetros de query (opcionales):**
+1173-
+1174-| Parámetro | Tipo | Default | Descripción |
+1175-|-----------|------|---------|-------------|
+1176-| `tipo` | enum | - | Filtra por tipo de evento |
+1177-| `page` | integer | 1 | Número de página |
+1178-| `per_page` | integer | 20 | Items por página (máx 100) |
+1179-
+1180-**Valores válidos de `tipo`:**
+1181-
+1182-`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+1183-
+1184-**Nota:** Este endpoint es case-scoped. Solo lista eventos asociados al `caso_id`. Tipos como `login` y `logout` solo aparecerán si fueron persistidos con referencia al caso.
+1185-
+1186-**Response body:**
+1187-
+1188-| Campo | Tipo | Descripción |
+1189-|-------|------|-------------|
+1190-| `data` | array | Lista de eventos |
+1191-| `total` | number | Total de eventos |
+1192-| `page` | number | Página actual |
+1193-| `per_page` | number | Items por página |
+1194-
+1195-**Estructura de evento:**
+1196-
+1197-| Campo | Tipo | Descripción |
+1198-|-------|------|-------------|
+1199-| `id` | UUID | Identificador del evento |
+1200-| `tipo` | string | Tipo de evento |
+1201-| `descripcion` | string | Descripción legible del evento |
+1202-| `fecha` | ISO date | Fecha y hora del evento |
+1203-| `usuario` | object | Usuario que generó el evento |
+1204-| `usuario.id` | UUID | ID del usuario |
+1205-| `usuario.nombre` | string | Nombre del usuario |
+1206-| `estado_origen` | string? | Estado anterior (solo transiciones) |
+1207-| `estado_destino` | string? | Estado nuevo (solo transiciones) |
+1208-| `resultado` | string | Resultado: `exitoso` o `rechazado` |
+1209-
+1210-**Nota de seguridad:** El endpoint NO expone `metadata` ni contenido sensible de consultas IA (`prompt_enviado`, `respuesta_recibida`).
+1211-
+1212-**Ejemplo de respuesta:**
+1213-
+1214-```json
+
+=== ARCHIVOS MODULO REPORTS ===
+src/modules/reports/dto/.gitkeep
+src/modules/reports/dto/generate-report.dto.ts
+src/modules/reports/reports.controller.ts
+src/modules/reports/reports.module.ts
+src/modules/reports/reports.repository.ts
+src/modules/reports/reports.service.ts
+
+=== REFERENCIAS REPORTS ===
+src/modules/reports/dto/generate-report.dto.ts:7: * POST /api/v1/cases/:caseId/reports
+src/modules/reports/dto/generate-report.dto.ts:11:    message: 'tipo debe ser uno de: resumen_ejecutivo, conclusion_operativa, control_calidad, riesgos, cronologico, revision_supervisor, agenda_vencimientos',
+src/modules/reports/dto/generate-report.dto.ts:13:  tipo!: TipoInforme;
+src/modules/reports/dto/generate-report.dto.ts:16:    message: 'formato debe ser: pdf o docx',
+src/modules/reports/dto/generate-report.dto.ts:18:  formato!: FormatoInforme;
+src/modules/reports/reports.controller.ts:10:import { ReportsService } from './reports.service';
+src/modules/reports/reports.controller.ts:19: * GET  /api/v1/cases/:caseId/reports - historial
+src/modules/reports/reports.controller.ts:20: * POST /api/v1/cases/:caseId/reports - generar
+src/modules/reports/reports.controller.ts:21: * GET  /api/v1/cases/:caseId/reports/:reportId - detalle/descarga
+src/modules/reports/reports.controller.ts:23:@Controller('cases/:caseId/reports')
+src/modules/reports/reports.controller.ts:29:  async findAll(
+src/modules/reports/reports.controller.ts:33:    return this.service.findAll(caseId, user.sub, user.perfil as PerfilUsuario);
+src/modules/reports/reports.controller.ts:45:  @Get(':reportId')
+src/modules/reports/reports.controller.ts:46:  async findOne(
+src/modules/reports/reports.controller.ts:48:    @Param('reportId', ParseUUIDPipe) reportId: string,
+src/modules/reports/reports.controller.ts:51:    return this.service.findOne(caseId, reportId, user.sub, user.perfil as PerfilUsuario);
+src/modules/reports/reports.module.ts:2:import { ReportsController } from './reports.controller';
+src/modules/reports/reports.module.ts:3:import { ReportsService } from './reports.service';
+src/modules/reports/reports.module.ts:4:import { ReportsRepository } from './reports.repository';
+src/modules/reports/reports.repository.ts:10:  async findByCaseId(casoId: string): Promise<InformeGenerado[]> {
+src/modules/reports/reports.repository.ts:11:    return this.prisma.informeGenerado.findMany({
+src/modules/reports/reports.repository.ts:17:  async findById(id: string): Promise<InformeGenerado | null> {
+src/modules/reports/reports.repository.ts:18:    return this.prisma.informeGenerado.findUnique({
+src/modules/reports/reports.repository.ts:23:  async findRecent(
+src/modules/reports/reports.repository.ts:25:    tipo: string,
+src/modules/reports/reports.repository.ts:26:    formato: string,
+src/modules/reports/reports.repository.ts:30:    return this.prisma.informeGenerado.findFirst({
+src/modules/reports/reports.repository.ts:33:        tipo_informe: tipo as any,
+src/modules/reports/reports.repository.ts:34:        formato: formato as any,
+src/modules/reports/reports.repository.ts:42:   * Crea informe y registra evento de auditoría en una sola transacción.
+src/modules/reports/reports.repository.ts:50:  async createWithAudit(
+src/modules/reports/reports.repository.ts:57:      const informe = await tx.informeGenerado.create({ data });
+src/modules/reports/reports.repository.ts:59:      // 2. Registrar evento de auditoría
+src/modules/reports/reports.repository.ts:60:      await tx.eventoAuditoria.create({
+src/modules/reports/reports.repository.ts:64:          tipo_evento: TipoEvento.INFORME_GENERADO,
+src/modules/reports/reports.repository.ts:74:    const caso = await this.prisma.caso.findUnique({
+src/modules/reports/reports.repository.ts:82:    const caso = await this.prisma.caso.findUnique({
+src/modules/reports/reports.repository.ts:90:    const caso = await this.prisma.caso.findUnique({
+src/modules/reports/reports.service.ts:7:import { ReportsRepository } from './reports.repository';
+src/modules/reports/reports.service.ts:15:  async findAll(
+src/modules/reports/reports.service.ts:21:    return this.repository.findByCaseId(casoId);
+src/modules/reports/reports.service.ts:26:   * E6-02: Usa transacción atómica que incluye evento de auditoría.
+src/modules/reports/reports.service.ts:27:   * Solo se registra evento en creación real (no en retorno idempotente).
+src/modules/reports/reports.service.ts:38:    // NO registrar evento de auditoría en este caso
+src/modules/reports/reports.service.ts:39:    const recent = await this.repository.findRecent(casoId, dto.tipo, dto.formato, 5);
+src/modules/reports/reports.service.ts:48:    const filename = `${dto.tipo}_${casoId.slice(0, 8)}_${Date.now()}.${dto.formato}`;
+src/modules/reports/reports.service.ts:49:    const ruta = `/reports/${casoId}/${filename}`;
+src/modules/reports/reports.service.ts:51:    // E6-02: Operación atómica (create + audit)
+src/modules/reports/reports.service.ts:52:    return this.repository.createWithAudit(
+src/modules/reports/reports.service.ts:55:        tipo_informe: dto.tipo,
+src/modules/reports/reports.service.ts:56:        formato: dto.formato,
+src/modules/reports/reports.service.ts:66:  async findOne(
+src/modules/reports/reports.service.ts:68:    reportId: string,
+src/modules/reports/reports.service.ts:74:    const report = await this.repository.findById(reportId);
+src/modules/reports/reports.service.ts:76:      throw new NotFoundException(`Informe ${reportId} no encontrado`);
+src/app.module.ts:35:import { ReportsModule } from './modules/reports/reports.module';
+src/app.module.ts:39:import { AuditModule } from './modules/audit/audit.module';
+docs/04_api/CONTRATO_API.md:69:| `201`  | Recurso creado. |
+docs/04_api/CONTRATO_API.md:73:| `403`  | Autenticado pero sin permiso para esta acción. |
+docs/04_api/CONTRATO_API.md:74:| `404`  | Recurso no encontrado. |
+docs/04_api/CONTRATO_API.md:138:- `403` — Usuario desactivado.
+docs/04_api/CONTRATO_API.md:165:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:183:- `201` — Usuario creado.
+docs/04_api/CONTRATO_API.md:196:- `403` — Sin acceso.
+docs/04_api/CONTRATO_API.md:197:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:206:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:207:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:229:  "tipo_documento": "CC",
+docs/04_api/CONTRATO_API.md:240:- `201` — Cliente creado.
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:318:- `201` — Caso creado.
+docs/04_api/CONTRATO_API.md:320:- `403` — Sin permiso para crear casos.
+docs/04_api/CONTRATO_API.md:351:- `403` — Sin acceso a este caso.
+docs/04_api/CONTRATO_API.md:352:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:386:- `403` — Sin permiso o no es propietario del caso.
+docs/04_api/CONTRATO_API.md:387:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:410:| `404`  | El caso no existe o no es accesible por el usuario en sesión. |
+docs/04_api/CONTRATO_API.md:444:- `PUT /facts/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+docs/04_api/CONTRATO_API.md:482:| `201` | Hecho creado |
+docs/04_api/CONTRATO_API.md:485:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:486:| `404` | Caso o hecho no encontrado |
+docs/04_api/CONTRATO_API.md:506:- `PUT /evidence/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+docs/04_api/CONTRATO_API.md:528:| `tipo_prueba` | enum | - | Sí | Tipo de prueba |
+docs/04_api/CONTRATO_API.md:544:| `tipo_prueba` | enum | - |
+docs/04_api/CONTRATO_API.md:567:| `201` | Prueba creada |
+docs/04_api/CONTRATO_API.md:570:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:571:| `404` | Caso o prueba no encontrado |
+docs/04_api/CONTRATO_API.md:601:| `201` | Riesgo creado |
+docs/04_api/CONTRATO_API.md:604:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:605:| `404` | Caso o riesgo no encontrado |
+docs/04_api/CONTRATO_API.md:647:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:648:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:671:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:672:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:729:| `403` | Estudiante sin acceso al caso o item de otro caso |
+docs/04_api/CONTRATO_API.md:730:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:752:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:753:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:802:| `201` | Entrada creada |
+docs/04_api/CONTRATO_API.md:805:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:806:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:825:| `201` | Actuación creada |
+docs/04_api/CONTRATO_API.md:827:| `404` | Caso o actuación no encontrada |
+docs/04_api/CONTRATO_API.md:883:| `201` | Documento registrado |
+docs/04_api/CONTRATO_API.md:886:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:887:| `404` | Caso o documento no encontrado |
+docs/04_api/CONTRATO_API.md:907:| `tipo` | enum | — | Filtra por tipo de sujeto procesal |
+docs/04_api/CONTRATO_API.md:910:| `tipo_identificacion` | enum | — | Filtra por coincidencia exacta en `tipo_identificacion` |
+docs/04_api/CONTRATO_API.md:912:**Valores válidos de `tipo`:** `victima`, `imputado`, `testigo`, `apoderado`, `otro`
+docs/04_api/CONTRATO_API.md:914:**Valores válidos de `tipo_identificacion`:** `CC`, `TI`, `CE`, `PAS`, `NIT`, `otro`
+docs/04_api/CONTRATO_API.md:918:- `tipo`, `nombre`, `identificacion` y `tipo_identificacion` pueden combinarse entre sí.
+docs/04_api/CONTRATO_API.md:921:- `tipo_identificacion` aplica comparación exacta.
+docs/04_api/CONTRATO_API.md:923:- Si `tipo` es inválido, la respuesta es `400 Bad Request`.
+docs/04_api/CONTRATO_API.md:926:- Si `tipo_identificacion` es inválido, la respuesta es `400 Bad Request`.
+docs/04_api/CONTRATO_API.md:927:- Si `tipo_identificacion` es vacío, la respuesta es `400 Bad Request`.
+docs/04_api/CONTRATO_API.md:938:      "tipo": "victima | imputado | testigo | apoderado | otro",
+docs/04_api/CONTRATO_API.md:941:      "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro | null",
+docs/04_api/CONTRATO_API.md:962:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:963:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:965:> **Consolidación contractual (Sprint 21):** Se integra en bloque único la semántica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion` para `GET /subjects`.
+docs/04_api/CONTRATO_API.md:980:  "tipo": "victima | imputado | testigo | apoderado | otro",
+docs/04_api/CONTRATO_API.md:983:  "tipo_identificacion": "CC | TI | CE | PAS | NIT | otro (opcional)",
+docs/04_api/CONTRATO_API.md:994:| `tipo` | enum | Sí | `victima` \| `imputado` \| `testigo` \| `apoderado` \| `otro` |
+docs/04_api/CONTRATO_API.md:997:| `tipo_identificacion` | enum | No | `CC` \| `TI` \| `CE` \| `PAS` \| `NIT` \| `otro` |
+docs/04_api/CONTRATO_API.md:1002:**Respuesta exitosa:** `201 Created`
+docs/04_api/CONTRATO_API.md:1007:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1008:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1023:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1024:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1025:- `404` — Sujeto no encontrado
+docs/04_api/CONTRATO_API.md:1072:| `201` | Revision creada |
+docs/04_api/CONTRATO_API.md:1074:| `403` | Estudiante sin acceso o perfil insuficiente |
+docs/04_api/CONTRATO_API.md:1075:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1081:#### `GET /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1084:#### `POST /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1090:**Formatos disponibles:** `pdf`, `docx`
+docs/04_api/CONTRATO_API.md:1092:**Idempotencia:** Si existe un informe del mismo tipo y formato generado en los últimos 5 minutos, se retorna ese informe en lugar de crear uno nuevo.
+docs/04_api/CONTRATO_API.md:1094:#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+docs/04_api/CONTRATO_API.md:1102:| `201` | Informe generado |
+docs/04_api/CONTRATO_API.md:1103:| `400` | Payload inválido (tipo o formato no válido) |
+docs/04_api/CONTRATO_API.md:1105:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1106:| `404` | Caso o informe no encontrado |
+docs/04_api/CONTRATO_API.md:1156:| `201` | Consulta procesada correctamente. Retorna respuesta IA y registra trazabilidad de la consulta |
+docs/04_api/CONTRATO_API.md:1157:| `400` | Payload inválido: `caso_id` con formato inválido, `herramienta` inválida, `consulta` vacía o `consulta` mayor a 2000 caracteres |
+docs/04_api/CONTRATO_API.md:1159:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1160:| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+docs/04_api/CONTRATO_API.md:1168:#### `GET /api/v1/cases/{caseId}/audit`
+docs/04_api/CONTRATO_API.md:1170:Lista los eventos de auditoría del caso. **Solo Supervisor y Administrador.**
+docs/04_api/CONTRATO_API.md:1176:| `tipo` | enum | - | Filtra por tipo de evento |
+docs/04_api/CONTRATO_API.md:1180:**Valores válidos de `tipo`:**
+docs/04_api/CONTRATO_API.md:1200:| `tipo` | string | Tipo de evento |
+docs/04_api/CONTRATO_API.md:1219:      "tipo": "transicion_estado",
+docs/04_api/CONTRATO_API.md:1242:| `400` | Filtro `tipo` inválido |
+docs/04_api/CONTRATO_API.md:1244:| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+docs/04_api/CONTRATO_API.md:1245:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1252:Eliminar la referencia a audit de esa sección, ya que ahora está implementado.
+docs/04_api/CONTRATO_API.md:1259:| E6-01 | 2026-03-28 | Restauración de `audit` como endpoint funcional. Implementación completa con paginación, filtros y control de acceso por rol. |
+docs/04_api/CONTRATO_API.md:1281:| Módulo | audit |
+docs/04_api/CONTRATO_API.md:1288:| E5-25 | 2026-03-28 | Retiro de `audit` del contrato MVP. Módulo diferido por no tener implementación funcional (scaffolding sin lógica). |
+docs/04_api/CONTRATO_API.md:1290:| 21 | 2026-03-27 | Consolidación contractual de `GET /subjects`: integración canónica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion`. |
+docs/04_api/CONTRATO_API.md:1291:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
+docs/04_api/CONTRATO_API.md:1297:| 17 | 2026-03-27 | Filtro por `tipo` en `GET /subjects`. Parámetro opcional con validación enum. |
