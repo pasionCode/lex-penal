@@ -1153,8 +1153,6 @@ Envía una consulta al módulo de IA sobre una herramienta del caso.
 **Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
 ---
 
-## Módulos diferidos (fuera de MVP)
-
 ### 10. Auditoría
 
 #### `GET /api/v1/cases/{caseId}/audit`

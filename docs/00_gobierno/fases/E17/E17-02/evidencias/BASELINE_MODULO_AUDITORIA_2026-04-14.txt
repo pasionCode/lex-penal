@@ -1,0 +1,96 @@
+=== FECHA ===
+2026-04-14T15:24:59-05:00
+
+=== CONTRATO AUDITORIA ===
+1153-**Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
+1154----
+1155-
+1156-## Módulos diferidos (fuera de MVP)
+1157-
+1158:### 10. Auditoría
+1159-
+1160:#### `GET /api/v1/cases/{caseId}/audit`
+1161-
+1162-Lista los eventos de auditoría del caso. **Solo Supervisor y Administrador.**
+1163-
+1164-**Parámetros de query (opcionales):**
+1165-
+1166-| Parámetro | Tipo | Default | Descripción |
+1167-|-----------|------|---------|-------------|
+1168-| `tipo` | enum | - | Filtra por tipo de evento |
+1169-| `page` | integer | 1 | Número de página |
+1170-| `per_page` | integer | 20 | Items por página (máx 100) |
+1171-
+1172-**Valores válidos de `tipo`:**
+1173-
+1174-`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+1175-
+1176-**Nota:** Este endpoint es case-scoped. Solo lista eventos asociados al `caso_id`. Tipos como `login` y `logout` solo aparecerán si fueron persistidos con referencia al caso.
+1177-
+1178-**Response body:**
+1179-
+1180-| Campo | Tipo | Descripción |
+
+=== MODULO AUDIT EN CODIGO ===
+src/modules/audit/audit.controller.ts
+src/modules/audit/audit.module.ts
+src/modules/audit/audit.repository.ts
+src/modules/audit/audit.service.ts
+src/modules/audit/dto/.gitkeep
+src/modules/audit/dto/audit-response.dto.ts
+src/modules/audit/dto/query-audit.dto.ts
+
+=== REFERENCIAS AUDIT EN CODIGO ===
+src/modules/ai/logging/ai-request-log.repository.ts:14: * El endpoint GET /audit NO expone prompt_enviado ni respuesta_recibida.
+src/modules/ai/prompt-templates/basic-info.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/checklist.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/client-briefing.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/conclusion.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/evidence.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/facts.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/risks.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/strategy.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/audit/audit.controller.ts:2:import { AuditService } from './audit.service';
+src/modules/audit/audit.controller.ts:3:import { QueryAuditDto } from './dto/query-audit.dto';
+src/modules/audit/audit.controller.ts:4:import { PaginatedAuditResponse } from './dto/audit-response.dto';
+src/modules/audit/audit.controller.ts:11: * GET /api/v1/cases/:caseId/audit  - Log de eventos del caso
+src/modules/audit/audit.controller.ts:24:@Controller('cases/:caseId/audit')
+src/modules/audit/audit.controller.ts:26:export class AuditController {
+src/modules/audit/audit.module.ts:2:import { AuditController } from './audit.controller';
+src/modules/audit/audit.module.ts:3:import { AuditService } from './audit.service';
+src/modules/audit/audit.module.ts:4:import { AuditRepository } from './audit.repository';
+src/modules/audit/audit.module.ts:7:  controllers: [AuditController],
+src/modules/audit/audit.module.ts:14:export class AuditModule {}
+src/modules/audit/audit.repository.ts:6: * Evento de auditoría con usuario incluido.
+src/modules/audit/audit.repository.ts:21: * Repositorio de audit.
+src/modules/audit/audit.repository.ts:30:   * Consulta eventos de auditoría de un caso con paginación y filtros.
+src/modules/audit/audit.service.ts:6:import { AuditRepository } from './audit.repository';
+src/modules/audit/audit.service.ts:7:import { QueryAuditDto } from './dto/query-audit.dto';
+src/modules/audit/audit.service.ts:12:} from './dto/audit-response.dto';
+src/modules/audit/audit.service.ts:17: * Servicio de audit.
+src/modules/audit/audit.service.ts:32:   * Lista eventos de auditoría de un caso.
+src/modules/audit/dto/audit-response.dto.ts:2: * DTOs de respuesta para el módulo audit.
+src/modules/audit/dto/audit-response.dto.ts:3: * E6-01: Implementación funcional de audit.
+src/modules/audit/dto/audit-response.dto.ts:10: * Usuario simplificado para respuesta de auditoría.
+src/modules/audit/dto/audit-response.dto.ts:18: * Evento de auditoría individual.
+src/modules/audit/dto/audit-response.dto.ts:33: * Respuesta paginada de eventos de auditoría.
+src/modules/audit/dto/audit-response.dto.ts:55:  return descriptions[tipo] || 'Evento de auditoría';
+src/modules/audit/dto/query-audit.dto.ts:21: * Filtros del log de auditoría.
+src/modules/audit/dto/query-audit.dto.ts:22: * GET /api/v1/cases/{caseId}/audit
+src/modules/cases/cases.service.ts:20: * para ejecutar guardas, persistir revisiones y registrar auditoría.
+src/modules/cases/cases.service.ts:116:   *    - Registro de auditoría
+src/modules/cases/services/caso-estado.service.ts:8: * - R06: Toda acción crítica es auditable
+src/modules/cases/services/caso-estado.service.ts:85:   * Verifica permisos, guardas, ejecuta acciones asociadas y registra auditoría.
+src/modules/cases/services/caso-estado.service.ts:196:      // 7. Registrar evento de auditoría
+src/modules/reports/reports.repository.ts:42:   * Crea informe y registra evento de auditoría en una sola transacción.
+src/modules/reports/reports.repository.ts:59:      // 2. Registrar evento de auditoría
+src/modules/reports/reports.service.ts:26:   * E6-02: Usa transacción atómica que incluye evento de auditoría.
+src/modules/reports/reports.service.ts:38:    // NO registrar evento de auditoría en este caso
+src/modules/reports/reports.service.ts:51:    // E6-02: Operación atómica (create + audit)
+src/modules/review/review.repository.ts:24:   * Crea revisión y registra evento de auditoría en una sola transacción.
+src/modules/review/review.repository.ts:63:      // 4. Registrar evento de auditoría
+src/modules/review/review.repository.ts:65:      // El resultado funcional (aprobado/devuelto) es dato de negocio, no de auditoría
+src/modules/review/review.service.ts:72:   *   - evento de auditoría
+src/modules/users/users.service.ts:213:   * @param _currentUserId ID del usuario que realiza la acción (para auditoría futura)
+src/app.module.ts:39:import { AuditModule } from './modules/audit/audit.module';
+src/app.module.ts:77:    AuditModule,
