@@ -1,0 +1,225 @@
+=== FECHA ===
+2026-04-13T23:24:22-05:00
+
+=== USUARIO / HOST ===
+lexumadmin
+lexum-main
+/home/lexumadmin
+
+=== HOSTNAMECTL ===
+ Static hostname: lexum-main
+       Icon name: computer-vm
+         Chassis: vm 🖴
+      Machine ID: c0c72f916d6749c0941eb7cd890b15ba
+         Boot ID: dbd44c3cde5e47859118af9079239dff
+  Virtualization: kvm
+Operating System: Ubuntu 24.04.4 LTS
+          Kernel: Linux 6.8.0-107-generic
+    Architecture: x86-64
+ Hardware Vendor: QEMU
+  Hardware Model: Standard PC _i440FX + PIIX, 1996_
+Firmware Version: rel-1.16.3-0-ga6ed6b701f0a-prebuilt.qemu.org
+   Firmware Date: Tue 2014-04-01
+    Firmware Age: 12y 1w 6d
+
+=== KERNEL ===
+Linux lexum-main 6.8.0-107-generic #107-Ubuntu SMP PREEMPT_DYNAMIC Fri Mar 13 19:51:50 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+=== RED (IP BRIEF) ===
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eth0             UP             207.180.248.126/18 2a02:c207:2269:9963::1/64 fe80::250:56ff:fe5b:b8cf/64 
+tailscale0       UNKNOWN        100.107.143.15/32 fd7a:115c:a1e0::4701:8f10/128 fe80::254c:2236:9bb7:4a9b/64 
+br-1e535e550f8f  UP             172.18.0.1/16 fe80::48ce:ceff:fe65:1555/64 
+br-27dd08a04e4a  DOWN           172.20.0.1/16 
+docker0          DOWN           172.17.0.1/16 fe80::6cd8:ff:fe19:df88/64 
+br-cb9a2f454613  DOWN           172.19.0.1/16 
+veth71f3642@if2  UP             fe80::f4ef:b5ff:fe4c:49f3/64 
+veth3a3a411@if2  UP             fe80::1013:97ff:fee3:ea6e/64 
+veth967dbbd@if2  UP             fe80::e8ef:5dff:fec7:ac98/64 
+
+=== RUTAS ===
+default via 207.180.192.1 dev eth0 proto static 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 linkdown 
+172.18.0.0/16 dev br-1e535e550f8f proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-cb9a2f454613 proto kernel scope link src 172.19.0.1 linkdown 
+172.20.0.0/16 dev br-27dd08a04e4a proto kernel scope link src 172.20.0.1 linkdown 
+207.180.192.0/18 via 207.180.192.1 dev eth0 
+
+=== DISCO ===
+Filesystem     Type   Size  Used Avail Use% Mounted on
+tmpfs          tmpfs  1.2G  1.4M  1.2G   1% /run
+/dev/sda1      ext4    96G   56G   41G  58% /
+tmpfs          tmpfs  5.9G  1.1M  5.9G   1% /dev/shm
+tmpfs          tmpfs  5.0M     0  5.0M   0% /run/lock
+/dev/sda16     ext4   881M  117M  703M  15% /boot
+/dev/sda15     vfat   105M  6.2M   99M   6% /boot/efi
+tmpfs          tmpfs  1.2G   12K  1.2G   1% /run/user/1000
+
+=== MEMORIA ===
+               total        used        free      shared  buff/cache   available
+Mem:            11Gi       1.2Gi       9.9Gi       116Mi       1.0Gi        10Gi
+Swap:          2.0Gi          0B       2.0Gi
+
+=== PUERTOS ESCUCHANDO ===
+Netid State  Recv-Q Send-Q               Local Address:Port  Peer Address:PortProcess
+udp   UNCONN 0      0                       127.0.0.54:53         0.0.0.0:*          
+udp   UNCONN 0      0                    127.0.0.53%lo:53         0.0.0.0:*          
+udp   UNCONN 0      0                          0.0.0.0:41641      0.0.0.0:*          
+udp   UNCONN 0      0                             [::]:41641         [::]:*          
+tcp   LISTEN 0      511                        0.0.0.0:80         0.0.0.0:*          
+tcp   LISTEN 0      511                        0.0.0.0:443        0.0.0.0:*          
+tcp   LISTEN 0      4096                    127.0.0.54:53         0.0.0.0:*          
+tcp   LISTEN 0      4096                100.107.143.15:58566      0.0.0.0:*          
+tcp   LISTEN 0      128                        0.0.0.0:2222       0.0.0.0:*          
+tcp   LISTEN 0      511                      127.0.0.1:4443       0.0.0.0:*          
+tcp   LISTEN 0      200                      127.0.0.1:5432       0.0.0.0:*          
+tcp   LISTEN 0      4096                     127.0.0.1:8080       0.0.0.0:*          
+tcp   LISTEN 0      4096                 127.0.0.53%lo:53         0.0.0.0:*          
+tcp   LISTEN 0      4096   [fd7a:115c:a1e0::4701:8f10]:42949         [::]:*          
+tcp   LISTEN 0      511                           [::]:80            [::]:*          
+tcp   LISTEN 0      511                           [::]:443           [::]:*          
+tcp   LISTEN 0      200                          [::1]:5432          [::]:*          
+tcp   LISTEN 0      511                              *:3010             *:*          
+
+=== UFW ===
+
+=== SERVICIOS CLAVE ===
+--- nginx ---
+active
+enabled
+--- postgresql ---
+active
+enabled
+--- docker ---
+active
+enabled
+--- tailscaled ---
+active
+enabled
+
+=== REPO DESPLIEGUE ===
+/opt/lex_penal/app
+
+=== RUTA /opt/lex_penal ===
+total 16
+drwxr-xr-x  4 root     root     4096 Apr 12 20:56 .
+drwxr-xr-x 15 root     root     4096 Apr 12 20:54 ..
+drwxr-xr-x 12 root     root     4096 Apr 12 21:02 app
+drwxr-xr-x  2 lexpenal lexpenal 4096 Apr 12 20:56 shared
+total 780
+drwxr-xr-x  12 root root   4096 Apr 12 21:02 .
+drwxr-xr-x   4 root root   4096 Apr 12 20:56 ..
+-rw-r--r--   1 root root    178 Apr 12 20:54 .editorconfig
+lrwxrwxrwx   1 root root     26 Apr 12 21:02 .env -> /opt/lex_penal/shared/.env
+-rw-r--r--   1 root root   2209 Apr 12 20:54 .env.example
+drwxr-xr-x   8 root root   4096 Apr 12 21:56 .git
+-rw-r--r--   1 root root    472 Apr 12 20:54 .gitattributes
+-rw-r--r--   1 root root    251 Apr 12 20:54 .gitignore
+-rw-r--r--   1 root root   1798 Apr 12 20:54 README.md
+drwxr-xr-x   8 root root   4096 Apr 12 21:02 dist
+drwxr-xr-x  17 root root   4096 Apr 12 20:54 docs
+drwxr-xr-x   8 root root   4096 Apr 12 20:54 infra
+drwxr-xr-x 497 root root  20480 Apr 12 20:58 node_modules
+-rw-r--r--   1 root root 353556 Apr 12 20:54 package-lock.json
+-rw-r--r--   1 root root   2753 Apr 12 20:54 package.json
+drwxr-xr-x   3 root root   4096 Apr 12 20:54 prisma
+drwxr-xr-x   7 root root   4096 Apr 12 20:54 resources
+drwxr-xr-x   8 root root   4096 Apr 12 20:54 scripts
+drwxr-xr-x   8 root root   4096 Apr 12 20:54 src
+-rw-r--r--   1 root root  11539 Apr 12 20:54 test_e5_04_estructural.sh
+-rw-r--r--   1 root root  16862 Apr 12 20:54 test_e5_05.sh
+-rw-r--r--   1 root root  18540 Apr 12 20:54 test_e5_05_v2.sh
+-rw-r--r--   1 root root  14552 Apr 12 20:54 test_e5_06.sh
+-rw-r--r--   1 root root  15048 Apr 12 20:54 test_e5_09.sh
+-rw-r--r--   1 root root  14772 Apr 12 20:54 test_e5_10.sh
+-rw-r--r--   1 root root  11993 Apr 12 20:54 test_e5_11.sh
+-rw-r--r--   1 root root  10494 Apr 12 20:54 test_e5_12.sh
+-rw-r--r--   1 root root  13575 Apr 12 20:54 test_e5_13.sh
+-rw-r--r--   1 root root  14753 Apr 12 20:54 test_e5_14.sh
+-rw-r--r--   1 root root  15428 Apr 12 20:54 test_e5_15.sh
+-rw-r--r--   1 root root   9363 Apr 12 20:54 test_e5_16.sh
+-rw-r--r--   1 root root  10655 Apr 12 20:54 test_e5_17.sh
+-rw-r--r--   1 root root  12140 Apr 12 20:54 test_e5_18.sh
+-rw-r--r--   1 root root  14542 Apr 12 20:54 test_e5_19.sh
+-rw-r--r--   1 root root  15235 Apr 12 20:54 test_e5_20.sh
+-rw-r--r--   1 root root  11882 Apr 12 20:54 test_e5_21.sh
+-rw-r--r--   1 root root   7884 Apr 12 20:54 test_e5_22.sh
+-rw-r--r--   1 root root  16017 Apr 12 20:54 test_e5_23.sh
+-rw-r--r--   1 root root  16611 Apr 12 20:54 test_e5_24.sh
+-rw-r--r--   1 root root   9862 Apr 12 20:54 test_e6_01.sh
+-rw-r--r--   1 root root  13303 Apr 12 20:54 test_e6_02.v3.sh
+-rw-r--r--   1 root root  13883 Apr 12 20:54 test_e6_03.sh
+drwxr-xr-x   6 root root   4096 Apr 12 20:54 tests
+-rw-r--r--   1 root root    862 Apr 12 20:54 tsconfig.json
+
+=== ARCHIVOS DE DESPLIEGUE / ENV ===
+/opt/lex_penal/app/.env.example
+/opt/lex_penal/app/package.json
+/opt/lex_penal/shared/.env
+
+=== NODE / NPM ===
+v20.20.2
+10.8.2
+
+=== PM2 ===
+
+=== DOCKER ===
+CONTAINER ID   IMAGE                                           COMMAND                  CREATED        STATUS                     PORTS                    NAMES
+0765c9e4e6b0   nextcloud:31-apache                             "/entrypoint.sh apac…"   8 weeks ago    Up 4 days                  127.0.0.1:8080->80/tcp   lexum_nextcloud
+02771d07fc57   mariadb:10.11                                   "docker-entrypoint.s…"   4 months ago   Up 4 days                  3306/tcp                 lexum_db
+3161e2b82492   redis:7-alpine                                  "docker-entrypoint.s…"   4 months ago   Up 4 days                  6379/tcp                 lexum_redis
+2fec47591cd1   qdrant/qdrant:latest                            "./entrypoint.sh"        7 months ago   Exited (143) 8 weeks ago                            qdrant
+9633e5eab6be   prom/prometheus:v2.53.0                         "/bin/prometheus --c…"   7 months ago   Exited (0) 8 weeks ago                              monitoring-prometheus-1
+7df5b312b1c2   612f0ff47f33                                    "caddy run --config …"   7 months ago   Exited (0) 8 weeks ago                              caddy
+a5596cdbcff7   prom/node-exporter:v1.8.1                       "/bin/node_exporter …"   7 months ago   Exited (2) 8 weeks ago                              monitoring-node_exporter-1
+6b03e281ddca   grafana/grafana:10.4.5                          "/run.sh"                7 months ago   Exited (0) 8 weeks ago                              monitoring-grafana-1
+366d532592aa   python:3.11-slim                                "python /srv/scrapy_…"   7 months ago   Exited (137) 8 weeks ago                            monitoring-scrapy_exporter-1
+3e9c3a3240cb   prometheuscommunity/postgres-exporter:v0.15.0   "/bin/postgres_expor…"   7 months ago   Exited (2) 8 weeks ago                              monitoring-postgres_exporter-1
+ac574f575abd   nginx:alpine                                    "/docker-entrypoint.…"   7 months ago   Exited (0) 8 weeks ago                              monitoring-nginx-proxy-1
+0532de579785   prom/alertmanager:v0.27.0                       "/bin/alertmanager -…"   7 months ago   Exited (0) 8 weeks ago                              monitoring-alertmanager-1
+IMAGE                                           ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest                                   9234e8fb04c4       8.31MB             0B        
+caddy:2.8.4                                     612f0ff47f33       49.2MB             0B   U    
+containrrr/watchtower:latest                    e7dd50d07b86       14.7MB             0B        
+grafana/grafana:10.4.5                          46df2778660d        430MB             0B   U    
+mariadb:10.11                                   3a3c046f59cd        331MB             0B   U    
+nextcloud:31-apache                             6a58834a47ab       1.44GB             0B   U    
+nginx:alpine                                    4a86014ec699       52.5MB             0B   U    
+prom/alertmanager:v0.27.0                       11f11916f8cd       70.3MB             0B   U    
+prom/node-exporter:v1.8.1                       0c6f6c1bdd47       23.3MB             0B   U    
+prom/prometheus:latest                          a3bc50fcb50f        313MB             0B        
+prom/prometheus:v2.53.0                         b74abbcc4eac        271MB             0B   U    
+prometheuscommunity/postgres-exporter:v0.15.0   7d5355bcdf04       19.5MB             0B   U    
+python:3.11-slim                                2ba2e944f9cd        125MB             0B   U    
+qdrant/qdrant:latest                            e35e37cf82b6        178MB             0B   U    
+redis:7-alpine                                  13105d2858de       41.4MB             0B   U    
+
+=== NGINX SITES ===
+total 24
+drwxr-xr-x  2 root root 4096 Apr 12 22:07 .
+drwxr-xr-x 10 root root 4096 Apr  5 17:26 ..
+-rw-r--r--  1 root root 1652 Apr 12 22:07 00-default-ssl.conf
+-rw-r--r--  1 root root  673 Sep  5  2025 legaltech-api
+-rw-r--r--  1 root root  354 Sep  5  2025 lexum_caddy_proxy.conf
+-rw-r--r--  1 root root  863 Apr  9 23:21 nextcloud
+total 72
+drwxr-xr-x  2 root root 4096 Feb 13 06:41 .
+drwxr-xr-x 10 root root 4096 Apr  5 17:26 ..
+-rw-r--r--  1 root root  421 Aug 23  2025 00-default-ssl.conf
+-rw-r--r--  1 root root  244 Jul  7  2025 cloud.pabloleon.com.co
+-rw-r--r--  1 root root 2742 Jul  7  2025 default
+-rw-r--r--  1 root root 2565 Sep  2  2025 default-modsecurity.conf
+-rw-r--r--  1 root root  810 Aug 23  2025 default-temp
+-rw-r--r--  1 root root  282 Sep  2  2025 default.disabled
+-rw-r--r--  1 root root 1274 Jul 22  2025 fixed-unified
+-rw-r--r--  1 root root  579 Aug  8  2025 legaltech-api
+-rw-r--r--  1 root root  579 Aug 23  2025 legaltech-api.backup-20250823_213929
+-rw-r--r--  1 root root 2296 Aug  9  2025 lexum-unified
+-rw-r--r--  1 root root 1648 Aug  9  2025 moodle
+-rw-r--r--  1 root root  733 Jul 22  2025 moodle-port
+-rw-r--r--  1 root root 1544 Aug 26  2025 nextcloud
+-rw-r--r--  1 root root 1128 Jul 22  2025 nextcloud-original
+-rw-r--r--  1 root root 1527 Jul 22  2025 unified
+-rw-r--r--  1 root root 1971 Aug  9  2025 unified-cloud
+
+=== CERTBOT ===
