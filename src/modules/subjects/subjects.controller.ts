@@ -24,12 +24,15 @@ export class SubjectsController {
   async findAll(
     @Param('caseId', ParseUUIDPipe) caseId: string,
     @Query() query: ListSubjectsQueryDto,
+    @Request() req: any,
   ) {
     const page = query.page ?? 1;
     const perPage = query.per_page ?? 20;
 
     return this.service.findAllByCaseId(
       caseId,
+      req.user.sub,
+      req.user.perfil,
       page,
       perPage,
       query.tipo,
@@ -46,14 +49,15 @@ export class SubjectsController {
     @Body() dto: CreateSubjectDto,
     @Request() req: any,
   ) {
-    return this.service.create(caseId, dto, req.user.sub);
+    return this.service.create(caseId, dto, req.user.sub, req.user.perfil);
   }
 
   @Get(':subjectId')
   async findOne(
     @Param('caseId', ParseUUIDPipe) caseId: string,
     @Param('subjectId', ParseUUIDPipe) subjectId: string,
+    @Request() req: any,
   ) {
-    return this.service.findOne(caseId, subjectId);
+    return this.service.findOne(caseId, subjectId, req.user.sub, req.user.perfil);
   }
 }

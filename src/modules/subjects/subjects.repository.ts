@@ -85,4 +85,13 @@ export class SubjectsRepository {
     });
     return !!caso;
   }
+
+  async getCaseResponsable(caseId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: caseId },
+      select: { responsable_id: true },
+    });
+
+    return caso?.responsable_id ?? null;
+  }
 }

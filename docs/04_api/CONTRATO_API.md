@@ -925,6 +925,8 @@ Authorization: Bearer {token}
 - Si `identificacion` es vacía o contiene solo espacios, la respuesta es `400 Bad Request`.
 - Si `tipo_identificacion` es inválido, la respuesta es `400 Bad Request`.
 - Si `tipo_identificacion` es vacío, la respuesta es `400 Bad Request`.
+- Estudiante: solo puede consultar sujetos de sus propios casos.
+- Supervisor y Administrador: acceso permitido según autenticación válida.
 
 **Respuesta exitosa:** `200 OK`
 ```json
@@ -956,6 +958,8 @@ Authorization: Bearer {token}
 
 **Errores:**
 - `400` — Parámetros de paginación o filtro inválidos
+- `401` — No autenticado
+- `403` — Estudiante sin acceso al caso
 - `404` — Caso no encontrado
 
 > **Consolidación contractual (Sprint 21):** Se integra en bloque único la semántica de filtros `tipo`, `nombre`, `identificacion` y `tipo_identificacion` para `GET /subjects`.
@@ -999,6 +1003,8 @@ Content-Type: application/json
 
 **Errores:**
 - `400` — Validación fallida
+- `401` — No autenticado
+- `403` — Estudiante sin acceso al caso
 - `404` — Caso no encontrado
 
 ---
@@ -1013,6 +1019,8 @@ Authorization: Bearer {token}
 **Respuesta exitosa:** `200 OK`
 
 **Errores:**
+- `401` — No autenticado
+- `403` — Estudiante sin acceso al caso
 - `404` — Caso no encontrado
 - `404` — Sujeto no encontrado
 
