@@ -1,0 +1,181 @@
+=== FECHA ===
+2026-04-14T15:30:48-05:00
+
+=== CONTRATO IA ===
+1094-| `201` | Informe generado |
+1095-| `400` | Payload inválido (tipo o formato no válido) |
+1096-| `401` | No autenticado |
+1097-| `403` | Estudiante sin acceso al caso |
+1098-| `404` | Caso o informe no encontrado |
+1099-
+1100----
+1101-
+1102:### 9. Módulo de IA
+1103-
+1104:#### `POST /api/v1/ai/query`
+1105-
+1106-Envía una consulta al módulo de IA sobre una herramienta del caso.
+1107-
+1108-**Naturaleza MVP:** En la versión actual, el módulo usa un placeholder local sin proveedor IA real. Las respuestas son simuladas para validación funcional.
+1109-
+1110-**Request body (AIQueryDto):**
+1111-
+1112-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+1113-|-------|------|-----------|-------------|-------------|
+1114-| `caso_id` | UUID | - | Sí | ID del caso a consultar |
+1115-| `herramienta` | enum | - | Sí | Herramienta del caso sobre la que se consulta |
+1116-| `consulta` | string | 2000 | Sí | Texto de la consulta |
+1117-
+1118-**Valores válidos de `herramienta`:**
+1119-
+1120-`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+1121-
+1122-**Response body (AIResponse):**
+1123-
+1124-| Campo | Tipo | Descripción |
+1125-|-------|------|-------------|
+1126-| `respuesta` | string | Texto de respuesta generado |
+1127-| `tokens_entrada` | number | Tokens consumidos en entrada |
+1128-| `tokens_salida` | number | Tokens generados en salida |
+1129-| `modelo_usado` | string | Identificador del modelo usado |
+1130-
+1131-**Ejemplo de respuesta:**
+1132-
+1133-```json
+1134-{
+1135-  "respuesta": "[MVP] Análisis de facts para el caso...",
+1136-  "tokens_entrada": 12,
+1137-  "tokens_salida": 15,
+1138-  "modelo_usado": "placeholder_v1"
+1139-}
+1140-```
+1141-
+1142-**Respuestas:**
+1143-
+1144-| Código | Descripción |
+1145-|--------|-------------|
+1146-| `201` | Consulta procesada correctamente. Retorna respuesta IA y registra trazabilidad de la consulta |
+1147-| `400` | Payload inválido: `caso_id` con formato inválido, `herramienta` inválida, `consulta` vacía o `consulta` mayor a 2000 caracteres |
+1148-| `401` | No autenticado |
+1149-| `403` | Estudiante sin acceso al caso |
+1150-| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+1151-| `409` | Caso en estado cerrado (no permite consultas IA) |
+1152-
+1153-**Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
+1154----
+1155-
+1156-### 10. Auditoría
+1157-
+1158-#### `GET /api/v1/cases/{caseId}/audit`
+1159-
+1160-Lista los eventos de auditoría del caso. **Solo Supervisor y Administrador.**
+1161-
+1162-**Parámetros de query (opcionales):**
+1163-
+1164-| Parámetro | Tipo | Default | Descripción |
+1165-|-----------|------|---------|-------------|
+1166-| `tipo` | enum | - | Filtra por tipo de evento |
+1167-| `page` | integer | 1 | Número de página |
+1168-| `per_page` | integer | 20 | Items por página (máx 100) |
+1169-
+1170-**Valores válidos de `tipo`:**
+1171-
+1172-`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+1173-
+1174-**Nota:** Este endpoint es case-scoped. Solo lista eventos asociados al `caso_id`. Tipos como `login` y `logout` solo aparecerán si fueron persistidos con referencia al caso.
+1175-
+1176-**Response body:**
+1177-
+1178-| Campo | Tipo | Descripción |
+1179-|-------|------|-------------|
+1180-| `data` | array | Lista de eventos |
+1181-| `total` | number | Total de eventos |
+1182-| `page` | number | Página actual |
+1183-| `per_page` | number | Items por página |
+1184-
+
+=== ARCHIVOS MODULO AI ===
+src/modules/ai/ai.controller.ts
+src/modules/ai/ai.module.ts
+src/modules/ai/ai.repository.ts
+src/modules/ai/ai.service.ts
+src/modules/ai/context-builders/ai-context-builder.ts
+src/modules/ai/context-builders/basic-info.context-builder.ts
+src/modules/ai/context-builders/checklist.context-builder.ts
+src/modules/ai/context-builders/client-briefing.context-builder.ts
+src/modules/ai/context-builders/conclusion.context-builder.ts
+src/modules/ai/context-builders/evidence.context-builder.ts
+src/modules/ai/context-builders/facts.context-builder.ts
+src/modules/ai/context-builders/risks.context-builder.ts
+src/modules/ai/context-builders/strategy.context-builder.ts
+src/modules/ai/dto/ai-query.dto.ts
+src/modules/ai/logging/ai-request-log.repository.ts
+src/modules/ai/prompt-templates/basic-info.txt
+src/modules/ai/prompt-templates/checklist.txt
+src/modules/ai/prompt-templates/client-briefing.txt
+src/modules/ai/prompt-templates/conclusion.txt
+src/modules/ai/prompt-templates/evidence.txt
+src/modules/ai/prompt-templates/facts.txt
+src/modules/ai/prompt-templates/risks.txt
+src/modules/ai/prompt-templates/strategy.txt
+
+=== REFERENCIAS IA / LOGGING / AUDIT ===
+src/modules/ai/ai.controller.ts:8:import { AIQueryDto } from './dto/ai-query.dto';
+src/modules/ai/ai.controller.ts:16: * POST /api/v1/ai/query
+src/modules/ai/ai.controller.ts:25:    @Body() dto: AIQueryDto,
+src/modules/ai/ai.module.ts:14:  providers: [AIService, AIRepository],
+src/modules/ai/ai.service.ts:8:import { AIQueryDto } from './dto/ai-query.dto';
+src/modules/ai/ai.service.ts:23:    dto: AIQueryDto,
+src/modules/ai/ai.service.ts:56:    // Registrar en log
+src/modules/ai/ai.service.ts:63:      prompt_enviado: dto.consulta,
+src/modules/ai/dto/ai-query.dto.ts:7: * POST /api/v1/ai/query
+src/modules/ai/dto/ai-query.dto.ts:9:export class AIQueryDto {
+src/modules/ai/logging/ai-request-log.repository.ts:5: * Repositorio de log de IA — solo INSERT, nunca UPDATE ni DELETE (R05, RI-IA-02).
+src/modules/ai/logging/ai-request-log.repository.ts:11: *         prompt_enviado, respuesta_recibida, tokens_entrada, tokens_salida,
+src/modules/ai/logging/ai-request-log.repository.ts:14: * El endpoint GET /audit NO expone prompt_enviado ni respuesta_recibida.
+src/modules/ai/logging/ai-request-log.repository.ts:20:  insertar(_log: Record<string, unknown>): Promise<void> {
+src/modules/ai/prompt-templates/basic-info.txt:1:# Plantilla de prompt — herramienta: basic-info
+src/modules/ai/prompt-templates/basic-info.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/checklist.txt:1:# Plantilla de prompt — herramienta: checklist
+src/modules/ai/prompt-templates/checklist.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/client-briefing.txt:1:# Plantilla de prompt — herramienta: client-briefing
+src/modules/ai/prompt-templates/client-briefing.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/conclusion.txt:1:# Plantilla de prompt — herramienta: conclusion
+src/modules/ai/prompt-templates/conclusion.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/evidence.txt:1:# Plantilla de prompt — herramienta: evidence
+src/modules/ai/prompt-templates/evidence.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/facts.txt:1:# Plantilla de prompt — herramienta: facts
+src/modules/ai/prompt-templates/facts.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/risks.txt:1:# Plantilla de prompt — herramienta: risks
+src/modules/ai/prompt-templates/risks.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/modules/ai/prompt-templates/strategy.txt:1:# Plantilla de prompt — herramienta: strategy
+src/modules/ai/prompt-templates/strategy.txt:3:# Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
+src/app.module.ts:39:import { AuditModule } from './modules/audit/audit.module';
+docs/04_api/CONTRATO_API.md:78:| `503`  | Servicio externo no disponible — usado exclusivamente para el módulo de IA. No afecta el flujo del caso. |
+docs/04_api/CONTRATO_API.md:107:#### `POST /api/v1/auth/login`
+docs/04_api/CONTRATO_API.md:142:#### `POST /api/v1/auth/logout`
+docs/04_api/CONTRATO_API.md:783:| Query param | Default | Descripción |
+docs/04_api/CONTRATO_API.md:1080:`riesgos`, `cronologico`, `revision_supervisor`, `agenda_vencimientos`
+docs/04_api/CONTRATO_API.md:1104:#### `POST /api/v1/ai/query`
+docs/04_api/CONTRATO_API.md:1110:**Request body (AIQueryDto):**
+docs/04_api/CONTRATO_API.md:1153:**Nota sobre 503:** El código `503 — Proveedor de IA no disponible` se agregará cuando se integre un proveedor IA real. En MVP no aplica.
+docs/04_api/CONTRATO_API.md:1158:#### `GET /api/v1/cases/{caseId}/audit`
+docs/04_api/CONTRATO_API.md:1160:Lista los eventos de auditoría del caso. **Solo Supervisor y Administrador.**
+docs/04_api/CONTRATO_API.md:1172:`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+docs/04_api/CONTRATO_API.md:1174:**Nota:** Este endpoint es case-scoped. Solo lista eventos asociados al `caso_id`. Tipos como `login` y `logout` solo aparecerán si fueron persistidos con referencia al caso.
+docs/04_api/CONTRATO_API.md:1200:**Nota de seguridad:** El endpoint NO expone `metadata` ni contenido sensible de consultas IA (`prompt_enviado`, `respuesta_recibida`).
+docs/04_api/CONTRATO_API.md:1242:Eliminar la referencia a audit de esa sección, ya que ahora está implementado.
+docs/04_api/CONTRATO_API.md:1249:| E6-01 | 2026-03-28 | Restauración de `audit` como endpoint funcional. Implementación completa con paginación, filtros y control de acceso por rol. |
+docs/04_api/CONTRATO_API.md:1271:| Módulo | audit |
+docs/04_api/CONTRATO_API.md:1278:| E5-25 | 2026-03-28 | Retiro de `audit` del contrato MVP. Módulo diferido por no tener implementación funcional (scaffolding sin lógica). |
+docs/04_api/CONTRATO_API.md:1314:- Sustituye el uso de `POST /api/v1/auth/login` como smoke técnico mínimo.
+
+=== PROMPTS IA ===
+src/modules/ai/prompt-templates/basic-info.txt
+src/modules/ai/prompt-templates/checklist.txt
+src/modules/ai/prompt-templates/client-briefing.txt
+src/modules/ai/prompt-templates/conclusion.txt
+src/modules/ai/prompt-templates/evidence.txt
+src/modules/ai/prompt-templates/facts.txt
+src/modules/ai/prompt-templates/risks.txt
+src/modules/ai/prompt-templates/strategy.txt
