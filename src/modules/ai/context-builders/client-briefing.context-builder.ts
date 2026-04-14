@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IAContexto } from '../../../types/interfaces';
 
 /**
- * Builder de contexto para herramienta: client-briefing
+ * Builder de contexto para herramienta: client_briefing
  * Consulta los repositorios necesarios y retorna IAContexto tipado.
  * Ver tabla de repositorios en ai-context-builder.ts.
  */

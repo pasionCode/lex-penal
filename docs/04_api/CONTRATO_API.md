@@ -1107,6 +1107,8 @@ Envía una consulta al módulo de IA sobre una herramienta del caso.
 
 **Naturaleza MVP:** En la versión actual, el módulo usa un placeholder local sin proveedor IA real. Las respuestas son simuladas para validación funcional.
 
+**Nota de implementación MVP:** En esta etapa `POST /api/v1/ai/query` no consume aún `context-builders` ni `prompt-templates`; esos artefactos permanecen como scaffolding preparatorio para una integración futura de proveedor IA.
+
 **Request body (AIQueryDto):**
 
 | Campo | Tipo | MaxLength | Obligatorio | Descripción |

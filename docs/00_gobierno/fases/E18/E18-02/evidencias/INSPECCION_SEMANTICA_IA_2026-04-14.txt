@@ -1,0 +1,170 @@
+=== FECHA ===
+2026-04-14T15:33:23-05:00
+
+=== AI CONTROLLER ===
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
+import { AIService } from './ai.service';
+import { AIQueryDto } from './dto/ai-query.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
+
+/**
+ * Consultas IA del caso.
+ * POST /api/v1/ai/query
+ */
+@Controller('ai')
+@UseGuards(JwtAuthGuard)
+export class AIController {
+  constructor(private readonly service: AIService) {}
+
+  @Post('query')
+  async query(
+    @Body() dto: AIQueryDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.query(dto, user.sub, user.perfil as PerfilUsuario);
+  }
+}
+
+=== AI DTO ===
+import { IsEnum, IsString, IsUUID, IsNotEmpty, MaxLength } from 'class-validator';
+import { HerramientaIA } from '../../../types/enums';
+
+
+/**
+ * DTO para consulta IA.
+ * POST /api/v1/ai/query
+ */
+export class AIQueryDto {
+  @IsUUID('4', { message: 'caso_id debe ser UUID válido' })
+  caso_id!: string;
+
+  @IsEnum(HerramientaIA, {
+    message: 'herramienta debe ser: basic_info, facts, evidence, risks, strategy, client_briefing, checklist, conclusion',
+  })
+  herramienta!: HerramientaIA;
+
+  @IsString({ message: 'consulta debe ser texto' })
+  @IsNotEmpty({ message: 'consulta es obligatoria' })
+  @MaxLength(2000, { message: 'consulta no puede exceder 2000 caracteres' })
+  consulta!: string;
+}
+
+=== AI SERVICE ===
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
+import { AIRepository } from './ai.repository';
+import { AIQueryDto } from './dto/ai-query.dto';
+import { PerfilUsuario, EstadoCaso } from '../../types/enums';
+
+export interface AIResponse {
+  respuesta: string;
+  tokens_entrada: number;
+  tokens_salida: number;
+  modelo_usado: string;
+}
+
+@Injectable()
+export class AIService {
+  constructor(private readonly repository: AIRepository) {}
+
+  async query(
+    dto: AIQueryDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<AIResponse> {
+    // Verificar caso existe
+    const exists = await this.repository.caseExists(dto.caso_id);
+    if (!exists) {
+      throw new NotFoundException(`Caso ${dto.caso_id} no encontrado`);
+    }
+
+    // Verificar ownership
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      const responsable = await this.repository.getCaseResponsable(dto.caso_id);
+      if (responsable !== userId) {
+        throw new ForbiddenException('Sin acceso a este caso');
+      }
+    }
+
+    // No disponible en estado cerrado
+    const estado = await this.repository.getCaseState(dto.caso_id);
+    if (estado === EstadoCaso.CERRADO) {
+      throw new ConflictException('No se permite consulta IA en casos cerrados');
+    }
+
+    const startTime = Date.now();
+
+    // MVP: respuesta placeholder (sin proveedor IA real)
+    const respuesta = `[MVP] Análisis de ${dto.herramienta} para el caso. Consulta: "${dto.consulta.slice(0, 50)}..."`;
+    const tokensEntrada = Math.ceil(dto.consulta.length / 4);
+    const tokensSalida = Math.ceil(respuesta.length / 4);
+
+    const duracion = Date.now() - startTime;
+
+    // Registrar en log
+    await this.repository.create({
+      caso_id: dto.caso_id,
+      usuario_id: userId,
+      herramienta: dto.herramienta,
+      proveedor: 'mvp_placeholder',
+      modelo: 'placeholder_v1',
+      prompt_enviado: dto.consulta,
+      respuesta_recibida: respuesta,
+      tokens_entrada: tokensEntrada,
+      tokens_salida: tokensSalida,
+      duracion_ms: duracion,
+      estado_llamada: 'exitosa',
+    });
+
+    return {
+      respuesta,
+      tokens_entrada: tokensEntrada,
+      tokens_salida: tokensSalida,
+      modelo_usado: 'placeholder_v1',
+    };
+  }
+}
+
+=== BASIC-INFO CONTEXT BUILDER ===
+import { Injectable } from '@nestjs/common';
+import { IAContexto } from '../../../types/interfaces';
+
+/**
+ * Builder de contexto para herramienta: basic-info
+ * Consulta los repositorios necesarios y retorna IAContexto tipado.
+ * Ver tabla de repositorios en ai-context-builder.ts.
+ */
+@Injectable()
+export class BasicInfoContextBuilder {
+  construir(_casoId: string): Promise<IAContexto> {
+    throw new Error('not implemented');
+  }
+}
+
+=== CLIENT-BRIEFING CONTEXT BUILDER ===
+import { Injectable } from '@nestjs/common';
+import { IAContexto } from '../../../types/interfaces';
+
+/**
+ * Builder de contexto para herramienta: client-briefing
+ * Consulta los repositorios necesarios y retorna IAContexto tipado.
+ * Ver tabla de repositorios en ai-context-builder.ts.
+ */
+@Injectable()
+export class ClientBriefingContextBuilder {
+  construir(_casoId: string): Promise<IAContexto> {
+    throw new Error('not implemented');
+  }
+}

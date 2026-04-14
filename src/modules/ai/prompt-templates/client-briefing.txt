@@ -1,4 +1,4 @@
-# Plantilla de prompt — herramienta: client-briefing
+# Plantilla de prompt — herramienta: client_briefing
 # Almacenamiento: archivos versionados en repo (decisión MVP, ARQUITECTURA_MODULO_IA_v3).
 # Cambios se auditan por historial de git. El log de IA almacena el prompt completo (RI-IA-03).
 #
