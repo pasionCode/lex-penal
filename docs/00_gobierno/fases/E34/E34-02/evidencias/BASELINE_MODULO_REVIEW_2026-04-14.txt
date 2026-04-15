@@ -1,0 +1,550 @@
+=== FECHA ===
+2026-04-14T21:30:57-05:00
+
+=== CONTRATO REVIEW ===
+---
+
+> **Nota de implementación (Sprint 15):** Subrecurso `subjects` implementado con
+> política append-only (GET lista, POST, GET detalle). PUT y DELETE no expuestos.
+
+---
+
+### 7. Revision del supervisor
+
+#### `GET /api/v1/cases/{caseId}/review`
+Retorna el historial completo de revisiones del caso.
+
+**Acceso:** Solo Supervisor y Administrador.
+
+#### `GET /api/v1/cases/{caseId}/review/feedback`
+Retorna la vista filtrada de la revision vigente para el responsable del caso.
+Retorna `null` si no existe revision vigente.
+
+**Acceso:** Estudiante responsable del caso, Supervisor y Administrador.
+
+#### `POST /api/v1/cases/{caseId}/review`
+Registra una nueva revision del caso.
+
+**Restricciones:**
+- Solo Supervisor y Administrador
+- Solo cuando el caso esta en estado `pendiente_revision`
+
+**Comportamiento:**
+- Incrementa `version_revision`
+- Marca la nueva revision como `vigente: true`
+- Marca revisiones anteriores como `vigente: false`
+
+**Campos requeridos:**
+
+| Campo | Tipo | Descripcion |
+|-------|------|-------------|
+| `resultado` | enum | `aprobado` o `devuelto` |
+| `observaciones` | string | Observaciones del supervisor (max 3000) |
+| `fecha_revision` | datetime | Opcional, default: ahora |
+
+**Respuestas (todos los endpoints):**
+
+| Codigo | Descripcion |
+|--------|-------------|
+| `200` | Historial, feedback o revision obtenida |
+| `201` | Revision creada |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso o perfil insuficiente |
+| `404` | Caso no encontrado |
+| `409` | Caso no esta en estado `pendiente_revision` |
+---
+
+### 8. Informes
+
+#### `GET /api/v1/cases/{caseId}/reports`
+Lista los informes generados para el caso.
+
+=== ARCHIVOS MODULO REVIEW ===
+src/modules/review/dto/.gitkeep
+src/modules/review/dto/create-review.dto.ts
+src/modules/review/review.controller.ts
+src/modules/review/review.module.ts
+src/modules/review/review.repository.ts
+src/modules/review/review.service.ts
+
+=== CONTENIDO CONTROLLER ===
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ReviewService } from './review.service';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
+
+/**
+ * Revisiones del supervisor — append-only.
+ * GET  /api/v1/cases/:caseId/review - historial (solo supervisor/admin)
+ * POST /api/v1/cases/:caseId/review - crear revisión
+ * GET  /api/v1/cases/:caseId/review/feedback - observaciones para estudiante
+ */
+@Controller('cases/:caseId/review')
+@UseGuards(JwtAuthGuard)
+export class ReviewController {
+  constructor(private readonly service: ReviewService) {}
+
+  @Get()
+  async findAll(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findAll(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Post()
+  async create(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: CreateReviewDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.create(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Get('feedback')
+  async getFeedback(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.getFeedback(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+}
+
+=== CONTENIDO SERVICE ===
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
+import { RevisionSupervisor } from '@prisma/client';
+import { ReviewRepository } from './review.repository';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { PerfilUsuario, EstadoCaso } from '../../types/enums';
+
+@Injectable()
+export class ReviewService {
+  constructor(private readonly repository: ReviewRepository) {}
+
+  /**
+   * Retorna historial de revisiones.
+   * Solo Supervisor y Admin pueden ver el historial completo.
+   */
+  async findAll(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<RevisionSupervisor[]> {
+    await this.checkCaseExists(casoId);
+
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      throw new ForbiddenException('Solo supervisores pueden ver el historial de revisiones');
+    }
+
+    return this.repository.findByCaseId(casoId);
+  }
+
+  /**
+   * Retorna feedback (observaciones) de la revisión vigente.
+   * Disponible para el estudiante responsable.
+   */
+  async getFeedback(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<{ observaciones: string; resultado: string; fecha_revision: Date | null } | null> {
+    await this.checkCaseExists(casoId);
+
+    // Estudiante solo puede ver feedback de su caso
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      const responsable = await this.repository.getCaseResponsable(casoId);
+      if (responsable !== userId) {
+        throw new ForbiddenException('Sin acceso a este caso');
+      }
+    }
+
+    const vigente = await this.repository.findVigente(casoId);
+    if (!vigente) {
+      return null;
+    }
+
+    return {
+      observaciones: vigente.observaciones,
+      resultado: vigente.resultado,
+      fecha_revision: vigente.fecha_revision,
+    };
+  }
+
+  /**
+   * Crea una nueva revisión.
+   * Solo Supervisor/Admin, solo en estado pendiente_revision.
+   * E6-02: Usa transacción atómica que incluye:
+   *   - desvigencia de revisiones anteriores
+   *   - cálculo de versión (dentro de transacción, sin race condition)
+   *   - creación de revisión
+   *   - evento de auditoría
+   */
+  async create(
+    casoId: string,
+    dto: CreateReviewDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<RevisionSupervisor> {
+    await this.checkCaseExists(casoId);
+
+    // Solo supervisor o admin
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      throw new ForbiddenException('Solo supervisores pueden registrar revisiones');
+    }
+
+    // Solo en estado pendiente_revision
+    const estado = await this.repository.getCaseState(casoId);
+    if (estado !== EstadoCaso.PENDIENTE_REVISION) {
+      throw new ConflictException(
+        `Solo se puede revisar en estado pendiente_revision. Estado actual: ${estado}`,
+      );
+    }
+
+    // E6-02: Operación atómica completa
+    // version_revision se calcula dentro de la transacción
+    return this.repository.createWithAudit(
+      {
+        caso_id: casoId,
+        supervisor_id: userId,
+        vigente: true,
+        observaciones: dto.observaciones,
+        resultado: dto.resultado,
+        fecha_revision: dto.fecha_revision ? new Date(dto.fecha_revision) : new Date(),
+        creado_por: userId,
+      },
+      casoId,
+      userId,
+    );
+  }
+
+  private async checkCaseExists(casoId: string): Promise<void> {
+    const exists = await this.repository.caseExists(casoId);
+    if (!exists) {
+      throw new NotFoundException(`Caso ${casoId} no encontrado`);
+    }
+  }
+}
+
+=== CONTENIDO REPOSITORY ===
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+import { RevisionSupervisor, Prisma } from '@prisma/client';
+import { TipoEvento, ResultadoAuditoria } from '../../types/enums';
+
+@Injectable()
+export class ReviewRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByCaseId(casoId: string): Promise<RevisionSupervisor[]> {
+    return this.prisma.revisionSupervisor.findMany({
+      where: { caso_id: casoId },
+      orderBy: { version_revision: 'desc' },
+    });
+  }
+
+  async findVigente(casoId: string): Promise<RevisionSupervisor | null> {
+    return this.prisma.revisionSupervisor.findFirst({
+      where: { caso_id: casoId, vigente: true },
+    });
+  }
+
+  /**
+   * Crea revisión y registra evento de auditoría en una sola transacción.
+   * E6-02: Operación atómica para evitar deriva y race conditions.
+   *
+   * La versión se calcula dentro de la transacción para evitar
+   * condiciones de carrera entre peticiones concurrentes.
+   *
+   * @param baseData Datos de la revisión (sin version_revision)
+   * @param casoId ID del caso
+   * @param usuarioId ID del usuario que crea la revisión
+   * @returns RevisionSupervisor creada
+   */
+  async createWithAudit(
+    baseData: Omit<Prisma.RevisionSupervisorUncheckedCreateInput, 'version_revision'>,
+    casoId: string,
+    usuarioId: string,
+  ): Promise<RevisionSupervisor> {
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Marcar anteriores como no vigentes
+      await tx.revisionSupervisor.updateMany({
+        where: { caso_id: casoId, vigente: true },
+        data: { vigente: false },
+      });
+
+      // 2. Calcular siguiente versión (dentro de transacción)
+      const last = await tx.revisionSupervisor.findFirst({
+        where: { caso_id: casoId },
+        orderBy: { version_revision: 'desc' },
+        select: { version_revision: true },
+      });
+      const nextVersion = (last?.version_revision ?? 0) + 1;
+
+      // 3. Crear revisión con versión calculada
+      const revision = await tx.revisionSupervisor.create({
+        data: {
+          ...baseData,
+          version_revision: nextVersion,
+        },
+      });
+
+      // 4. Registrar evento de auditoría
+      // Nota: resultado siempre EXITOSO porque la operación técnica fue exitosa
+      // El resultado funcional (aprobado/devuelto) es dato de negocio, no de auditoría
+      await tx.eventoAuditoria.create({
+        data: {
+          caso_id: casoId,
+          usuario_id: usuarioId,
+          tipo_evento: TipoEvento.REVISION_SUPERVISOR,
+          resultado: ResultadoAuditoria.EXITOSO,
+        },
+      });
+
+      return revision;
+    });
+  }
+
+  async caseExists(casoId: string): Promise<boolean> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { id: true },
+    });
+    return !!caso;
+  }
+
+  async getCaseState(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { estado_actual: true },
+    });
+    return caso?.estado_actual ?? null;
+  }
+
+  async getCaseResponsable(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { responsable_id: true },
+    });
+    return caso?.responsable_id ?? null;
+  }
+}
+
+=== DTOs REVIEW ===
+--- src/modules/review/dto/create-review.dto.ts ---
+import { IsEnum, IsString, IsNotEmpty, IsOptional, IsDateString, MaxLength } from 'class-validator';
+import { ResultadoRevision } from '../../../types/enums';
+
+
+/**
+ * DTO para crear revisión del supervisor.
+ * POST /api/v1/cases/:caseId/review
+ */
+export class CreateReviewDto {
+  @IsEnum(ResultadoRevision, {
+    message: 'resultado debe ser: aprobado o devuelto',
+  })
+  resultado!: ResultadoRevision;
+
+  @IsString({ message: 'observaciones debe ser texto' })
+  @IsNotEmpty({ message: 'observaciones es obligatorio' })
+  @MaxLength(3000, { message: 'observaciones no puede exceder 3000 caracteres' })
+  observaciones!: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'fecha_revision debe ser fecha ISO válida' })
+  fecha_revision?: string;
+}
+
+=== REFERENCIAS REVIEW ===
+src/modules/review/dto/create-review.dto.ts:7: * POST /api/v1/cases/:caseId/review
+src/modules/review/dto/create-review.dto.ts:11:    message: 'resultado debe ser: aprobado o devuelto',
+src/modules/review/review.controller.ts:10:import { ReviewService } from './review.service';
+src/modules/review/review.controller.ts:11:import { CreateReviewDto } from './dto/create-review.dto';
+src/modules/review/review.controller.ts:19: * GET  /api/v1/cases/:caseId/review - historial (solo supervisor/admin)
+src/modules/review/review.controller.ts:20: * POST /api/v1/cases/:caseId/review - crear revisión
+src/modules/review/review.controller.ts:21: * GET  /api/v1/cases/:caseId/review/feedback - observaciones para estudiante
+src/modules/review/review.controller.ts:23:@Controller('cases/:caseId/review')
+src/modules/review/review.controller.ts:45:  @Get('feedback')
+src/modules/review/review.module.ts:2:import { ReviewController } from './review.controller';
+src/modules/review/review.module.ts:3:import { ReviewService } from './review.service';
+src/modules/review/review.module.ts:4:import { ReviewRepository } from './review.repository';
+src/modules/review/review.repository.ts:13:      orderBy: { version_revision: 'desc' },
+src/modules/review/review.repository.ts:19:      where: { caso_id: casoId, vigente: true },
+src/modules/review/review.repository.ts:30:   * @param baseData Datos de la revisión (sin version_revision)
+src/modules/review/review.repository.ts:36:    baseData: Omit<Prisma.RevisionSupervisorUncheckedCreateInput, 'version_revision'>,
+src/modules/review/review.repository.ts:41:      // 1. Marcar anteriores como no vigentes
+src/modules/review/review.repository.ts:43:        where: { caso_id: casoId, vigente: true },
+src/modules/review/review.repository.ts:44:        data: { vigente: false },
+src/modules/review/review.repository.ts:50:        orderBy: { version_revision: 'desc' },
+src/modules/review/review.repository.ts:51:        select: { version_revision: true },
+src/modules/review/review.repository.ts:53:      const nextVersion = (last?.version_revision ?? 0) + 1;
+src/modules/review/review.repository.ts:59:          version_revision: nextVersion,
+src/modules/review/review.repository.ts:65:      // El resultado funcional (aprobado/devuelto) es dato de negocio, no de auditoría
+src/modules/review/review.service.ts:8:import { ReviewRepository } from './review.repository';
+src/modules/review/review.service.ts:9:import { CreateReviewDto } from './dto/create-review.dto';
+src/modules/review/review.service.ts:35:   * Retorna feedback (observaciones) de la revisión vigente.
+src/modules/review/review.service.ts:45:    // Estudiante solo puede ver feedback de su caso
+src/modules/review/review.service.ts:53:    const vigente = await this.repository.findVigente(casoId);
+src/modules/review/review.service.ts:54:    if (!vigente) {
+src/modules/review/review.service.ts:59:      observaciones: vigente.observaciones,
+src/modules/review/review.service.ts:60:      resultado: vigente.resultado,
+src/modules/review/review.service.ts:61:      fecha_revision: vigente.fecha_revision,
+src/modules/review/review.service.ts:67:   * Solo Supervisor/Admin, solo en estado pendiente_revision.
+src/modules/review/review.service.ts:87:    // Solo en estado pendiente_revision
+src/modules/review/review.service.ts:91:        `Solo se puede revisar en estado pendiente_revision. Estado actual: ${estado}`,
+src/modules/review/review.service.ts:96:    // version_revision se calcula dentro de la transacción
+src/modules/review/review.service.ts:101:        vigente: true,
+docs/04_api/CONTRATO_API.md:41:| Documento único — representa exactamente un documento por caso | Singular o kebab-case descriptivo | `/strategy`, `/client-briefing`, `/checklist`, `/conclusion`, `/review` |
+docs/04_api/CONTRATO_API.md:73:| `403`  | Autenticado pero sin permiso para esta acción. |
+docs/04_api/CONTRATO_API.md:74:| `404`  | Recurso no encontrado. |
+docs/04_api/CONTRATO_API.md:75:| `409`  | Conflicto de estado — la operación es inválida dado el estado actual del recurso. |
+docs/04_api/CONTRATO_API.md:138:- `403` — Usuario desactivado.
+docs/04_api/CONTRATO_API.md:165:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:185:- `409` — Email ya registrado.
+docs/04_api/CONTRATO_API.md:196:- `403` — Sin acceso.
+docs/04_api/CONTRATO_API.md:197:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:206:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:207:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:320:- `403` — Sin permiso para crear casos.
+docs/04_api/CONTRATO_API.md:321:- `409` — El radicado ya está registrado en el sistema.
+docs/04_api/CONTRATO_API.md:351:- `403` — Sin acceso a este caso.
+docs/04_api/CONTRATO_API.md:352:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:381:**Restricción de estado:** Solo disponible en estados `en_analisis` y `devuelto`.
+docs/04_api/CONTRATO_API.md:386:- `403` — Sin permiso o no es propietario del caso.
+docs/04_api/CONTRATO_API.md:387:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:388:- `409` — El estado actual no permite edición.
+docs/04_api/CONTRATO_API.md:400:  "estado_destino": "pendiente_revision"
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:410:| `404`  | El caso no existe o no es accesible por el usuario en sesión. |
+docs/04_api/CONTRATO_API.md:411:| `409`  | El estado actual del caso es incompatible con el estado destino solicitado. |
+docs/04_api/CONTRATO_API.md:422:| Operación | `borrador` | `en_analisis` | `pendiente_revision` | `devuelto` | `aprobado_supervisor` / `listo_para_cliente` / `cerrado` |
+docs/04_api/CONTRATO_API.md:425:| `PUT` (escritura) | ❌ `409` | ✅ | ❌ `409` | ✅ | ❌ `409` |
+docs/04_api/CONTRATO_API.md:439:- `POST /facts` y `PUT /facts/:id` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:470:**Dependencia funcional:** Al menos 1 hecho registrado es requisito para la transición `en_analisis → pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones.
+docs/04_api/CONTRATO_API.md:480:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:481:| `404` | Caso o hecho no encontrado |
+docs/04_api/CONTRATO_API.md:482:| `409` | El estado actual del caso no permite crear o modificar hechos |
+docs/04_api/CONTRATO_API.md:497:- `POST /evidence`, `PUT /evidence/:id`, `PATCH /link` y `PATCH /unlink` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:503:**Nota:** El DTO de creación incluye `hecho_id` como campo opcional. Si se suministra en `POST`, debe pertenecer al mismo caso; si no, retorna `409`. Para relink/unlink posterior, usar los endpoints PATCH.
+docs/04_api/CONTRATO_API.md:559:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:560:| `404` | Caso o prueba no encontrado |
+docs/04_api/CONTRATO_API.md:561:| `409` | Conflicto: hecho no pertenece al mismo caso o el estado actual no permite escritura |
+docs/04_api/CONTRATO_API.md:575:- `POST /risks` y `PUT /risks/{riskId}` solo estan permitidos en estados `en_analisis` y `devuelto`.
+docs/04_api/CONTRATO_API.md:576:- En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:597:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:598:| `404` | Caso o riesgo no encontrado |
+docs/04_api/CONTRATO_API.md:599:| `409` | El estado actual del caso no permite crear o modificar riesgos |
+docs/04_api/CONTRATO_API.md:613:  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+docs/04_api/CONTRATO_API.md:614:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:618:- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:634:**Dependencia funcional:** El campo `linea_principal` es obligatorio para la transición `en_analisis -> pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones, no en este endpoint.
+docs/04_api/CONTRATO_API.md:643:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:644:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:645:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:655:  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+docs/04_api/CONTRATO_API.md:656:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:660:- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:669:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:670:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:671:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:728:| `403` | Estudiante sin acceso al caso o item de otro caso |
+docs/04_api/CONTRATO_API.md:729:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:738:  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+docs/04_api/CONTRATO_API.md:739:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:743:- `PUT /conclusion` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:752:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:753:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:754:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:806:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:807:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:829:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:830:| `404` | Caso o actuación no encontrada |
+docs/04_api/CONTRATO_API.md:889:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:890:| `404` | Caso o documento no encontrado |
+docs/04_api/CONTRATO_API.md:965:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:966:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1010:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1011:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1026:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1027:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1028:- `404` — Sujeto no encontrado
+docs/04_api/CONTRATO_API.md:1039:#### `GET /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1044:#### `GET /api/v1/cases/{caseId}/review/feedback`
+docs/04_api/CONTRATO_API.md:1045:Retorna la vista filtrada de la revision vigente para el responsable del caso.
+docs/04_api/CONTRATO_API.md:1046:Retorna `null` si no existe revision vigente.
+docs/04_api/CONTRATO_API.md:1050:#### `POST /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1055:- Solo cuando el caso esta en estado `pendiente_revision`
+docs/04_api/CONTRATO_API.md:1058:- Incrementa `version_revision`
+docs/04_api/CONTRATO_API.md:1059:- Marca la nueva revision como `vigente: true`
+docs/04_api/CONTRATO_API.md:1060:- Marca revisiones anteriores como `vigente: false`
+docs/04_api/CONTRATO_API.md:1066:| `resultado` | enum | `aprobado` o `devuelto` |
+docs/04_api/CONTRATO_API.md:1074:| `200` | Historial, feedback o revision obtenida |
+docs/04_api/CONTRATO_API.md:1077:| `403` | Estudiante sin acceso o perfil insuficiente |
+docs/04_api/CONTRATO_API.md:1078:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1079:| `409` | Caso no esta en estado `pendiente_revision` |
+docs/04_api/CONTRATO_API.md:1108:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1109:| `404` | Caso o informe no encontrado |
+docs/04_api/CONTRATO_API.md:1162:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1163:| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+docs/04_api/CONTRATO_API.md:1164:| `409` | Caso en estado cerrado (no permite consultas IA) |
+docs/04_api/CONTRATO_API.md:1247:| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+docs/04_api/CONTRATO_API.md:1248:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1294:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
+src/modules/cases/cases.service.ts:115:   *    - Validación de revisión vigente compatible en devuelto/aprobado_supervisor
+src/modules/cases/constants/caso-estado.constants.ts:31:  'en_analisis→pendiente_revision': [
+src/modules/cases/constants/caso-estado.constants.ts:36:  'pendiente_revision→devuelto': [
+src/modules/cases/constants/caso-estado.constants.ts:40:  'pendiente_revision→aprobado_supervisor': [
+src/modules/cases/constants/caso-estado.constants.ts:44:  'devuelto→en_analisis': [
+src/modules/cases/constants/caso-estado.constants.ts:49:  'aprobado_supervisor→listo_para_cliente': [
+src/modules/cases/constants/caso-estado.constants.ts:71: * Incluye APROBADO_SUPERVISOR: una vez aprobado, el caso queda sellado.
+src/modules/cases/dto/transition-state.dto.ts:8: * 409: la transición no existe desde el estado actual.
+src/modules/cases/dto/update-case.dto.ts:13: * Solo permitido en estados: en_analisis, devuelto.
+src/modules/cases/services/caso-estado.service.ts:21: * En transiciones pendiente_revision → devuelto/aprobado_supervisor:
+src/modules/cases/services/caso-estado.service.ts:24: * - La revisión anterior (si existe) se marca como vigente = false
+src/modules/cases/services/caso-estado.service.ts:87:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:88:   * @throws ForbiddenException (403) si el perfil no tiene permiso
+src/modules/cases/services/caso-estado.service.ts:89:   * @throws ConflictException (409) si la transición no es válida desde el estado actual
+src/modules/cases/services/caso-estado.service.ts:169:      }        // 5b. Si es transición de supervisor: validar revisión vigente compatible
+src/modules/cases/services/caso-estado.service.ts:224:   * - Si el caso no existe: lanza NotFoundException (404)
+src/modules/cases/services/caso-estado.service.ts:225:   * - Si el estado bloquea escritura: lanza ConflictException (409)
+src/modules/cases/services/caso-estado.service.ts:228:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:229:   * @throws ConflictException (409) si el estado no permite escritura
+src/modules/cases/services/caso-estado.service.ts:334:      case 'en_analisis→pendiente_revision':
+src/modules/cases/services/caso-estado.service.ts:338:      case 'pendiente_revision→devuelto':
+src/modules/cases/services/caso-estado.service.ts:342:      case 'pendiente_revision→aprobado_supervisor':
+src/modules/cases/services/caso-estado.service.ts:346:      case 'devuelto→en_analisis':
+src/modules/cases/services/caso-estado.service.ts:350:      case 'aprobado_supervisor→listo_para_cliente':
+src/modules/cases/services/caso-estado.service.ts:402:   * Guarda: en_analisis → pendiente_revision
+src/modules/cases/services/caso-estado.service.ts:447:   * Guarda: observaciones requeridas (devuelto, aprobado_supervisor)
+src/modules/cases/services/caso-estado.service.ts:459:   * Guarda: pendiente_revision → aprobado_supervisor
+src/modules/cases/services/caso-estado.service.ts:461:   * - Debe existir una revisión vigente compatible con resultado aprobado
+src/modules/cases/services/caso-estado.service.ts:464:   * La transición solo valida la existencia de una revisión vigente compatible.
+src/modules/cases/services/caso-estado.service.ts:476:   * Guarda: devuelto → en_analisis
+src/modules/cases/services/caso-estado.service.ts:479:   * Nota: Si el caso está en estado devuelto, debe existir
+src/modules/cases/services/caso-estado.service.ts:494:        'Error de integridad: caso en estado devuelto sin revisión registrada.',
+src/modules/cases/services/caso-estado.service.ts:500:   * Guarda: aprobado_supervisor → listo_para_cliente
+src/modules/cases/services/caso-estado.service.ts:585:   * Valida que exista una revisión vigente compatible para salir de pendiente_revision.
+src/modules/cases/services/caso-estado.service.ts:603:        vigente: true,
+src/modules/cases/services/caso-estado.service.ts:605:      orderBy: { version_revision: 'desc' },
+src/modules/cases/services/caso-estado.service.ts:609:        version_revision: true,
+src/modules/cases/services/caso-estado.service.ts:610:        vigente: true,
+src/modules/cases/services/caso-estado.service.ts:616:        'No existe revisión vigente para salir de pendiente_revision.',
+src/modules/cases/services/caso-estado.service.ts:621:      estadoDestino === EstadoCaso.APROBADO_SUPERVISOR ? 'aprobado' : 'devuelto';
+src/modules/cases/services/caso-estado.service.ts:625:        `La revisión vigente debe tener resultado ${resultadoEsperado}.`,
