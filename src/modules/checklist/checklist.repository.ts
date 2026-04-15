@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
 import { ChecklistBloque, ChecklistItem } from '@prisma/client';
+import {
+  BLOQUES_CHECKLIST_U008,
+  ITEMS_CHECKLIST_U008,
+} from '../cases/constants/caso-estado.constants';
 
 export type BloqueConItems = ChecklistBloque & {
   items: ChecklistItem[];
@@ -80,58 +84,57 @@ export class ChecklistRepository {
     return count > 0;
   }
 
+  /**
+   * Bootstrap/backfill alineado con la fuente canónica U008.
+   * - Si no hay bloques, crea BLOQUES_CHECKLIST_U008.
+   * - Si un bloque no tiene items, crea ITEMS_CHECKLIST_U008 del bloque.
+   */
   async createBaseStructure(casoId: string): Promise<void> {
-    const bloques = [
-      {
-        codigo: 'B01',
-        nombre: 'Verificación de hechos',
-        critico: true,
-        items: [
-          { codigo: 'B01_01', descripcion: 'Hechos contrastados con denuncia' },
-          { codigo: 'B01_02', descripcion: 'Tipicidad analizada' },
-        ],
-      },
-      {
-        codigo: 'B02',
-        nombre: 'Análisis probatorio',
-        critico: true,
-        items: [
-          { codigo: 'B02_01', descripcion: 'Pruebas relevantes identificadas' },
-          { codigo: 'B02_02', descripcion: 'Licitud y conducencia verificadas' },
-        ],
-      },
-      {
-        codigo: 'B03',
-        nombre: 'Estrategia defensiva',
-        critico: true,
-        items: [
-          { codigo: 'B03_01', descripcion: 'Línea principal documentada' },
-          { codigo: 'B03_02', descripcion: 'Riesgos identificados' },
-        ],
-      },
-    ];
+    const bloquesExistentes = await this.prisma.checklistBloque.count({
+      where: { caso_id: casoId },
+    });
 
-    for (const bloque of bloques) {
-      const bloqueCreado = await this.prisma.checklistBloque.create({
-        data: {
-          caso_id: casoId,
-          codigo_bloque: bloque.codigo,
-          nombre_bloque: bloque.nombre,
-          critico: bloque.critico,
-          completado: false,
-        },
-      });
-
-      for (const item of bloque.items) {
-        await this.prisma.checklistItem.create({
+    if (bloquesExistentes === 0) {
+      for (const bloque of BLOQUES_CHECKLIST_U008) {
+        await this.prisma.checklistBloque.create({
           data: {
-            bloque_id: bloqueCreado.id,
             caso_id: casoId,
-            codigo_item: item.codigo,
-            descripcion: item.descripcion,
-            marcado: false,
+            codigo_bloque: bloque.codigo,
+            nombre_bloque: bloque.nombre,
+            critico: bloque.critico,
+            completado: false,
           },
         });
+      }
+    }
+
+    const bloques = await this.prisma.checklistBloque.findMany({
+      where: { caso_id: casoId },
+      select: { id: true, codigo_bloque: true },
+    });
+
+    for (const bloque of bloques) {
+      const itemsExistentes = await this.prisma.checklistItem.count({
+        where: { bloque_id: bloque.id },
+      });
+
+      if (itemsExistentes === 0) {
+        const itemsDefinidos =
+          ITEMS_CHECKLIST_U008[
+            bloque.codigo_bloque as keyof typeof ITEMS_CHECKLIST_U008
+          ] || [];
+
+        for (const item of itemsDefinidos) {
+          await this.prisma.checklistItem.create({
+            data: {
+              bloque_id: bloque.id,
+              caso_id: casoId,
+              codigo_item: item.codigo,
+              descripcion: item.descripcion,
+              marcado: false,
+            },
+          });
+        }
       }
     }
   }

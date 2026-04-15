@@ -1,0 +1,352 @@
+=== FECHA ===
+2026-04-14T19:14:49-05:00
+
+=== CHECKLIST CONTROLLER ===
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ChecklistService } from './checklist.service';
+import { UpdateChecklistDto } from './dto/update-checklist-item.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
+
+/**
+ * Checklist de calidad — jerárquico (bloques + items).
+ * GET  /api/v1/cases/:caseId/checklist
+ * PUT  /api/v1/cases/:caseId/checklist
+ */
+@Controller('cases/:caseId/checklist')
+@UseGuards(JwtAuthGuard)
+export class ChecklistController {
+  constructor(private readonly service: ChecklistService) {}
+
+  @Get()
+  async findAll(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Put()
+  async updateItems(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: UpdateChecklistDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.updateItems(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+  }
+}
+
+=== CHECKLIST SERVICE ===
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { ChecklistRepository, BloqueConItems } from './checklist.repository';
+import { UpdateChecklistDto } from './dto/update-checklist-item.dto';
+import { PerfilUsuario } from '../../types/enums';
+
+@Injectable()
+export class ChecklistService {
+  constructor(private readonly repository: ChecklistRepository) {}
+
+  async findByCaseId(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<{ bloques: BloqueConItems[] }> {
+    await this.checkCaseAccess(casoId, userId, perfil);
+
+    const bloques = await this.repository.findByCaseId(casoId);
+
+    return { bloques };
+  }
+
+  async updateItems(
+    casoId: string,
+    dto: UpdateChecklistDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<{ bloques: BloqueConItems[] }> {
+    await this.checkCaseAccess(casoId, userId, perfil);
+
+    const bloquesAfectados = new Set<string>();
+
+    for (const itemUpdate of dto.items) {
+      const item = await this.repository.findItemById(itemUpdate.id);
+
+      if (!item) {
+        throw new BadRequestException(`Item ${itemUpdate.id} no encontrado`);
+      }
+
+      if (item.caso_id !== casoId) {
+        throw new ForbiddenException(`Item ${itemUpdate.id} no pertenece a este caso`);
+      }
+
+      await this.repository.updateItem(itemUpdate.id, itemUpdate.marcado, userId);
+      bloquesAfectados.add(item.bloque_id);
+    }
+
+    for (const bloqueId of bloquesAfectados) {
+      await this.repository.updateBloqueCompletado(bloqueId);
+    }
+
+    const bloques = await this.repository.findByCaseId(casoId);
+    return { bloques };
+  }
+
+  async bootstrapIfNeeded(casoId: string): Promise<void> {
+    const exists = await this.repository.hasChecklist(casoId);
+    if (!exists) {
+      await this.repository.createBaseStructure(casoId);
+    }
+  }
+
+  private async checkCaseAccess(
+    casoId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<void> {
+    const exists = await this.repository.caseExists(casoId);
+    if (!exists) {
+      throw new NotFoundException(`Caso ${casoId} no encontrado`);
+    }
+
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      const responsable = await this.repository.getCaseResponsable(casoId);
+      if (responsable !== userId) {
+        throw new ForbiddenException('Sin acceso a este caso');
+      }
+    }
+  }
+}
+=== CHECKLIST REPOSITORY ===
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+import { ChecklistBloque, ChecklistItem } from '@prisma/client';
+
+export type BloqueConItems = ChecklistBloque & {
+  items: ChecklistItem[];
+};
+
+@Injectable()
+export class ChecklistRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByCaseId(casoId: string): Promise<BloqueConItems[]> {
+    return this.prisma.checklistBloque.findMany({
+      where: { caso_id: casoId },
+      include: {
+        items: {
+          orderBy: { codigo_item: 'asc' },
+        },
+      },
+      orderBy: { codigo_bloque: 'asc' },
+    });
+  }
+
+  async findItemById(itemId: string): Promise<ChecklistItem | null> {
+    return this.prisma.checklistItem.findUnique({
+      where: { id: itemId },
+    });
+  }
+
+  async updateItem(
+    itemId: string,
+    marcado: boolean,
+    userId: string,
+  ): Promise<ChecklistItem> {
+    return this.prisma.checklistItem.update({
+      where: { id: itemId },
+      data: {
+        marcado,
+        marcado_en: marcado ? new Date() : null,
+        marcado_por: marcado ? userId : null,
+      },
+    });
+  }
+
+  async updateBloqueCompletado(bloqueId: string): Promise<ChecklistBloque> {
+    const items = await this.prisma.checklistItem.findMany({
+      where: { bloque_id: bloqueId },
+      select: { marcado: true },
+    });
+
+    const completado = items.length > 0 && items.every((i) => i.marcado);
+
+    return this.prisma.checklistBloque.update({
+      where: { id: bloqueId },
+      data: { completado },
+    });
+  }
+
+  async caseExists(casoId: string): Promise<boolean> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { id: true },
+    });
+    return !!caso;
+  }
+
+  async getCaseResponsable(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { responsable_id: true },
+    });
+    return caso?.responsable_id ?? null;
+  }
+
+  async hasChecklist(casoId: string): Promise<boolean> {
+    const count = await this.prisma.checklistBloque.count({
+      where: { caso_id: casoId },
+    });
+    return count > 0;
+  }
+
+  async createBaseStructure(casoId: string): Promise<void> {
+    const bloques = [
+      {
+        codigo: 'B01',
+        nombre: 'Verificación de hechos',
+        critico: true,
+        items: [
+          { codigo: 'B01_01', descripcion: 'Hechos contrastados con denuncia' },
+          { codigo: 'B01_02', descripcion: 'Tipicidad analizada' },
+        ],
+      },
+      {
+        codigo: 'B02',
+        nombre: 'Análisis probatorio',
+        critico: true,
+        items: [
+          { codigo: 'B02_01', descripcion: 'Pruebas relevantes identificadas' },
+          { codigo: 'B02_02', descripcion: 'Licitud y conducencia verificadas' },
+        ],
+      },
+      {
+        codigo: 'B03',
+        nombre: 'Estrategia defensiva',
+        critico: true,
+        items: [
+          { codigo: 'B03_01', descripcion: 'Línea principal documentada' },
+          { codigo: 'B03_02', descripcion: 'Riesgos identificados' },
+        ],
+      },
+    ];
+
+    for (const bloque of bloques) {
+      const bloqueCreado = await this.prisma.checklistBloque.create({
+        data: {
+          caso_id: casoId,
+          codigo_bloque: bloque.codigo,
+          nombre_bloque: bloque.nombre,
+          critico: bloque.critico,
+          completado: false,
+        },
+      });
+
+      for (const item of bloque.items) {
+        await this.prisma.checklistItem.create({
+          data: {
+            bloque_id: bloqueCreado.id,
+            caso_id: casoId,
+            codigo_item: item.codigo,
+            descripcion: item.descripcion,
+            marcado: false,
+          },
+        });
+      }
+    }
+  }
+}
+=== CASO-ESTADO BOOTSTRAP CHECKLIST ===
+  // GENERACIÓN DE ESTRUCTURA BASE (R08) — E5-05: Con items U008
+  // --------------------------------------------------------------------------
+
+  /**
+   * Genera la estructura base de herramientas al activar un caso.
+   * Se ejecuta en transición borrador → en_analisis.
+   *
+   * IDEMPOTENCIA: Verifica existencia antes de crear cada elemento.
+   * Soporta backfill de items para casos con bloques pero sin items.
+   *
+   * Crea:
+   * - checklist_bloques (12 bloques del U008)
+   * - checklist_items (1 item por bloque - taxonomía mínima E5-05)
+   * - estrategia (registro vacío)
+   * - explicacion_cliente (registro vacío)
+   * - conclusion_operativa (registro vacío)
+   */
+  private async generarEstructuraBase(
+    tx: Prisma.TransactionClient,
+    casoId: string,
+    usuarioId: string,
+  ): Promise<void> {
+    // 1. Crear checklist_bloques (solo si no existen)
+    const bloquesExistentes = await tx.checklistBloque.count({
+      where: { caso_id: casoId },
+    });
+
+    if (bloquesExistentes === 0) {
+      for (const bloque of BLOQUES_CHECKLIST_U008) {
+        await tx.checklistBloque.create({
+          data: {
+            caso_id: casoId,
+            codigo_bloque: bloque.codigo,
+            nombre_bloque: bloque.nombre,
+            critico: bloque.critico,
+            completado: false,
+          },
+        });
+      }
+    }
+
+    // 2. Crear checklist_items por bloque (idempotente - backfill compatible)
+    // Cargar bloques del caso (pueden existir de antes o recién creados)
+    const bloques = await tx.checklistBloque.findMany({
+      where: { caso_id: casoId },
+      select: { id: true, codigo_bloque: true },
+    });
+
+    for (const bloque of bloques) {
+      // Verificar si el bloque ya tiene items
+      const itemsExistentes = await tx.checklistItem.count({
+        where: { bloque_id: bloque.id },
+      });
+
+      // Si no tiene items, crear los definidos en ITEMS_CHECKLIST_U008
+      if (itemsExistentes === 0) {
+        const itemsDefinidos = ITEMS_CHECKLIST_U008[bloque.codigo_bloque] || [];
+        for (const item of itemsDefinidos) {
+          await tx.checklistItem.create({
+            data: {
+              bloque_id: bloque.id,
+              caso_id: casoId,
+              codigo_item: item.codigo,
+              descripcion: item.descripcion,
+              marcado: false,
+            },
+          });
+        }
+      }
+    }
+
+    // 3. Crear estrategia vacía (solo si no existe)
+    const estrategiaExiste = await tx.estrategia.findUnique({
+      where: { caso_id: casoId },
+    });
+
+    if (!estrategiaExiste) {
+      await tx.estrategia.create({
+        data: {
