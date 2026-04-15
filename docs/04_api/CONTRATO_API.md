@@ -570,6 +570,11 @@ PUT    /api/v1/cases/{caseId}/risks/{riskId}
 
 Coleccion editable sin DELETE expuesto.
 
+**Comportamiento:**
+- `GET /risks` y `GET /risks/{riskId}` permiten lectura si el usuario tiene acceso al caso.
+- `POST /risks` y `PUT /risks/{riskId}` solo estan permitidos en estados `en_analisis` y `devuelto`.
+- En otros estados retorna `409 Conflict`.
+
 **Enums validos:**
 
 | Campo | Valores |
@@ -591,6 +596,7 @@ Coleccion editable sin DELETE expuesto.
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso o riesgo no encontrado |
+| `409` | El estado actual del caso no permite crear o modificar riesgos |
 ---
 
 #### 5.4 Estrategia de defensa

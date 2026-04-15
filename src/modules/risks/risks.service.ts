@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { Riesgo } from '@prisma/client';
 import { RisksRepository } from './risks.repository';
@@ -21,8 +22,8 @@ export class RisksService {
     perfil: PerfilUsuario,
   ): Promise<Riesgo> {
     await this.checkCaseAccess(casoId, userId, perfil);
+    await this.assertWritableState(casoId);
 
-    // Validar: prioridad crítica requiere estrategia_mitigacion
     if (dto.prioridad === Prioridad.CRITICA && !dto.estrategia_mitigacion) {
       throw new BadRequestException('Riesgo con prioridad critica requiere estrategia_mitigacion');
     }
@@ -75,16 +76,17 @@ export class RisksService {
     perfil: PerfilUsuario,
   ): Promise<Riesgo> {
     await this.checkCaseAccess(casoId, userId, perfil);
+    await this.assertWritableState(casoId);
 
     const riesgo = await this.repository.findById(riskId);
     if (!riesgo || riesgo.caso_id !== casoId) {
       throw new NotFoundException(`Riesgo ${riskId} no encontrado`);
     }
 
-    // Validar: si se actualiza a prioridad crítica, debe tener estrategia
     const nuevaPrioridad = dto.prioridad ?? riesgo.prioridad;
     const nuevaEstrategia = dto.estrategia_mitigacion ?? riesgo.estrategia_mitigacion;
-    if (nuevaPrioridad === 'critica' && !nuevaEstrategia) {
+
+    if (nuevaPrioridad === Prioridad.CRITICA && !nuevaEstrategia) {
       throw new BadRequestException('Riesgo con prioridad critica requiere estrategia_mitigacion');
     }
 
@@ -119,6 +121,16 @@ export class RisksService {
       if (responsable !== userId) {
         throw new ForbiddenException('Sin acceso a este caso');
       }
+    }
+  }
+
+  private async assertWritableState(casoId: string): Promise<void> {
+    const estado = await this.repository.getCaseState(casoId);
+
+    if (estado !== 'en_analisis' && estado !== 'devuelto') {
+      throw new ConflictException(
+        'El estado actual del caso no permite crear o modificar riesgos',
+      );
     }
   }
 }

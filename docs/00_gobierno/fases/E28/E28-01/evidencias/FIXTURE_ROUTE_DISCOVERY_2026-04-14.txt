@@ -1,0 +1,135 @@
+=== AUTH ===
+src/modules/auth/auth.controller.ts:3:import { LoginDto } from './dto/login.dto';
+src/modules/auth/auth.controller.ts:4:import { LoginResponseDto } from './dto/login-response.dto';
+src/modules/auth/auth.controller.ts:10: * POST /api/v1/auth/login   - Iniciar sesión (US-01)
+src/modules/auth/auth.controller.ts:15:@Controller('auth')
+src/modules/auth/auth.controller.ts:20:   * POST /api/v1/auth/login
+src/modules/auth/auth.controller.ts:25:   * @param dto Credenciales de login
+src/modules/auth/auth.controller.ts:28:  @Post('login')
+src/modules/auth/auth.controller.ts:30:  async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
+src/modules/auth/auth.controller.ts:31:    return this.authService.login(dto);
+src/modules/auth/auth.controller.ts:41:  @Post('logout')
+src/modules/auth/auth.module.ts:28: * - POST /auth/login   (US-01)
+src/modules/auth/auth.service.ts:4:import { LoginDto } from './dto/login.dto';
+src/modules/auth/auth.service.ts:5:import { LoginResponseDto } from './dto/login-response.dto';
+src/modules/auth/auth.service.ts:33:   * @param dto Credenciales de login
+src/modules/auth/auth.service.ts:37:  async login(dto: LoginDto): Promise<LoginResponseDto> {
+src/modules/auth/dto/login-response.dto.ts:4: * Datos del usuario retornados en la respuesta de login.
+src/modules/auth/dto/login-response.dto.ts:7:export class LoginUserDto {
+src/modules/auth/dto/login-response.dto.ts:15: * Respuesta exitosa del endpoint POST /api/v1/auth/login
+src/modules/auth/dto/login-response.dto.ts:17:export class LoginResponseDto {
+src/modules/auth/dto/login.dto.ts:5: * POST /api/v1/auth/login
+src/modules/auth/dto/login.dto.ts:7:export class LoginDto {
+src/modules/auth/dto/session-response.dto.ts:2:export class SessionResponseDto {
+src/modules/auth/guards/jwt-auth.guard.ts:10: * @Get('ruta-protegida')
+src/modules/auth/strategies/jwt.strategy.ts:8: * Coincide con lo firmado en AuthService.login()
+docs/04_api/CONTRATO_API.md:25:- **Regla de controllers**: los decorators `@Controller(...)` deben declarar rutas relativas al recurso. Queda prohibido repetir `api/v1` dentro del controller.
+docs/04_api/CONTRATO_API.md:107:#### `POST /api/v1/auth/login`
+docs/04_api/CONTRATO_API.md:1183:`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+docs/04_api/CONTRATO_API.md:1185:**Nota:** Este endpoint es case-scoped. Solo lista eventos asociados al `caso_id`. Tipos como `login` y `logout` solo aparecerán si fueron persistidos con referencia al caso.
+docs/04_api/CONTRATO_API.md:1325:- Sustituye el uso de `POST /api/v1/auth/login` como smoke técnico mínimo.
+
+=== USERS ===
+src/modules/users/dto/create-user.dto.ts:13:export class CreateUserDto {
+src/modules/users/dto/create-user.dto.ts:29:    message: `perfil debe ser uno de: ${Object.values(PerfilUsuario).join(', ')}`,
+src/modules/users/dto/create-user.dto.ts:31:  perfil!: PerfilUsuario;
+src/modules/users/dto/query-users.dto.ts:4:export class QueryUsersDto {
+src/modules/users/dto/query-users.dto.ts:5:  perfil?: PerfilUsuario;
+src/modules/users/dto/update-user.dto.ts:19: * - perfil
+src/modules/users/dto/update-user.dto.ts:24:export class UpdateUserDto {
+src/modules/users/dto/update-user.dto.ts:38:    message: 'perfil debe ser: estudiante, supervisor o administrador',
+src/modules/users/dto/update-user.dto.ts:40:  perfil?: PerfilUsuario;
+src/modules/users/users.controller.ts:34:@Controller('users')
+src/modules/users/users.controller.ts:46:  @Get('me')
+src/modules/users/users.controller.ts:59:      perfil: user.perfil,
+src/modules/users/users.controller.ts:72:  @Get()
+src/modules/users/users.controller.ts:76:    @CurrentUser('perfil') perfil: string,
+src/modules/users/users.controller.ts:78:    this.assertAdmin(perfil);
+src/modules/users/users.controller.ts:86:  @Post()
+src/modules/users/users.controller.ts:91:    @CurrentUser('perfil') perfil: string,
+src/modules/users/users.controller.ts:93:    this.assertAdmin(perfil);
+src/modules/users/users.controller.ts:102:  @Get(':id')
+src/modules/users/users.controller.ts:106:    @CurrentUser('perfil') perfil: string,
+src/modules/users/users.controller.ts:108:    this.assertAdmin(perfil);
+src/modules/users/users.controller.ts:115:   * Campos actualizables: nombre, email, perfil, activo.
+src/modules/users/users.controller.ts:118:  @Put(':id')
+src/modules/users/users.controller.ts:124:    @CurrentUser('perfil') perfil: string,
+src/modules/users/users.controller.ts:126:    this.assertAdmin(perfil);
+src/modules/users/users.controller.ts:135:   * Verifica que el perfil sea administrador.
+src/modules/users/users.controller.ts:138:  private assertAdmin(perfil: string): void {
+src/modules/users/users.controller.ts:139:    if (perfil !== PerfilUsuario.ADMINISTRADOR) {
+src/modules/users/users.repository.ts:13:  perfil: string;
+src/modules/users/users.repository.ts:26:  perfil: true,
+src/modules/users/users.repository.ts:67:   * Verifica si existe al menos un usuario con perfil administrador activo.
+src/modules/users/users.repository.ts:73:        perfil: PerfilUsuario.administrador,
+src/modules/users/users.repository.ts:96:  ): Promise<Pick<Usuario, 'id' | 'nombre' | 'email' | 'perfil' | 'activo'> | null> {
+src/modules/users/users.repository.ts:103:        perfil: true,
+src/modules/users/users.service.ts:49:   * Convierte perfil de dominio a Prisma.
+src/modules/users/users.service.ts:52:  private toPrismaPerfil(perfil: PerfilUsuario): PrismaPerfilUsuario {
+src/modules/users/users.service.ts:58:    return map[perfil];
+src/modules/users/users.service.ts:76:  ): Promise<Pick<Usuario, 'id' | 'nombre' | 'email' | 'perfil' | 'activo'> | null> {
+src/modules/users/users.service.ts:83:  ): Promise<Pick<Usuario, 'id' | 'nombre' | 'email' | 'perfil' | 'activo'>> {
+src/modules/users/users.service.ts:101:      perfil: dto.perfil as unknown as PrismaPerfilUsuario,
+src/modules/users/users.service.ts:112:      perfil: usuario.perfil,
+src/modules/users/users.service.ts:144:      if (existingUser.perfil === PrismaPerfilUsuario.administrador) {
+src/modules/users/users.service.ts:154:        message: `Inconsistencia crítica: email ${normalizedEmail} existe con perfil ${existingUser.perfil}, se esperaba administrador`,
+src/modules/users/users.service.ts:172:      perfil: PrismaPerfilUsuario.administrador,
+src/modules/users/users.service.ts:254:    if (dto.perfil !== undefined) {
+src/modules/users/users.service.ts:255:      updateData.perfil = this.toPrismaPerfil(dto.perfil);
+docs/04_api/CONTRATO_API.md:25:- **Regla de controllers**: los decorators `@Controller(...)` deben declarar rutas relativas al recurso. Queda prohibido repetir `api/v1` dentro del controller.
+docs/04_api/CONTRATO_API.md:127:    "perfil": "estudiante"
+docs/04_api/CONTRATO_API.md:159:- `perfil` — filtra por perfil (`estudiante`, `supervisor`, `administrador`).
+docs/04_api/CONTRATO_API.md:177:  "perfil": "estudiante",
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:1075:| `403` | Estudiante sin acceso o perfil insuficiente |
+
+=== CASES ===
+src/modules/cases/cases.controller.ts:13:import { TransitionStateDto } from './dto/transition-state.dto';
+src/modules/cases/cases.controller.ts:26: * POST   /api/v1/cases/:id/transition
+src/modules/cases/cases.controller.ts:33:@Controller('cases')
+src/modules/cases/cases.controller.ts:42:  @Get()
+src/modules/cases/cases.controller.ts:51:  @Post()
+src/modules/cases/cases.controller.ts:62:  @Get(':id')
+src/modules/cases/cases.controller.ts:73:  @Put(':id')
+src/modules/cases/cases.controller.ts:85:  @Post(':id/transition')
+src/modules/cases/cases.controller.ts:86:  async transition(
+src/modules/cases/cases.controller.ts:91:    return this.service.transition(
+src/modules/cases/cases.service.ts:19: * NOTA E5-04: El método transition() ahora delega a CasoEstadoService
+src/modules/cases/cases.service.ts:118:  async transition(
+src/modules/cases/dto/create-case.dto.ts:18:export class CreateCaseDto {
+src/modules/cases/dto/transition-state.dto.ts:6: * POST /api/v1/cases/:id/transition
+src/modules/cases/dto/transition-state.dto.ts:11:export class TransitionStateDto {
+src/modules/cases/dto/update-case.dto.ts:17:export class UpdateCaseDto {
+docs/04_api/CONTRATO_API.md:25:- **Regla de controllers**: los decorators `@Controller(...)` deben declarar rutas relativas al recurso. Queda prohibido repetir `api/v1` dentro del controller.
+docs/04_api/CONTRATO_API.md:394:#### `POST /api/v1/cases/{caseId}/transition`
+
+=== BOOTSTRAP ===
+src/main.ts:6:async function bootstrap(): Promise<void> {
+src/main.ts:28:bootstrap();
+src/modules/cases/constants/caso-estado.constants.ts:106: * E5-05: Resuelve D-05 (bootstrap sin items).
+src/modules/checklist/checklist.service.ts:60:  async bootstrapIfNeeded(casoId: string): Promise<void> {
+src/modules/users/bootstrap.service.ts:6: * Servicio de bootstrap del módulo users.
+src/modules/users/bootstrap.service.ts:11: * - BOOTSTRAP_ADMIN_ENABLED: true/false
+src/modules/users/bootstrap.service.ts:12: * - BOOTSTRAP_ADMIN_NAME: nombre del administrador
+src/modules/users/bootstrap.service.ts:13: * - BOOTSTRAP_ADMIN_EMAIL: email del administrador
+src/modules/users/bootstrap.service.ts:14: * - BOOTSTRAP_ADMIN_PASSWORD: contraseña del administrador
+src/modules/users/bootstrap.service.ts:27:   * Implementa el bootstrap idempotente del usuario administrador.
+src/modules/users/bootstrap.service.ts:34:   * Ejecuta el proceso de bootstrap.
+src/modules/users/bootstrap.service.ts:38:    // Verificar si el bootstrap está habilitado
+src/modules/users/bootstrap.service.ts:39:    const enabled = this.configService.get<string>('BOOTSTRAP_ADMIN_ENABLED');
+src/modules/users/bootstrap.service.ts:46:    this.logger.log('Iniciando proceso de bootstrap de usuarios...');
+src/modules/users/bootstrap.service.ts:49:    const name = this.configService.get<string>('BOOTSTRAP_ADMIN_NAME');
+src/modules/users/bootstrap.service.ts:50:    const email = this.configService.get<string>('BOOTSTRAP_ADMIN_EMAIL');
+src/modules/users/bootstrap.service.ts:51:    const password = this.configService.get<string>('BOOTSTRAP_ADMIN_PASSWORD');
+src/modules/users/bootstrap.service.ts:56:        'BOOTSTRAP_ADMIN_NAME, BOOTSTRAP_ADMIN_EMAIL y BOOTSTRAP_ADMIN_PASSWORD son obligatorias cuando BOOTSTRAP_ADMIN_ENABLED=true',
+src/modules/users/bootstrap.service.ts:60:    // Ejecutar bootstrap
+src/modules/users/bootstrap.service.ts:83:      this.logger.error(`❌ Falló el bootstrap de administrador: ${errorMsg}`);
+src/modules/users/bootstrap.service.ts:87:    this.logger.log('Proceso de bootstrap de usuarios completado');
+src/modules/users/users.module.ts:5:import { BootstrapService } from './bootstrap.service';
+src/modules/users/users.module.ts:14: * - BootstrapService: bootstrap automático del administrador
+src/modules/users/users.service.ts:147:          message: `Usuario bootstrap ya existe: ${normalizedEmail}`,
+src/modules/users/users.service.ts:178:      message: `Usuario bootstrap administrador creado: ${normalizedEmail}`,
+.env:54:BOOTSTRAP_ADMIN_ENABLED=true
+.env:55:BOOTSTRAP_ADMIN_NAME="Administrador LEX_PENAL"
+.env:56:BOOTSTRAP_ADMIN_EMAIL="admin@lexpenal.local"
+.env:57:BOOTSTRAP_ADMIN_PASSWORD="CambiarEnProduccion_2026!"
