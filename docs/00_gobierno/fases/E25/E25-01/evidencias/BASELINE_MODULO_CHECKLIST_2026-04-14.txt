@@ -1,0 +1,426 @@
+=== FECHA ===
+2026-04-14T19:12:00-05:00
+
+=== CONTRATO CHECKLIST ===
+674-| `401` | No autenticado |
+675-| `403` | Estudiante sin acceso al caso |
+676-| `404` | Caso no encontrado |
+677-| `409` | El estado actual del caso no permite auto-creación o modificación |
+678-```
+679-
+680----
+681-
+682:#### 5.6 Checklist de calidad
+683-```
+684:GET  /api/v1/cases/{caseId}/checklist
+685:PUT  /api/v1/cases/{caseId}/checklist
+686-```
+687-
+688-Recurso **jerarquico**: estructura fija de bloques con items.
+689-
+690:**Bootstrap:** El checklist se crea automaticamente al activar el caso (transicion `borrador -> en_analisis`). No se auto-crea en `GET`.
+691-
+692-**Estructura de respuesta:**
+693-```json
+694-{
+695-  "bloques": [
+696-    {
+697-      "id": "uuid",
+698-      "codigo_bloque": "B01",
+699-      "nombre_bloque": "Verificacion de hechos",
+700-      "critico": true,
+701-      "completado": false,
+702-      "items": [
+703-        {
+704-          "id": "uuid",
+705-          "codigo_item": "B01_01",
+706-          "descripcion": "Hechos contrastados con denuncia",
+707-          "marcado": false
+708-        }
+709-      ]
+710-    }
+711-  ]
+712-}
+713-```
+714-
+715-**Formato PUT:**
+716-```json
+717-{
+718-  "items": [
+719-    { "id": "uuid-item", "marcado": true },
+720-    { "id": "uuid-item", "marcado": false }
+721-  ]
+722-}
+723-```
+724-
+725-**Recalculo automatico:** Al actualizar items, `bloque.completado` se recalcula como `true` solo si todos sus items estan marcados.
+726-
+727-**Respuestas:**
+728-
+729-| Codigo | Descripcion |
+730-|--------|-------------|
+731-| `200` | Checklist obtenido o actualizado |
+732-| `400` | Item inexistente en payload |
+733-| `401` | No autenticado |
+734-| `403` | Estudiante sin acceso al caso o item de otro caso |
+735-| `404` | Caso no encontrado |
+736----
+737-
+738-#### 5.7 Conclusión operativa
+739-
+740-Recurso **singleton**: existe exactamente una conclusión operativa por caso.
+741-
+742-**Comportamiento especial:**
+743-- Si `GET /conclusion` se invoca y no existe aún una conclusión para el caso:
+744-  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+745-  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+746-- Si `GET /conclusion` se invoca y ya existe la conclusión, retorna el recurso sin importar el estado del caso (200).
+747-- `PUT /conclusion` actualiza la conclusión existente del caso.
+748-- Si `PUT /conclusion` se invoca y no existe aún conclusión, el sistema la crea con los datos suministrados.
+749-- `PUT /conclusion` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+750-
+751-**Respuestas:**
+752-
+753-| Código | Descripción |
+754-|--------|-------------|
+755-| `200` | Conclusión obtenida, auto-creada o actualizada |
+756-| `400` | Payload inválido en `PUT` |
+757-| `401` | No autenticado |
+758-| `403` | Estudiante sin acceso al caso |
+759-| `404` | Caso no encontrado |
+760-| `409` | El estado actual del caso no permite auto-creación o modificación |
+761----
+762-
+763-#### 5.8 Línea de tiempo
+764-
+765-```
+766-GET  /api/v1/cases/{caseId}/timeline
+767-POST /api/v1/cases/{caseId}/timeline
+768-```
+769-
+770-Recurso **colección append-only paginada**: múltiples entradas por caso, sin edición ni eliminación.
+771-
+772-**Comportamiento:**
+773-- `GET /timeline` lista entradas con paginación.
+774-- `POST /timeline` crea una entrada con `orden` asignado automáticamente.
+775-- No hay endpoint de detalle individual, PUT ni DELETE.
+776-
+777-**Paginación:**
+778-
+779-La respuesta de GET incluye metadatos de paginación:
+780-
+781-```json
+782-{
+783-  "data": [...],
+784-  "total": 25,
+785-  "page": 1,
+786-  "per_page": 20
+787-}
+788-```
+789-
+790-| Query param | Default | Descripción |
+791-|-------------|---------|-------------|
+792-| `page` | 1 | Página actual |
+793-| `per_page` | 20 | Items por página |
+794-
+795-**Campos POST (CreateTimelineEntryDto):**
+796-
+797-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+798-|-------|------|-----------|-------------|-------------|
+799-| `fecha_evento` | ISO date | - | Sí | Fecha del evento |
+800-| `descripcion` | string | 1000 | Sí | Descripción del evento |
+801-
+802-**Campo `orden`:** Asignado automáticamente por el backend, no editable por cliente. Cada nueva entrada recibe el siguiente número de orden disponible para el caso.
+803-
+804-**Respuestas:**
+805-
+806-| Código | Descripción |
+807-|--------|-------------|
+808-| `200` | Lista paginada obtenida |
+809-| `201` | Entrada creada |
+810-| `400` | Payload inválido (fecha inválida o campo requerido faltante) |
+811-| `401` | No autenticado |
+812-| `403` | Estudiante sin acceso al caso |
+813-| `404` | Caso no encontrado |
+814-
+815----
+816-
+817-#### 5.9 Actuaciones procesales
+818-
+819-```
+820-GET    /api/v1/cases/{caseId}/proceedings
+821-POST   /api/v1/cases/{caseId}/proceedings
+822-GET    /api/v1/cases/{caseId}/proceedings/{proceedingId}
+823-```
+824-
+825-Entidad con **política append-only**. No se permite edición ni eliminación.
+826-
+827-**Respuestas:**
+828-
+829-| Código | Descripción |
+830-|--------|-------------|
+831-| `200` | Lista o detalle de actuaciones |
+832-| `201` | Actuación creada |
+833-| `400` | Payload inválido |
+834-| `404` | Caso o actuación no encontrada |
+835-
+836-> **Nota de implementación (Sprint 13):** Se retiró la exposición de `PUT` y `DELETE`
+837-> para alinear el recurso con la política append-only.
+838-
+839----
+840-
+841-#### 5.10 Documentos del caso
+842-
+843-```
+844-GET    /api/v1/cases/{caseId}/documents
+845-POST   /api/v1/cases/{caseId}/documents
+846-GET    /api/v1/cases/{caseId}/documents/{documentId}
+847-PUT    /api/v1/cases/{caseId}/documents/{documentId}
+848-```
+849-
+850-Recurso **colección con edición limitada**: múltiples documentos por caso, con restricción de mutabilidad.
+851-
+852-**Comportamiento:**
+853-- `GET /documents` lista todos los documentos del caso.
+854-- `POST /documents` registra metadatos de un nuevo documento.
+855-- `GET /documents/:id` obtiene detalle de un documento.
+856-- `PUT /documents/:id` actualiza **solo el campo `descripcion`** (política Sprint 11).
+857-
+858-**Política de inmutabilidad:** Los campos `categoria`, `nombre_original`, `nombre_almacenado`, `ruta`, `mime_type` y `tamanio_bytes` son inmutables después de la creación. Solo `descripcion` es editable vía PUT.
+859-
+860-**Nota:** El recurso implementa solo metadatos, sin subida real de archivos binarios.
+861-
+862-**Campos POST (CreateDocumentDto):**
+863-
+864-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+865-|-------|------|-----------|-------------|-------------|
+866-| `categoria` | enum | - | Sí | Categoría del documento |
+867-| `nombre_original` | string | 255 | Sí | Nombre original del archivo |
+868-| `nombre_almacenado` | string | 255 | Sí | Nombre almacenado en sistema |
+869-| `ruta` | string | 500 | Sí | Ruta de almacenamiento |
+870-| `mime_type` | string | 100 | Sí | Tipo MIME del archivo |
+
+=== ARCHIVOS MODULO CHECKLIST ===
+src/modules/checklist/checklist.controller.ts
+src/modules/checklist/checklist.module.ts
+src/modules/checklist/checklist.repository.ts
+src/modules/checklist/checklist.service.ts
+src/modules/checklist/dto/.gitkeep
+src/modules/checklist/dto/update-checklist-item.dto.ts
+
+=== REFERENCIAS CHECKLIST ===
+src/modules/checklist/checklist.controller.ts:10:import { ChecklistService } from './checklist.service';
+src/modules/checklist/checklist.controller.ts:11:import { UpdateChecklistDto } from './dto/update-checklist-item.dto';
+src/modules/checklist/checklist.controller.ts:18: * Checklist de calidad — jerárquico (bloques + items).
+src/modules/checklist/checklist.controller.ts:19: * GET  /api/v1/cases/:caseId/checklist
+src/modules/checklist/checklist.controller.ts:20: * PUT  /api/v1/cases/:caseId/checklist
+src/modules/checklist/checklist.controller.ts:22:@Controller('cases/:caseId/checklist')
+src/modules/checklist/checklist.module.ts:2:import { ChecklistController } from './checklist.controller';
+src/modules/checklist/checklist.module.ts:3:import { ChecklistService } from './checklist.service';
+src/modules/checklist/checklist.module.ts:4:import { ChecklistRepository } from './checklist.repository';
+src/modules/checklist/checklist.repository.ts:6:  items: ChecklistItem[];
+src/modules/checklist/checklist.repository.ts:14:    return this.prisma.checklistBloque.findMany({
+src/modules/checklist/checklist.repository.ts:17:        items: {
+src/modules/checklist/checklist.repository.ts:18:          orderBy: { codigo_item: 'asc' },
+src/modules/checklist/checklist.repository.ts:21:      orderBy: { codigo_bloque: 'asc' },
+src/modules/checklist/checklist.repository.ts:26:    return this.prisma.checklistItem.findUnique({
+src/modules/checklist/checklist.repository.ts:33:    marcado: boolean,
+src/modules/checklist/checklist.repository.ts:36:    return this.prisma.checklistItem.update({
+src/modules/checklist/checklist.repository.ts:39:        marcado,
+src/modules/checklist/checklist.repository.ts:40:        marcado_en: marcado ? new Date() : null,
+src/modules/checklist/checklist.repository.ts:41:        marcado_por: marcado ? userId : null,
+src/modules/checklist/checklist.repository.ts:47:    const items = await this.prisma.checklistItem.findMany({
+src/modules/checklist/checklist.repository.ts:49:      select: { marcado: true },
+src/modules/checklist/checklist.repository.ts:52:    const completado = items.length > 0 && items.every((i) => i.marcado);
+src/modules/checklist/checklist.repository.ts:54:    return this.prisma.checklistBloque.update({
+src/modules/checklist/checklist.repository.ts:56:      data: { completado },
+src/modules/checklist/checklist.repository.ts:77:    const count = await this.prisma.checklistBloque.count({
+src/modules/checklist/checklist.repository.ts:84:    const bloques = [
+src/modules/checklist/checklist.repository.ts:89:        items: [
+src/modules/checklist/checklist.repository.ts:98:        items: [
+src/modules/checklist/checklist.repository.ts:107:        items: [
+src/modules/checklist/checklist.repository.ts:114:    for (const bloque of bloques) {
+src/modules/checklist/checklist.repository.ts:115:      const bloqueCreado = await this.prisma.checklistBloque.create({
+src/modules/checklist/checklist.repository.ts:118:          codigo_bloque: bloque.codigo,
+src/modules/checklist/checklist.repository.ts:121:          completado: false,
+src/modules/checklist/checklist.repository.ts:125:      for (const item of bloque.items) {
+src/modules/checklist/checklist.repository.ts:126:        await this.prisma.checklistItem.create({
+src/modules/checklist/checklist.repository.ts:130:            codigo_item: item.codigo,
+src/modules/checklist/checklist.repository.ts:132:            marcado: false,
+src/modules/checklist/checklist.service.ts:7:import { ChecklistRepository, BloqueConItems } from './checklist.repository';
+src/modules/checklist/checklist.service.ts:8:import { UpdateChecklistDto } from './dto/update-checklist-item.dto';
+src/modules/checklist/checklist.service.ts:19:  ): Promise<{ bloques: BloqueConItems[] }> {
+src/modules/checklist/checklist.service.ts:22:    const bloques = await this.repository.findByCaseId(casoId);
+src/modules/checklist/checklist.service.ts:24:    return { bloques };
+src/modules/checklist/checklist.service.ts:32:  ): Promise<{ bloques: BloqueConItems[] }> {
+src/modules/checklist/checklist.service.ts:35:    const bloquesAfectados = new Set<string>();
+src/modules/checklist/checklist.service.ts:37:    for (const itemUpdate of dto.items) {
+src/modules/checklist/checklist.service.ts:48:      await this.repository.updateItem(itemUpdate.id, itemUpdate.marcado, userId);
+src/modules/checklist/checklist.service.ts:49:      bloquesAfectados.add(item.bloque_id);
+src/modules/checklist/checklist.service.ts:52:    for (const bloqueId of bloquesAfectados) {
+src/modules/checklist/checklist.service.ts:56:    const bloques = await this.repository.findByCaseId(casoId);
+src/modules/checklist/checklist.service.ts:57:    return { bloques };
+src/modules/checklist/checklist.service.ts:60:  async bootstrapIfNeeded(casoId: string): Promise<void> {
+src/modules/checklist/dto/update-checklist-item.dto.ts:5: * Actualización de estado de un ítem del checklist.
+src/modules/checklist/dto/update-checklist-item.dto.ts:11:  @IsBoolean({ message: 'marcado debe ser booleano' })
+src/modules/checklist/dto/update-checklist-item.dto.ts:12:  marcado!: boolean;
+src/modules/checklist/dto/update-checklist-item.dto.ts:16: * DTO para actualizar múltiples ítems del checklist.
+src/modules/checklist/dto/update-checklist-item.dto.ts:17: * PUT /api/v1/cases/:caseId/checklist
+src/modules/checklist/dto/update-checklist-item.dto.ts:20:  @IsArray({ message: 'items debe ser un array' })
+src/modules/checklist/dto/update-checklist-item.dto.ts:23:  items!: ChecklistItemUpdateDto[];
+src/modules/cases/cases.module.ts:6:import { ChecklistModule } from '../checklist/checklist.module';
+src/modules/cases/cases.service.ts:13:import { ChecklistService } from '../checklist/checklist.service';
+src/modules/cases/cases.service.ts:28:    private readonly checklistService: ChecklistService,
+src/modules/cases/constants/caso-estado.constants.ts:31:  'en_analisis→pendiente_revision': [
+src/modules/cases/constants/caso-estado.constants.ts:36:  'pendiente_revision→devuelto': [
+src/modules/cases/constants/caso-estado.constants.ts:40:  'pendiente_revision→aprobado_supervisor': [
+src/modules/cases/constants/caso-estado.constants.ts:83: * Bloques del checklist según U008.
+src/modules/cases/constants/caso-estado.constants.ts:102: * Items del checklist U008 — Taxonomía mínima.
+src/modules/cases/constants/caso-estado.constants.ts:106: * E5-05: Resuelve D-05 (bootstrap sin items).
+src/modules/cases/dto/transition-state.dto.ts:8: * 409: la transición no existe desde el estado actual.
+src/modules/cases/services/caso-estado.service.ts:15: * dependencia circular entre módulos cases y checklist. Las verificaciones
+src/modules/cases/services/caso-estado.service.ts:16: * de checklist se hacen mediante consultas directas a Prisma. Si en el futuro
+src/modules/cases/services/caso-estado.service.ts:21: * En transiciones pendiente_revision → devuelto/aprobado_supervisor:
+src/modules/cases/services/caso-estado.service.ts:87:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:88:   * @throws ForbiddenException (403) si el perfil no tiene permiso
+src/modules/cases/services/caso-estado.service.ts:89:   * @throws ConflictException (409) si la transición no es válida desde el estado actual
+src/modules/cases/services/caso-estado.service.ts:224:   * - Si el caso no existe: lanza NotFoundException (404)
+src/modules/cases/services/caso-estado.service.ts:225:   * - Si el estado bloquea escritura: lanza ConflictException (409)
+src/modules/cases/services/caso-estado.service.ts:228:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:229:   * @throws ConflictException (409) si el estado no permite escritura
+src/modules/cases/services/caso-estado.service.ts:334:      case 'en_analisis→pendiente_revision':
+src/modules/cases/services/caso-estado.service.ts:338:      case 'pendiente_revision→devuelto':
+src/modules/cases/services/caso-estado.service.ts:342:      case 'pendiente_revision→aprobado_supervisor':
+src/modules/cases/services/caso-estado.service.ts:402:   * Guarda: en_analisis → pendiente_revision
+src/modules/cases/services/caso-estado.service.ts:403:   * - Checklist sin bloques críticos incompletos (R02)
+src/modules/cases/services/caso-estado.service.ts:411:    // Verificar checklist
+src/modules/cases/services/caso-estado.service.ts:412:    const bloquesCriticosIncompletos = await this.prisma.checklistBloque.count({
+src/modules/cases/services/caso-estado.service.ts:416:        completado: false,
+src/modules/cases/services/caso-estado.service.ts:420:    if (bloquesCriticosIncompletos > 0) {
+src/modules/cases/services/caso-estado.service.ts:422:        `El checklist tiene ${bloquesCriticosIncompletos} bloque(s) crítico(s) incompleto(s).`,
+src/modules/cases/services/caso-estado.service.ts:459:   * Guarda: pendiente_revision → aprobado_supervisor
+src/modules/cases/services/caso-estado.service.ts:501:   * - Conclusión operativa completa (5 bloques)
+src/modules/cases/services/caso-estado.service.ts:503:   * - Checklist sin bloques críticos incompletos
+src/modules/cases/services/caso-estado.service.ts:524:      // Verificar 5 bloques principales
+src/modules/cases/services/caso-estado.service.ts:542:    // Verificar checklist nuevamente
+src/modules/cases/services/caso-estado.service.ts:543:    const bloquesCriticosIncompletos = await this.prisma.checklistBloque.count({
+src/modules/cases/services/caso-estado.service.ts:547:        completado: false,
+src/modules/cases/services/caso-estado.service.ts:551:    if (bloquesCriticosIncompletos > 0) {
+src/modules/cases/services/caso-estado.service.ts:553:        `El checklist tiene ${bloquesCriticosIncompletos} bloque(s) crítico(s) incompleto(s).`,
+src/modules/cases/services/caso-estado.service.ts:585:   * Valida que exista una revisión vigente compatible para salir de pendiente_revision.
+src/modules/cases/services/caso-estado.service.ts:616:        'No existe revisión vigente para salir de pendiente_revision.',
+src/modules/cases/services/caso-estado.service.ts:632:  // GENERACIÓN DE ESTRUCTURA BASE (R08) — E5-05: Con items U008
+src/modules/cases/services/caso-estado.service.ts:640:   * Soporta backfill de items para casos con bloques pero sin items.
+src/modules/cases/services/caso-estado.service.ts:643:   * - checklist_bloques (12 bloques del U008)
+src/modules/cases/services/caso-estado.service.ts:644:   * - checklist_items (1 item por bloque - taxonomía mínima E5-05)
+src/modules/cases/services/caso-estado.service.ts:654:    // 1. Crear checklist_bloques (solo si no existen)
+src/modules/cases/services/caso-estado.service.ts:655:    const bloquesExistentes = await tx.checklistBloque.count({
+src/modules/cases/services/caso-estado.service.ts:659:    if (bloquesExistentes === 0) {
+src/modules/cases/services/caso-estado.service.ts:661:        await tx.checklistBloque.create({
+src/modules/cases/services/caso-estado.service.ts:664:            codigo_bloque: bloque.codigo,
+src/modules/cases/services/caso-estado.service.ts:667:            completado: false,
+src/modules/cases/services/caso-estado.service.ts:673:    // 2. Crear checklist_items por bloque (idempotente - backfill compatible)
+src/modules/cases/services/caso-estado.service.ts:674:    // Cargar bloques del caso (pueden existir de antes o recién creados)
+src/modules/cases/services/caso-estado.service.ts:675:    const bloques = await tx.checklistBloque.findMany({
+src/modules/cases/services/caso-estado.service.ts:677:      select: { id: true, codigo_bloque: true },
+src/modules/cases/services/caso-estado.service.ts:680:    for (const bloque of bloques) {
+src/modules/cases/services/caso-estado.service.ts:681:      // Verificar si el bloque ya tiene items
+src/modules/cases/services/caso-estado.service.ts:682:      const itemsExistentes = await tx.checklistItem.count({
+src/modules/cases/services/caso-estado.service.ts:686:      // Si no tiene items, crear los definidos en ITEMS_CHECKLIST_U008
+src/modules/cases/services/caso-estado.service.ts:687:      if (itemsExistentes === 0) {
+src/modules/cases/services/caso-estado.service.ts:688:        const itemsDefinidos = ITEMS_CHECKLIST_U008[bloque.codigo_bloque] || [];
+src/modules/cases/services/caso-estado.service.ts:689:        for (const item of itemsDefinidos) {
+src/modules/cases/services/caso-estado.service.ts:690:          await tx.checklistItem.create({
+src/modules/cases/services/caso-estado.service.ts:694:              codigo_item: item.codigo,
+src/modules/cases/services/caso-estado.service.ts:696:              marcado: false,
+src/app.module.ts:28:import { ChecklistModule } from './modules/checklist/checklist.module';
+docs/04_api/CONTRATO_API.md:41:| Documento único — representa exactamente un documento por caso | Singular o kebab-case descriptivo | `/strategy`, `/client-briefing`, `/checklist`, `/conclusion`, `/review` |
+docs/04_api/CONTRATO_API.md:73:| `403`  | Autenticado pero sin permiso para esta acción. |
+docs/04_api/CONTRATO_API.md:74:| `404`  | Recurso no encontrado. |
+docs/04_api/CONTRATO_API.md:75:| `409`  | Conflicto de estado — la operación es inválida dado el estado actual del recurso. |
+docs/04_api/CONTRATO_API.md:138:- `403` — Usuario desactivado.
+docs/04_api/CONTRATO_API.md:165:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:185:- `409` — Email ya registrado.
+docs/04_api/CONTRATO_API.md:196:- `403` — Sin acceso.
+docs/04_api/CONTRATO_API.md:197:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:206:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:207:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:320:- `403` — Sin permiso para crear casos.
+docs/04_api/CONTRATO_API.md:321:- `409` — El radicado ya está registrado en el sistema.
+docs/04_api/CONTRATO_API.md:351:- `403` — Sin acceso a este caso.
+docs/04_api/CONTRATO_API.md:352:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:386:- `403` — Sin permiso o no es propietario del caso.
+docs/04_api/CONTRATO_API.md:387:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:388:- `409` — El estado actual no permite edición.
+docs/04_api/CONTRATO_API.md:400:  "estado_destino": "pendiente_revision"
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:410:| `404`  | El caso no existe o no es accesible por el usuario en sesión. |
+docs/04_api/CONTRATO_API.md:411:| `409`  | El estado actual del caso es incompatible con el estado destino solicitado. |
+docs/04_api/CONTRATO_API.md:422:| Operación | `borrador` | `en_analisis` | `pendiente_revision` | `devuelto` | `aprobado_supervisor` / `listo_para_cliente` / `cerrado` |
+docs/04_api/CONTRATO_API.md:425:| `PUT` (escritura) | ❌ `409` | ✅ | ❌ `409` | ✅ | ❌ `409` |
+docs/04_api/CONTRATO_API.md:475:**Dependencia funcional:** Al menos 1 hecho registrado es requisito para la transición `en_analisis → pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones.
+docs/04_api/CONTRATO_API.md:485:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:486:| `404` | Caso o hecho no encontrado |
+docs/04_api/CONTRATO_API.md:570:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:571:| `404` | Caso o prueba no encontrado |
+docs/04_api/CONTRATO_API.md:572:| `409` | Conflicto: hecho no pertenece al mismo caso (en /link) |
+docs/04_api/CONTRATO_API.md:604:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:605:| `404` | Caso o riesgo no encontrado |
+docs/04_api/CONTRATO_API.md:620:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:624:- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:640:**Dependencia funcional:** El campo `linea_principal` es obligatorio para la transición `en_analisis -> pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones, no en este endpoint.
+docs/04_api/CONTRATO_API.md:649:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:650:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:651:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:662:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:666:- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:675:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:676:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:677:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:684:GET  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:685:PUT  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:688:Recurso **jerarquico**: estructura fija de bloques con items.
+docs/04_api/CONTRATO_API.md:690:**Bootstrap:** El checklist se crea automaticamente al activar el caso (transicion `borrador -> en_analisis`). No se auto-crea en `GET`.
+docs/04_api/CONTRATO_API.md:695:  "bloques": [
+docs/04_api/CONTRATO_API.md:698:      "codigo_bloque": "B01",
+docs/04_api/CONTRATO_API.md:701:      "completado": false,
+docs/04_api/CONTRATO_API.md:702:      "items": [
+docs/04_api/CONTRATO_API.md:705:          "codigo_item": "B01_01",
+docs/04_api/CONTRATO_API.md:707:          "marcado": false
+docs/04_api/CONTRATO_API.md:718:  "items": [
+docs/04_api/CONTRATO_API.md:719:    { "id": "uuid-item", "marcado": true },
+docs/04_api/CONTRATO_API.md:720:    { "id": "uuid-item", "marcado": false }
+docs/04_api/CONTRATO_API.md:725:**Recalculo automatico:** Al actualizar items, `bloque.completado` se recalcula como `true` solo si todos sus items estan marcados.
+docs/04_api/CONTRATO_API.md:734:| `403` | Estudiante sin acceso al caso o item de otro caso |
+docs/04_api/CONTRATO_API.md:735:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:745:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:749:- `PUT /conclusion` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:758:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:759:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:760:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:812:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:813:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:834:| `404` | Caso o actuación no encontrada |
+docs/04_api/CONTRATO_API.md:893:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:894:| `404` | Caso o documento no encontrado |
+docs/04_api/CONTRATO_API.md:969:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:970:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1014:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1015:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1030:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1031:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1032:- `404` — Sujeto no encontrado
+docs/04_api/CONTRATO_API.md:1059:- Solo cuando el caso esta en estado `pendiente_revision`
+docs/04_api/CONTRATO_API.md:1081:| `403` | Estudiante sin acceso o perfil insuficiente |
+docs/04_api/CONTRATO_API.md:1082:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1083:| `409` | Caso no esta en estado `pendiente_revision` |
+docs/04_api/CONTRATO_API.md:1112:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1113:| `404` | Caso o informe no encontrado |
+docs/04_api/CONTRATO_API.md:1137:`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+docs/04_api/CONTRATO_API.md:1166:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1167:| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+docs/04_api/CONTRATO_API.md:1168:| `409` | Caso en estado cerrado (no permite consultas IA) |
+docs/04_api/CONTRATO_API.md:1251:| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+docs/04_api/CONTRATO_API.md:1252:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1298:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
