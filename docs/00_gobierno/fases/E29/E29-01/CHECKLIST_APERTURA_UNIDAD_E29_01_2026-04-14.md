@@ -1,0 +1,21 @@
+# CHECKLIST APERTURA UNIDAD E29-01 — 2026-04-14
+
+## 1. Identificación
+- Fase: E29
+- Unidad: E29-01
+- Fecha de apertura: 2026-04-14
+- Estado: ABIERTA
+
+## 2. Objetivo de la unidad
+Realizar un diagnóstico post-E28 para identificar el siguiente frente técnico prioritario del backend LEX_PENAL.
+
+## 3. Alcance
+- Revisar contrato API vigente.
+- Revisar módulos ya endurecidos/cerrados.
+- Identificar frente faltante, incompleto o más rentable.
+- Proponer unidad técnica siguiente con criterio de impacto y costo.
+
+## 4. Criterios de aceptación
+- Existe evidencia diagnóstica reproducible.
+- Existe recomendación explícita del siguiente frente.
+- Queda lista la transición a una unidad técnica posterior.
