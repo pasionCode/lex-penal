@@ -23,7 +23,7 @@ Con las fases previas ya ejecutadas en su respectivo alcance, corresponde habili
 - [x] Fase creada documentalmente
 - [x] Checklist de apertura emitido
 - [x] Baseline inicial emitido
-- [ ] Unidad E35-01 definida
+- [x] Unidad E35-01 definida
 - [ ] Ejecución técnica iniciada
 - [ ] Cierre formal de fase emitido
 
