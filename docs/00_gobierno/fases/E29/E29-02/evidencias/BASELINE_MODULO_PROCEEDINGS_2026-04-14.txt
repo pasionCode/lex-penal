@@ -1,0 +1,610 @@
+=== FECHA ===
+2026-04-14T20:50:11-05:00
+
+=== CONTRATO PROCEEDINGS ===
+799-
+800-| Código | Descripción |
+801-|--------|-------------|
+802-| `200` | Lista paginada obtenida |
+803-| `201` | Entrada creada |
+804-| `400` | Payload inválido (fecha inválida o campo requerido faltante) |
+805-| `401` | No autenticado |
+806-| `403` | Estudiante sin acceso al caso |
+807-| `404` | Caso no encontrado |
+808-
+809----
+810-
+811:#### 5.9 Actuaciones procesales
+812-
+813-```
+814:GET    /api/v1/cases/{caseId}/proceedings
+815:POST   /api/v1/cases/{caseId}/proceedings
+816:GET    /api/v1/cases/{caseId}/proceedings/{proceedingId}
+817-```
+818-
+819-Entidad con **política append-only**. No se permite edición ni eliminación.
+820-
+821-**Respuestas:**
+822-
+823-| Código | Descripción |
+824-|--------|-------------|
+825-| `200` | Lista o detalle de actuaciones |
+826-| `201` | Actuación creada |
+827-| `400` | Payload inválido |
+828-| `404` | Caso o actuación no encontrada |
+829-
+830-> **Nota de implementación (Sprint 13):** Se retiró la exposición de `PUT` y `DELETE`
+831-> para alinear el recurso con la política append-only.
+832-
+833----
+834-
+835-#### 5.10 Documentos del caso
+836-
+837-```
+838-GET    /api/v1/cases/{caseId}/documents
+839-POST   /api/v1/cases/{caseId}/documents
+840-GET    /api/v1/cases/{caseId}/documents/{documentId}
+841-PUT    /api/v1/cases/{caseId}/documents/{documentId}
+842-```
+843-
+844-Recurso **colección con edición limitada**: múltiples documentos por caso, con restricción de mutabilidad.
+845-
+846-**Comportamiento:**
+847-- `GET /documents` lista todos los documentos del caso.
+848-- `POST /documents` registra metadatos de un nuevo documento.
+849-- `GET /documents/:id` obtiene detalle de un documento.
+850-- `PUT /documents/:id` actualiza **solo el campo `descripcion`** (política Sprint 11).
+851-
+852-**Política de inmutabilidad:** Los campos `categoria`, `nombre_original`, `nombre_almacenado`, `ruta`, `mime_type` y `tamanio_bytes` son inmutables después de la creación. Solo `descripcion` es editable vía PUT.
+853-
+854-**Nota:** El recurso implementa solo metadatos, sin subida real de archivos binarios.
+855-
+856-**Campos POST (CreateDocumentDto):**
+857-
+858-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+859-|-------|------|-----------|-------------|-------------|
+860-| `categoria` | enum | - | Sí | Categoría del documento |
+861-| `nombre_original` | string | 255 | Sí | Nombre original del archivo |
+862-| `nombre_almacenado` | string | 255 | Sí | Nombre almacenado en sistema |
+863-| `ruta` | string | 500 | Sí | Ruta de almacenamiento |
+864-| `mime_type` | string | 100 | Sí | Tipo MIME del archivo |
+865-| `tamanio_bytes` | int | - | Sí | Tamaño en bytes (min 1) |
+866-| `descripcion` | string | 1000 | No | Descripción del documento |
+867-
+868-**Enum `categoria`:**
+869-`acusacion`, `defensa`, `cliente`, `actuacion`, `informe`, `evidencia`, `anexo`, `otro`
+870-
+871-**Campos PUT (UpdateDocumentDto):**
+872-
+873-| Campo | Tipo | MaxLength | Obligatorio |
+874-|-------|------|-----------|-------------|
+875-| `descripcion` | string | 1000 | No |
+876-
+877-**Serialización:** El campo `tamanio_bytes` se persiste como BigInt y se serializa como Number en las respuestas JSON.
+878-
+879-**Respuestas:**
+880-
+881-| Código | Descripción |
+882-|--------|-------------|
+883-| `200` | Lista obtenida, detalle obtenido o descripción actualizada |
+884-| `201` | Documento registrado |
+885-| `400` | Payload inválido (campo requerido faltante o valor fuera de rango) |
+886-| `401` | No autenticado |
+887-| `403` | Estudiante sin acceso al caso |
+888-| `404` | Caso o documento no encontrado |
+889-
+890----
+891-
+892-### 6. Sujetos procesales
+893-
+894-Entidad con **política append-only**. No se permite edición ni eliminación.
+895-
+896-#### 6.1 Listar sujetos de un caso
+897-```
+898-GET /api/v1/cases/{caseId}/subjects
+899-Authorization: Bearer {token}
+900-```
+901-
+902-**Parámetros de query:**
+903-
+904-| Parámetro | Tipo | Default | Descripción |
+905-|-----------|------|---------|-------------|
+906-| `page` | number | 1 | Página actual (1-indexed) |
+907-| `per_page` | number | 20 | Elementos por página (1-100) |
+908-| `tipo` | enum | — | Filtra por tipo de sujeto procesal |
+909-| `nombre` | string | — | Filtra por coincidencia parcial case-insensitive en `nombre` |
+910-| `identificacion` | string | — | Filtra por coincidencia exacta en `identificacion` |
+911-| `tipo_identificacion` | enum | — | Filtra por coincidencia exacta en `tipo_identificacion` |
+912-
+913-**Valores válidos de `tipo`:** `victima`, `imputado`, `testigo`, `apoderado`, `otro`
+914-
+915-**Valores válidos de `tipo_identificacion`:** `CC`, `TI`, `CE`, `PAS`, `NIT`, `otro`
+916-
+917-#### Reglas de comportamiento
+918-- Los filtros se aplican antes de la paginación.
+919-- `tipo`, `nombre`, `identificacion` y `tipo_identificacion` pueden combinarse entre sí.
+920-- `nombre` aplica búsqueda parcial case-insensitive.
+921-- `identificacion` aplica comparación exacta.
+922-- `tipo_identificacion` aplica comparación exacta.
+923-- Si no hay coincidencias, la respuesta es `200 OK` con `data: []` y `total: 0`.
+924-- Si `tipo` es inválido, la respuesta es `400 Bad Request`.
+925-- Si `nombre` es vacío o contiene solo espacios, la respuesta es `400 Bad Request`.
+926-- Si `identificacion` es vacía o contiene solo espacios, la respuesta es `400 Bad Request`.
+927-- Si `tipo_identificacion` es inválido, la respuesta es `400 Bad Request`.
+928-- Si `tipo_identificacion` es vacío, la respuesta es `400 Bad Request`.
+929-- Estudiante: solo puede consultar sujetos de sus propios casos.
+930-- Supervisor y Administrador: acceso permitido según autenticación válida.
+931-
+932-**Respuesta exitosa:** `200 OK`
+933-```json
+934-{
+935-  "data": [
+936-    {
+
+=== ARCHIVOS MODULO PROCEEDINGS ===
+src/modules/proceedings/dto/create-proceeding.dto.ts
+src/modules/proceedings/dto/update-proceeding.dto.ts
+src/modules/proceedings/proceedings.controller.ts
+src/modules/proceedings/proceedings.module.ts
+src/modules/proceedings/proceedings.repository.ts
+src/modules/proceedings/proceedings.service.ts
+
+=== CONTENIDO CONTROLLER ===
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ProceedingsService } from './proceedings.service';
+import { CreateProceedingDto } from './dto/create-proceeding.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { PerfilUsuario } from '../../types/enums';
+
+/**
+ * Actuaciones procesales del caso — Política Append-Only (Sprint 13)
+ * 
+ * GET    /api/v1/cases/:caseId/proceedings              → Listar
+ * POST   /api/v1/cases/:caseId/proceedings              → Crear
+ * GET    /api/v1/cases/:caseId/proceedings/:proceedingId → Detalle
+ * 
+ * PUT y DELETE removidos por política append-only.
+ */
+@Controller('cases/:caseId/proceedings')
+@UseGuards(JwtAuthGuard)
+export class ProceedingsController {
+  constructor(private readonly service: ProceedingsService) {}
+
+  @Get()
+  async findAll(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findAll(caseId, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Post()
+  async create(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Body() dto: CreateProceedingDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.create(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+  }
+
+  @Get(':proceedingId')
+  async findOne(
+    @Param('caseId', ParseUUIDPipe) caseId: string,
+    @Param('proceedingId', ParseUUIDPipe) proceedingId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.findOne(caseId, proceedingId, user.sub, user.perfil as PerfilUsuario);
+  }
+}
+
+=== CONTENIDO SERVICE ===
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Actuacion } from '@prisma/client';
+import { ProceedingsRepository } from './proceedings.repository';
+import { CreateProceedingDto } from './dto/create-proceeding.dto';
+import { UpdateProceedingDto } from './dto/update-proceeding.dto';
+import { PerfilUsuario } from '../../types/enums';
+
+@Injectable()
+export class ProceedingsService {
+  constructor(private readonly repository: ProceedingsRepository) {}
+
+  async findAll(
+    caseId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Actuacion[]> {
+    await this.validateCaseAccess(caseId, userId, perfil);
+    return this.repository.findAllByCaseId(caseId);
+  }
+
+  async findOne(
+    caseId: string,
+    proceedingId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Actuacion> {
+    await this.validateCaseAccess(caseId, userId, perfil);
+    const proceeding = await this.repository.findById(proceedingId);
+    if (!proceeding || proceeding.caso_id !== caseId) {
+      throw new NotFoundException(`Actuación ${proceedingId} no encontrada`);
+    }
+    return proceeding;
+  }
+
+  async create(
+    caseId: string,
+    dto: CreateProceedingDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Actuacion> {
+    await this.validateCaseAccess(caseId, userId, perfil);
+
+    return this.repository.create({
+      caso_id: caseId,
+      descripcion: dto.descripcion,
+      fecha: dto.fecha ? new Date(dto.fecha) : undefined,
+      responsable_id: dto.responsable_id,
+      responsable_externo: dto.responsable_externo,
+      completada: dto.completada ?? false,
+      creado_por: userId,
+    });
+  }
+
+  async update(
+    caseId: string,
+    proceedingId: string,
+    dto: UpdateProceedingDto,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Actuacion> {
+    await this.validateCaseAccess(caseId, userId, perfil);
+
+    const existing = await this.repository.findById(proceedingId);
+    if (!existing || existing.caso_id !== caseId) {
+      throw new NotFoundException(`Actuación ${proceedingId} no encontrada`);
+    }
+
+    return this.repository.update(proceedingId, {
+      descripcion: dto.descripcion,
+      fecha: dto.fecha ? new Date(dto.fecha) : undefined,
+      responsable_id: dto.responsable_id,
+      responsable_externo: dto.responsable_externo,
+      completada: dto.completada,
+      actualizado_por: userId,
+    });
+  }
+
+  async remove(
+    caseId: string,
+    proceedingId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<Actuacion> {
+    await this.validateCaseAccess(caseId, userId, perfil);
+
+    const existing = await this.repository.findById(proceedingId);
+    if (!existing || existing.caso_id !== caseId) {
+      throw new NotFoundException(`Actuación ${proceedingId} no encontrada`);
+    }
+
+    return this.repository.delete(proceedingId);
+  }
+
+  private async validateCaseAccess(
+    caseId: string,
+    userId: string,
+    perfil: PerfilUsuario,
+  ): Promise<void> {
+    const exists = await this.repository.caseExists(caseId);
+    if (!exists) {
+      throw new NotFoundException(`Caso ${caseId} no encontrado`);
+    }
+
+    if (perfil === PerfilUsuario.ESTUDIANTE) {
+      const responsable = await this.repository.getCaseResponsable(caseId);
+      if (responsable !== userId) {
+        throw new ForbiddenException('Sin acceso a este caso');
+      }
+    }
+  }
+}
+
+=== CONTENIDO REPOSITORY ===
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+import { Actuacion } from '@prisma/client';
+
+@Injectable()
+export class ProceedingsRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAllByCaseId(caseId: string): Promise<Actuacion[]> {
+    return this.prisma.actuacion.findMany({
+      where: { caso_id: caseId },
+      orderBy: { fecha: 'asc' },
+    });
+  }
+
+  async findById(id: string): Promise<Actuacion | null> {
+    return this.prisma.actuacion.findUnique({
+      where: { id },
+    });
+  }
+
+  async create(data: {
+    caso_id: string;
+    descripcion: string;
+    fecha?: Date;
+    responsable_id?: string;
+    responsable_externo?: string;
+    completada: boolean;
+    creado_por: string;
+  }): Promise<Actuacion> {
+    return this.prisma.actuacion.create({ data });
+  }
+
+  async update(
+    id: string,
+    data: {
+      descripcion?: string;
+      fecha?: Date;
+      responsable_id?: string;
+      responsable_externo?: string;
+      completada?: boolean;
+      actualizado_por: string;
+    },
+  ): Promise<Actuacion> {
+    return this.prisma.actuacion.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async delete(id: string): Promise<Actuacion> {
+    return this.prisma.actuacion.delete({
+      where: { id },
+    });
+  }
+
+  async caseExists(caseId: string): Promise<boolean> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: caseId },
+      select: { id: true },
+    });
+    return caso !== null;
+  }
+
+  async getCaseResponsable(caseId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: caseId },
+      select: { responsable_id: true },
+    });
+    return caso?.responsable_id ?? null;
+  }
+}
+
+=== REFERENCIAS PROCEEDINGS ===
+src/modules/proceedings/dto/create-proceeding.dto.ts:14: * POST /api/v1/cases/:caseId/proceedings
+src/modules/proceedings/dto/update-proceeding.dto.ts:12: * PUT /api/v1/cases/:caseId/proceedings/:proceedingId
+src/modules/proceedings/proceedings.controller.ts:10:import { ProceedingsService } from './proceedings.service';
+src/modules/proceedings/proceedings.controller.ts:11:import { CreateProceedingDto } from './dto/create-proceeding.dto';
+src/modules/proceedings/proceedings.controller.ts:20: * GET    /api/v1/cases/:caseId/proceedings              → Listar
+src/modules/proceedings/proceedings.controller.ts:21: * POST   /api/v1/cases/:caseId/proceedings              → Crear
+src/modules/proceedings/proceedings.controller.ts:22: * GET    /api/v1/cases/:caseId/proceedings/:proceedingId → Detalle
+src/modules/proceedings/proceedings.controller.ts:26:@Controller('cases/:caseId/proceedings')
+src/modules/proceedings/proceedings.controller.ts:33:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/proceedings/proceedings.controller.ts:36:    return this.service.findAll(caseId, user.sub, user.perfil as PerfilUsuario);
+src/modules/proceedings/proceedings.controller.ts:40:  async create(
+src/modules/proceedings/proceedings.controller.ts:41:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/proceedings/proceedings.controller.ts:45:    return this.service.create(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+src/modules/proceedings/proceedings.controller.ts:48:  @Get(':proceedingId')
+src/modules/proceedings/proceedings.controller.ts:49:  async findOne(
+src/modules/proceedings/proceedings.controller.ts:50:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/proceedings/proceedings.controller.ts:51:    @Param('proceedingId', ParseUUIDPipe) proceedingId: string,
+src/modules/proceedings/proceedings.controller.ts:54:    return this.service.findOne(caseId, proceedingId, user.sub, user.perfil as PerfilUsuario);
+src/modules/proceedings/proceedings.module.ts:2:import { ProceedingsController } from './proceedings.controller';
+src/modules/proceedings/proceedings.module.ts:3:import { ProceedingsService } from './proceedings.service';
+src/modules/proceedings/proceedings.module.ts:4:import { ProceedingsRepository } from './proceedings.repository';
+src/modules/proceedings/proceedings.repository.ts:9:  async findAllByCaseId(caseId: string): Promise<Actuacion[]> {
+src/modules/proceedings/proceedings.repository.ts:11:      where: { caso_id: caseId },
+src/modules/proceedings/proceedings.repository.ts:22:  async create(data: {
+src/modules/proceedings/proceedings.repository.ts:31:    return this.prisma.actuacion.create({ data });
+src/modules/proceedings/proceedings.repository.ts:57:  async caseExists(caseId: string): Promise<boolean> {
+src/modules/proceedings/proceedings.repository.ts:59:      where: { id: caseId },
+src/modules/proceedings/proceedings.repository.ts:65:  async getCaseResponsable(caseId: string): Promise<string | null> {
+src/modules/proceedings/proceedings.repository.ts:67:      where: { id: caseId },
+src/modules/proceedings/proceedings.service.ts:7:import { ProceedingsRepository } from './proceedings.repository';
+src/modules/proceedings/proceedings.service.ts:8:import { CreateProceedingDto } from './dto/create-proceeding.dto';
+src/modules/proceedings/proceedings.service.ts:17:    caseId: string,
+src/modules/proceedings/proceedings.service.ts:21:    await this.validateCaseAccess(caseId, userId, perfil);
+src/modules/proceedings/proceedings.service.ts:22:    return this.repository.findAllByCaseId(caseId);
+src/modules/proceedings/proceedings.service.ts:25:  async findOne(
+src/modules/proceedings/proceedings.service.ts:26:    caseId: string,
+src/modules/proceedings/proceedings.service.ts:27:    proceedingId: string,
+src/modules/proceedings/proceedings.service.ts:31:    await this.validateCaseAccess(caseId, userId, perfil);
+src/modules/proceedings/proceedings.service.ts:32:    const proceeding = await this.repository.findById(proceedingId);
+src/modules/proceedings/proceedings.service.ts:33:    if (!proceeding || proceeding.caso_id !== caseId) {
+src/modules/proceedings/proceedings.service.ts:34:      throw new NotFoundException(`Actuación ${proceedingId} no encontrada`);
+src/modules/proceedings/proceedings.service.ts:39:  async create(
+src/modules/proceedings/proceedings.service.ts:40:    caseId: string,
+src/modules/proceedings/proceedings.service.ts:45:    await this.validateCaseAccess(caseId, userId, perfil);
+src/modules/proceedings/proceedings.service.ts:47:    return this.repository.create({
+src/modules/proceedings/proceedings.service.ts:48:      caso_id: caseId,
+src/modules/proceedings/proceedings.service.ts:59:    caseId: string,
+src/modules/proceedings/proceedings.service.ts:60:    proceedingId: string,
+src/modules/proceedings/proceedings.service.ts:65:    await this.validateCaseAccess(caseId, userId, perfil);
+src/modules/proceedings/proceedings.service.ts:67:    const existing = await this.repository.findById(proceedingId);
+src/modules/proceedings/proceedings.service.ts:68:    if (!existing || existing.caso_id !== caseId) {
+src/modules/proceedings/proceedings.service.ts:69:      throw new NotFoundException(`Actuación ${proceedingId} no encontrada`);
+src/modules/proceedings/proceedings.service.ts:72:    return this.repository.update(proceedingId, {
+src/modules/proceedings/proceedings.service.ts:83:    caseId: string,
+src/modules/proceedings/proceedings.service.ts:84:    proceedingId: string,
+src/modules/proceedings/proceedings.service.ts:88:    await this.validateCaseAccess(caseId, userId, perfil);
+src/modules/proceedings/proceedings.service.ts:90:    const existing = await this.repository.findById(proceedingId);
+src/modules/proceedings/proceedings.service.ts:91:    if (!existing || existing.caso_id !== caseId) {
+src/modules/proceedings/proceedings.service.ts:92:      throw new NotFoundException(`Actuación ${proceedingId} no encontrada`);
+src/modules/proceedings/proceedings.service.ts:95:    return this.repository.delete(proceedingId);
+src/modules/proceedings/proceedings.service.ts:99:    caseId: string,
+src/modules/proceedings/proceedings.service.ts:103:    const exists = await this.repository.caseExists(caseId);
+src/modules/proceedings/proceedings.service.ts:105:      throw new NotFoundException(`Caso ${caseId} no encontrado`);
+src/modules/proceedings/proceedings.service.ts:109:      const responsable = await this.repository.getCaseResponsable(caseId);
+src/modules/cases/cases.controller.ts:12:import { CreateCaseDto } from './dto/create-case.dto';
+src/modules/cases/cases.controller.ts:52:  async create(
+src/modules/cases/cases.controller.ts:56:    return this.service.create(dto, userId);
+src/modules/cases/cases.controller.ts:63:  async findOne(
+src/modules/cases/cases.controller.ts:67:    return this.service.findOne(id, user.sub, user.perfil as PerfilUsuario);
+src/modules/cases/cases.repository.ts:16:  async create(data: Prisma.CasoCreateInput): Promise<Caso> {
+src/modules/cases/cases.repository.ts:17:    return this.prisma.caso.create({ data });
+src/modules/cases/cases.service.ts:3:  ConflictException,
+src/modules/cases/cases.service.ts:10:import { CreateCaseDto } from './dto/create-case.dto';
+src/modules/cases/cases.service.ts:32:  async create(dto: CreateCaseDto, userId: string): Promise<Caso> {
+src/modules/cases/cases.service.ts:40:      throw new ConflictException(`El radicado ${dto.radicado} ya está registrado en el sistema`);
+src/modules/cases/cases.service.ts:43:    return this.repository.create({
+src/modules/cases/cases.service.ts:64:  async findOne(id: string, userId: string, perfil: PerfilUsuario): Promise<Caso> {
+src/modules/cases/cases.service.ts:78:      throw new ConflictException(
+src/modules/cases/dto/transition-state.dto.ts:8: * 409: la transición no existe desde el estado actual.
+src/modules/cases/services/caso-estado.service.ts:28:  ConflictException,
+src/modules/cases/services/caso-estado.service.ts:87:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:88:   * @throws ForbiddenException (403) si el perfil no tiene permiso
+src/modules/cases/services/caso-estado.service.ts:89:   * @throws ConflictException (409) si la transición no es válida desde el estado actual
+src/modules/cases/services/caso-estado.service.ts:121:      throw new ConflictException({
+src/modules/cases/services/caso-estado.service.ts:197:      await tx.eventoAuditoria.create({
+src/modules/cases/services/caso-estado.service.ts:224:   * - Si el caso no existe: lanza NotFoundException (404)
+src/modules/cases/services/caso-estado.service.ts:225:   * - Si el estado bloquea escritura: lanza ConflictException (409)
+src/modules/cases/services/caso-estado.service.ts:228:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:229:   * @throws ConflictException (409) si el estado no permite escritura
+src/modules/cases/services/caso-estado.service.ts:247:      throw new ConflictException({
+src/modules/cases/services/caso-estado.service.ts:661:        await tx.checklistBloque.create({
+src/modules/cases/services/caso-estado.service.ts:690:          await tx.checklistItem.create({
+src/modules/cases/services/caso-estado.service.ts:709:      await tx.estrategia.create({
+src/modules/cases/services/caso-estado.service.ts:723:      await tx.explicacionCliente.create({
+src/modules/cases/services/caso-estado.service.ts:737:      await tx.conclusionOperativa.create({
+docs/04_api/CONTRATO_API.md:43:Esta convención aplica a todos los subrecursos de `/api/v1/cases/{caseId}/*`.
+docs/04_api/CONTRATO_API.md:73:| `403`  | Autenticado pero sin permiso para esta acción. |
+docs/04_api/CONTRATO_API.md:74:| `404`  | Recurso no encontrado. |
+docs/04_api/CONTRATO_API.md:75:| `409`  | Conflicto de estado — la operación es inválida dado el estado actual del recurso. |
+docs/04_api/CONTRATO_API.md:138:- `403` — Usuario desactivado.
+docs/04_api/CONTRATO_API.md:165:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:185:- `409` — Email ya registrado.
+docs/04_api/CONTRATO_API.md:196:- `403` — Sin acceso.
+docs/04_api/CONTRATO_API.md:197:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:206:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:207:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:320:- `403` — Sin permiso para crear casos.
+docs/04_api/CONTRATO_API.md:321:- `409` — El radicado ya está registrado en el sistema.
+docs/04_api/CONTRATO_API.md:325:#### `GET /api/v1/cases/{caseId}`
+docs/04_api/CONTRATO_API.md:346:La ficha básica del caso se consulta oficialmente a través del agregado raíz `GET /api/v1/cases/{caseId}`.
+docs/04_api/CONTRATO_API.md:347:No existe el subrecurso `GET /api/v1/cases/{caseId}/basic-info`.
+docs/04_api/CONTRATO_API.md:351:- `403` — Sin acceso a este caso.
+docs/04_api/CONTRATO_API.md:352:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:356:#### `PUT /api/v1/cases/{caseId}`
+docs/04_api/CONTRATO_API.md:362:La ficha básica del caso se actualiza oficialmente a través del agregado raíz `PUT /api/v1/cases/{caseId}`.
+docs/04_api/CONTRATO_API.md:363:No existe el subrecurso `PUT /api/v1/cases/{caseId}/basic-info`.
+docs/04_api/CONTRATO_API.md:386:- `403` — Sin permiso o no es propietario del caso.
+docs/04_api/CONTRATO_API.md:387:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:388:- `409` — El estado actual no permite edición.
+docs/04_api/CONTRATO_API.md:394:#### `POST /api/v1/cases/{caseId}/transition`
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:410:| `404`  | El caso no existe o no es accesible por el usuario en sesión. |
+docs/04_api/CONTRATO_API.md:411:| `409`  | El estado actual del caso es incompatible con el estado destino solicitado. |
+docs/04_api/CONTRATO_API.md:425:| `PUT` (escritura) | ❌ `409` | ✅ | ❌ `409` | ✅ | ❌ `409` |
+docs/04_api/CONTRATO_API.md:439:- `POST /facts` y `PUT /facts/:id` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:480:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:481:| `404` | Caso o hecho no encontrado |
+docs/04_api/CONTRATO_API.md:482:| `409` | El estado actual del caso no permite crear o modificar hechos |
+docs/04_api/CONTRATO_API.md:497:- `POST /evidence`, `PUT /evidence/:id`, `PATCH /link` y `PATCH /unlink` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:503:**Nota:** El DTO de creación incluye `hecho_id` como campo opcional. Si se suministra en `POST`, debe pertenecer al mismo caso; si no, retorna `409`. Para relink/unlink posterior, usar los endpoints PATCH.
+docs/04_api/CONTRATO_API.md:559:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:560:| `404` | Caso o prueba no encontrado |
+docs/04_api/CONTRATO_API.md:561:| `409` | Conflicto: hecho no pertenece al mismo caso o el estado actual no permite escritura |
+docs/04_api/CONTRATO_API.md:565:POST   /api/v1/cases/{caseId}/risks
+docs/04_api/CONTRATO_API.md:566:GET    /api/v1/cases/{caseId}/risks
+docs/04_api/CONTRATO_API.md:567:GET    /api/v1/cases/{caseId}/risks/{riskId}
+docs/04_api/CONTRATO_API.md:568:PUT    /api/v1/cases/{caseId}/risks/{riskId}
+docs/04_api/CONTRATO_API.md:576:- En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:597:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:598:| `404` | Caso o riesgo no encontrado |
+docs/04_api/CONTRATO_API.md:599:| `409` | El estado actual del caso no permite crear o modificar riesgos |
+docs/04_api/CONTRATO_API.md:605:GET  /api/v1/cases/{caseId}/strategy
+docs/04_api/CONTRATO_API.md:606:PUT  /api/v1/cases/{caseId}/strategy
+docs/04_api/CONTRATO_API.md:614:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:618:- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:643:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:644:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:645:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:656:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:660:- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:669:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:670:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:671:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:678:GET  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:679:PUT  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:728:| `403` | Estudiante sin acceso al caso o item de otro caso |
+docs/04_api/CONTRATO_API.md:729:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:739:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:743:- `PUT /conclusion` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:752:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:753:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:754:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:760:GET  /api/v1/cases/{caseId}/timeline
+docs/04_api/CONTRATO_API.md:761:POST /api/v1/cases/{caseId}/timeline
+docs/04_api/CONTRATO_API.md:806:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:807:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:814:GET    /api/v1/cases/{caseId}/proceedings
+docs/04_api/CONTRATO_API.md:815:POST   /api/v1/cases/{caseId}/proceedings
+docs/04_api/CONTRATO_API.md:816:GET    /api/v1/cases/{caseId}/proceedings/{proceedingId}
+docs/04_api/CONTRATO_API.md:828:| `404` | Caso o actuación no encontrada |
+docs/04_api/CONTRATO_API.md:838:GET    /api/v1/cases/{caseId}/documents
+docs/04_api/CONTRATO_API.md:839:POST   /api/v1/cases/{caseId}/documents
+docs/04_api/CONTRATO_API.md:840:GET    /api/v1/cases/{caseId}/documents/{documentId}
+docs/04_api/CONTRATO_API.md:841:PUT    /api/v1/cases/{caseId}/documents/{documentId}
+docs/04_api/CONTRATO_API.md:887:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:888:| `404` | Caso o documento no encontrado |
+docs/04_api/CONTRATO_API.md:898:GET /api/v1/cases/{caseId}/subjects
+docs/04_api/CONTRATO_API.md:963:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:964:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:972:POST /api/v1/cases/{caseId}/subjects
+docs/04_api/CONTRATO_API.md:1008:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1009:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1016:GET /api/v1/cases/{caseId}/subjects/{subjectId}
+docs/04_api/CONTRATO_API.md:1024:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1025:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1026:- `404` — Sujeto no encontrado
+docs/04_api/CONTRATO_API.md:1037:#### `GET /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1042:#### `GET /api/v1/cases/{caseId}/review/feedback`
+docs/04_api/CONTRATO_API.md:1048:#### `POST /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1075:| `403` | Estudiante sin acceso o perfil insuficiente |
+docs/04_api/CONTRATO_API.md:1076:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1077:| `409` | Caso no esta en estado `pendiente_revision` |
+docs/04_api/CONTRATO_API.md:1082:#### `GET /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1085:#### `POST /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1095:#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+docs/04_api/CONTRATO_API.md:1106:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1107:| `404` | Caso o informe no encontrado |
+docs/04_api/CONTRATO_API.md:1160:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1161:| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+docs/04_api/CONTRATO_API.md:1162:| `409` | Caso en estado cerrado (no permite consultas IA) |
+docs/04_api/CONTRATO_API.md:1169:#### `GET /api/v1/cases/{caseId}/audit`
+docs/04_api/CONTRATO_API.md:1245:| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+docs/04_api/CONTRATO_API.md:1246:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1290:| E5-22 | 2026-03-28 | Corrección contractual de `basic-info`: se elimina la referencia residual al subrecurso y se explicita que la ficha básica se consulta y actualiza vía `GET/PUT /api/v1/cases/{caseId}`. |
+docs/04_api/CONTRATO_API.md:1292:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
+docs/04_api/CONTRATO_API.md:1293:| 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
+docs/04_api/CONTRATO_API.md:1295:| 14 | 2026-03-27 | Hardening de validaciones en `proceedings` |
+docs/04_api/CONTRATO_API.md:1296:| 13 | 2026-03-26 | Política append-only para `proceedings`, removidos PUT/DELETE |

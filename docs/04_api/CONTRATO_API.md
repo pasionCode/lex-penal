@@ -825,6 +825,8 @@ Entidad con **política append-only**. No se permite edición ni eliminación.
 | `200` | Lista o detalle de actuaciones |
 | `201` | Actuación creada |
 | `400` | Payload inválido |
+| `401` | No autenticado |
+| `403` | Estudiante sin acceso al caso |
 | `404` | Caso o actuación no encontrada |
 
 > **Nota de implementación (Sprint 13):** Se retiró la exposición de `PUT` y `DELETE`

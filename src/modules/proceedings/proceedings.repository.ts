@@ -31,29 +31,6 @@ export class ProceedingsRepository {
     return this.prisma.actuacion.create({ data });
   }
 
-  async update(
-    id: string,
-    data: {
-      descripcion?: string;
-      fecha?: Date;
-      responsable_id?: string;
-      responsable_externo?: string;
-      completada?: boolean;
-      actualizado_por: string;
-    },
-  ): Promise<Actuacion> {
-    return this.prisma.actuacion.update({
-      where: { id },
-      data,
-    });
-  }
-
-  async delete(id: string): Promise<Actuacion> {
-    return this.prisma.actuacion.delete({
-      where: { id },
-    });
-  }
-
   async caseExists(caseId: string): Promise<boolean> {
     const caso = await this.prisma.caso.findUnique({
       where: { id: caseId },
