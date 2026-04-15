@@ -1,0 +1,588 @@
+=== FECHA ===
+2026-04-14T19:50:50-05:00
+
+=== CONTRATO EVIDENCE ===
+477-| `201` | Hecho creado |
+478-| `400` | Payload inválido (campo requerido faltante o enum inválido) |
+479-| `401` | No autenticado |
+480-| `403` | Estudiante sin acceso al caso |
+481-| `404` | Caso o hecho no encontrado |
+482-| `409` | El estado actual del caso no permite crear o modificar hechos |
+483----
+484-
+485:#### 5.2 Pruebas del caso
+486-
+487-```
+488:POST   /api/v1/cases/{caseId}/evidence
+489:GET    /api/v1/cases/{caseId}/evidence
+490:GET    /api/v1/cases/{caseId}/evidence/{evidenceId}
+491:PUT    /api/v1/cases/{caseId}/evidence/{evidenceId}
+492:PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/link
+493:PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/unlink
+494-```
+495-
+496-Recurso **colección editable sin DELETE**: múltiples pruebas por caso, con capacidad de vincular/desvincular a hechos.
+497-
+498-**Comportamiento:**
+499-- `POST /evidence` crea una prueba.
+500-- `GET /evidence` lista todas las pruebas del caso.
+501-- `GET /evidence/:id` obtiene detalle de una prueba.
+502-- `PUT /evidence/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+503-- `PATCH /evidence/:id/link` vincula la prueba a un hecho del mismo caso.
+504-- `PATCH /evidence/:id/unlink` desvincula la prueba del hecho asociado.
+505-
+506-**Vínculo con hechos:**
+507-
+508-El campo `hecho_id` se gestiona exclusivamente mediante los endpoints `/link` y `/unlink`, no mediante PUT. El hecho debe pertenecer al mismo caso; intentar vincular a un hecho de otro caso retorna error.
+509-
+510-**Nota:** El DTO de creación incluye `hecho_id` como campo opcional, pero el comportamiento validado en runtime es el vínculo/desvínculo por PATCH.
+511-
+512-**Enums válidos:**
+513-
+514-| Enum | Valores |
+515-|------|---------|
+516-| `TipoPrueba` | `testimonial`, `documental`, `pericial`, `real`, `otro` |
+517-| `EvaluacionProbatoria` | `ok`, `cuestionable`, `deficiente` |
+518-
+519-**Campos POST (CreateEvidenceDto):**
+520-
+521-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+522-|-------|------|-----------|-------------|-------------|
+523-| `descripcion` | string | 2000 | Sí | Descripción de la prueba |
+524-| `tipo_prueba` | enum | - | Sí | Tipo de prueba |
+525-| `hecho_id` | UUID | - | No | (Presente en DTO, usar /link para vincular) |
+526-| `hecho_descripcion_libre` | string | 500 | No | Descripción libre del hecho que soporta |
+527-| `licitud` | enum | - | Sí | Evaluación de licitud |
+528-| `legalidad` | enum | - | Sí | Evaluación de legalidad |
+529-| `suficiencia` | enum | - | Sí | Evaluación de suficiencia |
+530-| `credibilidad` | enum | - | Sí | Evaluación de credibilidad |
+531-| `posicion_defensiva` | string | 1000 | No | Posición defensiva respecto a la prueba |
+532-
+533-**Campos PUT (UpdateEvidenceDto):**
+534-
+535-Todos los campos son opcionales. Solo se actualizan los campos presentes en el payload.
+536-
+537-| Campo | Tipo | MaxLength |
+538-|-------|------|-----------|
+539-| `descripcion` | string | 2000 |
+540-| `tipo_prueba` | enum | - |
+541-| `hecho_descripcion_libre` | string | 500 |
+542-| `licitud` | enum | - |
+543-| `legalidad` | enum | - |
+544-| `suficiencia` | enum | - |
+545-| `credibilidad` | enum | - |
+546-| `posicion_defensiva` | string | 1000 |
+547-
+548-**Nota:** `hecho_id` no se puede modificar mediante PUT. Usar `/link` y `/unlink`.
+549-
+550-**Campos PATCH /link (LinkEvidenceDto):**
+551-
+552-| Campo | Tipo | Obligatorio | Descripción |
+553-|-------|------|-------------|-------------|
+554-| `hecho_id` | UUID | Sí | ID del hecho al que vincular (debe ser del mismo caso) |
+555-
+556-**PATCH /unlink:** No requiere body.
+557-
+558-**Respuestas:**
+559-
+560-| Código | Descripción |
+561-|--------|-------------|
+562-| `200` | Lista, detalle, prueba actualizada, vinculada o desvinculada |
+563-| `201` | Prueba creada |
+564-| `400` | Payload inválido (enum incorrecto, campo requerido faltante) |
+565-| `401` | No autenticado |
+566-| `403` | Estudiante sin acceso al caso |
+567-| `404` | Caso o prueba no encontrado |
+568-| `409` | Conflicto: hecho no pertenece al mismo caso (en /link) |
+569----
+570-
+571-#### 5.3 Riesgos del caso
+572-```
+573-POST   /api/v1/cases/{caseId}/risks
+574-GET    /api/v1/cases/{caseId}/risks
+575-GET    /api/v1/cases/{caseId}/risks/{riskId}
+576-PUT    /api/v1/cases/{caseId}/risks/{riskId}
+577-```
+578-
+579-Coleccion editable sin DELETE expuesto.
+580-
+581-**Enums validos:**
+582-
+583-| Campo | Valores |
+584-|-------|---------|
+585-| `probabilidad` | `alta`, `media`, `baja` |
+586-| `impacto` | `alto`, `medio`, `bajo` |
+587-| `prioridad` | `critica`, `alta`, `media`, `baja` |
+588-| `estado_mitigacion` | `pendiente`, `en_curso`, `mitigado`, `aceptado` |
+589-
+590-**Regla de negocio:** Si `prioridad = critica`, el campo `estrategia_mitigacion` es obligatorio.
+591-
+592-**Respuestas:**
+593-
+594-| Codigo | Descripcion |
+595-|--------|-------------|
+596-| `200` | Lista o detalle de riesgos, o riesgo actualizado |
+597-| `201` | Riesgo creado |
+598-| `400` | Payload invalido o prioridad critica sin estrategia |
+599-| `401` | No autenticado |
+600-| `403` | Estudiante sin acceso al caso |
+601-| `404` | Caso o riesgo no encontrado |
+602----
+603-
+604-#### 5.4 Estrategia de defensa
+605-
+606-```
+607-GET  /api/v1/cases/{caseId}/strategy
+608-PUT  /api/v1/cases/{caseId}/strategy
+609-```
+610-
+611-Recurso **singleton**: existe exactamente una instancia de estrategia por cada caso.
+612-
+613-**Comportamiento especial:**
+614-- Si `GET /strategy` se invoca y no existe aún una estrategia para el caso:
+615-  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+616-  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+617-- Si `GET /strategy` se invoca y ya existe la estrategia, retorna el recurso sin importar el estado del caso (200).
+618-- `PUT /strategy` actualiza la estrategia existente del caso.
+619-- Si `PUT /strategy` se invoca y no existe aún estrategia, el sistema la crea con los datos suministrados.
+620-- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+621-
+622-**Campos:**
+623-
+624-| Campo | Tipo | MaxLength | Descripción |
+625-|-------|------|-----------|-------------|
+626-| `linea_principal` | string | 2000 | Línea defensiva principal |
+627-| `fundamento_juridico` | string | 3000 | Fundamento jurídico de la defensa |
+628-| `fundamento_probatorio` | string | 3000 | Fundamento probatorio |
+629-| `linea_subsidiaria` | string | 2000 | Línea defensiva subsidiaria |
+630-| `posicion_allanamiento` | string | 1000 | Posición frente a allanamiento |
+631-| `posicion_preacuerdo` | string | 1000 | Posición frente a preacuerdo |
+632-| `posicion_juicio` | string | 1000 | Posición frente a juicio |
+633-
+634-Todos los campos son opcionales en `PUT`.
+635-
+636-**Dependencia funcional:** El campo `linea_principal` es obligatorio para la transición `en_analisis -> pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones, no en este endpoint.
+637-
+638-**Respuestas:**
+639-
+640-| Código | Descripción |
+641-|--------|-------------|
+642-| `200` | Estrategia obtenida, auto-creada o actualizada correctamente |
+643-| `400` | Payload inválido o incumplimiento de validaciones del DTO en `PUT` |
+644-| `401` | No autenticado |
+645-| `403` | Estudiante sin acceso al caso |
+646-| `404` | Caso no encontrado |
+647-| `409` | El estado actual del caso no permite auto-creación o modificación |
+648-
+649----
+650-
+651-#### 5.5 Explicación al cliente
+652-
+653-Recurso **singleton**: existe exactamente una explicación al cliente por caso.
+654-
+655-**Comportamiento especial:**
+656-- Si `GET /client-briefing` se invoca y no existe aún una explicación para el caso:
+657-  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+658-  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+659-- Si `GET /client-briefing` se invoca y ya existe la explicación, retorna el recurso sin importar el estado del caso (200).
+660-- `PUT /client-briefing` actualiza la explicación existente del caso.
+661-- Si `PUT /client-briefing` se invoca y no existe aún explicación, el sistema la crea con los datos suministrados.
+662-- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+663-
+664-**Respuestas:**
+665-
+666-| Código | Descripción |
+667-|--------|-------------|
+668-| `200` | Explicación obtenida, auto-creada o actualizada |
+669-| `400` | Payload inválido en `PUT` |
+670-| `401` | No autenticado |
+671-| `403` | Estudiante sin acceso al caso |
+672-| `404` | Caso no encontrado |
+673-| `409` | El estado actual del caso no permite auto-creación o modificación |
+674-```
+675-
+676----
+677-
+678-#### 5.6 Checklist de calidad
+679-```
+680-GET  /api/v1/cases/{caseId}/checklist
+681-PUT  /api/v1/cases/{caseId}/checklist
+682-```
+683-
+684-Recurso **jerarquico**: estructura fija de bloques con items.
+685-
+686-**Bootstrap:** El checklist se crea automaticamente al activar el caso (transicion `borrador -> en_analisis`). No se auto-crea en `GET`.
+687-
+688-**Estructura de respuesta:**
+689-```json
+690-{
+691-  "bloques": [
+692-    {
+693-      "id": "uuid",
+694-      "codigo_bloque": "B01",
+695-      "nombre_bloque": "Verificacion de hechos",
+696-      "critico": true,
+697-      "completado": false,
+698-      "items": [
+699-        {
+700-          "id": "uuid",
+701-          "codigo_item": "B01_01",
+702-          "descripcion": "Hechos contrastados con denuncia",
+703-          "marcado": false
+704-        }
+705-      ]
+706-    }
+707-  ]
+708-}
+709-```
+710-
+711-**Formato PUT:**
+712-```json
+713-{
+
+=== ARCHIVOS MODULO EVIDENCE ===
+src/modules/evidence/dto/.gitkeep
+src/modules/evidence/dto/create-evidence.dto.ts
+src/modules/evidence/dto/index.ts
+src/modules/evidence/dto/link-evidence.dto.ts
+src/modules/evidence/dto/update-evidence.dto.ts
+src/modules/evidence/evidence.controller.ts
+src/modules/evidence/evidence.module.ts
+src/modules/evidence/evidence.repository.ts
+src/modules/evidence/evidence.service.ts
+
+=== REFERENCIAS EVIDENCE ===
+src/modules/evidence/dto/create-evidence.dto.ts:13: * POST /api/v1/cases/:caseId/evidence
+src/modules/evidence/dto/create-evidence.dto.ts:26:  @IsUUID('4', { message: 'hecho_id debe ser un UUID válido' })
+src/modules/evidence/dto/create-evidence.dto.ts:27:  hecho_id?: string;
+src/modules/evidence/dto/create-evidence.dto.ts:35:    message: 'licitud debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/create-evidence.dto.ts:37:  licitud!: EvaluacionProbatoria;
+src/modules/evidence/dto/create-evidence.dto.ts:40:    message: 'legalidad debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/create-evidence.dto.ts:42:  legalidad!: EvaluacionProbatoria;
+src/modules/evidence/dto/create-evidence.dto.ts:45:    message: 'suficiencia debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/create-evidence.dto.ts:47:  suficiencia!: EvaluacionProbatoria;
+src/modules/evidence/dto/create-evidence.dto.ts:50:    message: 'credibilidad debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/create-evidence.dto.ts:52:  credibilidad!: EvaluacionProbatoria;
+src/modules/evidence/dto/index.ts:1:export * from './create-evidence.dto';
+src/modules/evidence/dto/index.ts:2:export * from './update-evidence.dto';
+src/modules/evidence/dto/index.ts:3:export * from './link-evidence.dto';
+src/modules/evidence/dto/link-evidence.dto.ts:5: * PATCH /api/v1/cases/:caseId/evidence/:evidenceId/link
+src/modules/evidence/dto/link-evidence.dto.ts:8:  @IsUUID('4', { message: 'hecho_id debe ser un UUID válido' })
+src/modules/evidence/dto/link-evidence.dto.ts:9:  hecho_id!: string;
+src/modules/evidence/dto/update-evidence.dto.ts:11: * PUT /api/v1/cases/:caseId/evidence/:evidenceId
+src/modules/evidence/dto/update-evidence.dto.ts:13: * Nota: hecho_id se gestiona via /link y /unlink
+src/modules/evidence/dto/update-evidence.dto.ts:34:    message: 'licitud debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/update-evidence.dto.ts:36:  licitud?: EvaluacionProbatoria;
+src/modules/evidence/dto/update-evidence.dto.ts:40:    message: 'legalidad debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/update-evidence.dto.ts:42:  legalidad?: EvaluacionProbatoria;
+src/modules/evidence/dto/update-evidence.dto.ts:46:    message: 'suficiencia debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/update-evidence.dto.ts:48:  suficiencia?: EvaluacionProbatoria;
+src/modules/evidence/dto/update-evidence.dto.ts:52:    message: 'credibilidad debe ser: ok, cuestionable o deficiente',
+src/modules/evidence/dto/update-evidence.dto.ts:54:  credibilidad?: EvaluacionProbatoria;
+src/modules/evidence/evidence.controller.ts:12:import { EvidenceService } from './evidence.service';
+src/modules/evidence/evidence.controller.ts:13:import { CreateEvidenceDto } from './dto/create-evidence.dto';
+src/modules/evidence/evidence.controller.ts:14:import { UpdateEvidenceDto } from './dto/update-evidence.dto';
+src/modules/evidence/evidence.controller.ts:15:import { LinkEvidenceDto } from './dto/link-evidence.dto';
+src/modules/evidence/evidence.controller.ts:24:@Controller('cases/:caseId/evidence')
+src/modules/evidence/evidence.controller.ts:30:  async create(
+src/modules/evidence/evidence.controller.ts:31:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/evidence/evidence.controller.ts:35:    return this.service.create(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+src/modules/evidence/evidence.controller.ts:40:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/evidence/evidence.controller.ts:43:    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+src/modules/evidence/evidence.controller.ts:46:  @Get(':evidenceId')
+src/modules/evidence/evidence.controller.ts:48:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/evidence/evidence.controller.ts:49:    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+src/modules/evidence/evidence.controller.ts:52:    return this.service.findOne(caseId, evidenceId, user.sub, user.perfil as PerfilUsuario);
+src/modules/evidence/evidence.controller.ts:55:  @Put(':evidenceId')
+src/modules/evidence/evidence.controller.ts:56:  async update(
+src/modules/evidence/evidence.controller.ts:57:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/evidence/evidence.controller.ts:58:    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+src/modules/evidence/evidence.controller.ts:62:    return this.service.update(caseId, evidenceId, dto, user.sub, user.perfil as PerfilUsuario);
+src/modules/evidence/evidence.controller.ts:65:  @Patch(':evidenceId/link')
+src/modules/evidence/evidence.controller.ts:66:  async link(
+src/modules/evidence/evidence.controller.ts:67:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/evidence/evidence.controller.ts:68:    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+src/modules/evidence/evidence.controller.ts:72:    return this.service.link(caseId, evidenceId, dto.hecho_id, user.sub, user.perfil as PerfilUsuario);
+src/modules/evidence/evidence.controller.ts:75:  @Patch(':evidenceId/unlink')
+src/modules/evidence/evidence.controller.ts:76:  async unlink(
+src/modules/evidence/evidence.controller.ts:77:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/evidence/evidence.controller.ts:78:    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+src/modules/evidence/evidence.controller.ts:81:    return this.service.unlink(caseId, evidenceId, user.sub, user.perfil as PerfilUsuario);
+src/modules/evidence/evidence.module.ts:2:import { EvidenceController } from './evidence.controller';
+src/modules/evidence/evidence.module.ts:3:import { EvidenceService } from './evidence.service';
+src/modules/evidence/evidence.module.ts:4:import { EvidenceRepository } from './evidence.repository';
+src/modules/evidence/evidence.repository.ts:9:  async create(data: Prisma.PruebaUncheckedCreateInput): Promise<Prueba> {
+src/modules/evidence/evidence.repository.ts:10:    return this.prisma.prueba.create({ data });
+src/modules/evidence/evidence.repository.ts:24:  async update(id: string, data: Prisma.PruebaUncheckedUpdateInput): Promise<Prueba> {
+src/modules/evidence/evidence.repository.ts:25:    return this.prisma.prueba.update({ where: { id }, data });
+src/modules/evidence/evidence.service.ts:5:  ConflictException,
+src/modules/evidence/evidence.service.ts:8:import { EvidenceRepository } from './evidence.repository';
+src/modules/evidence/evidence.service.ts:9:import { CreateEvidenceDto } from './dto/create-evidence.dto';
+src/modules/evidence/evidence.service.ts:10:import { UpdateEvidenceDto } from './dto/update-evidence.dto';
+src/modules/evidence/evidence.service.ts:17:  async create(
+src/modules/evidence/evidence.service.ts:25:    if (dto.hecho_id) {
+src/modules/evidence/evidence.service.ts:26:      const hechoValid = await this.repository.hechoExistsInCase(dto.hecho_id, casoId);
+src/modules/evidence/evidence.service.ts:28:        throw new ConflictException('El hecho no pertenece al mismo caso');
+src/modules/evidence/evidence.service.ts:32:    return this.repository.create({
+src/modules/evidence/evidence.service.ts:36:      hecho_id: dto.hecho_id ?? null,
+src/modules/evidence/evidence.service.ts:38:      licitud: dto.licitud,
+src/modules/evidence/evidence.service.ts:39:      legalidad: dto.legalidad,
+src/modules/evidence/evidence.service.ts:40:      suficiencia: dto.suficiencia,
+src/modules/evidence/evidence.service.ts:41:      credibilidad: dto.credibilidad,
+src/modules/evidence/evidence.service.ts:59:    evidenceId: string,
+src/modules/evidence/evidence.service.ts:65:    const prueba = await this.repository.findById(evidenceId);
+src/modules/evidence/evidence.service.ts:67:      throw new NotFoundException(`Prueba ${evidenceId} no encontrada`);
+src/modules/evidence/evidence.service.ts:73:  async update(
+src/modules/evidence/evidence.service.ts:75:    evidenceId: string,
+src/modules/evidence/evidence.service.ts:82:    const prueba = await this.repository.findById(evidenceId);
+src/modules/evidence/evidence.service.ts:84:      throw new NotFoundException(`Prueba ${evidenceId} no encontrada`);
+src/modules/evidence/evidence.service.ts:87:    const updateData: Record<string, unknown> = {
+src/modules/evidence/evidence.service.ts:91:    if (dto.descripcion !== undefined) updateData.descripcion = dto.descripcion;
+src/modules/evidence/evidence.service.ts:92:    if (dto.tipo_prueba !== undefined) updateData.tipo_prueba = dto.tipo_prueba;
+src/modules/evidence/evidence.service.ts:93:    if (dto.hecho_descripcion_libre !== undefined) updateData.hecho_descripcion_libre = dto.hecho_descripcion_libre;
+src/modules/evidence/evidence.service.ts:94:    if (dto.licitud !== undefined) updateData.licitud = dto.licitud;
+src/modules/evidence/evidence.service.ts:95:    if (dto.legalidad !== undefined) updateData.legalidad = dto.legalidad;
+src/modules/evidence/evidence.service.ts:96:    if (dto.suficiencia !== undefined) updateData.suficiencia = dto.suficiencia;
+src/modules/evidence/evidence.service.ts:97:    if (dto.credibilidad !== undefined) updateData.credibilidad = dto.credibilidad;
+src/modules/evidence/evidence.service.ts:98:    if (dto.posicion_defensiva !== undefined) updateData.posicion_defensiva = dto.posicion_defensiva;
+src/modules/evidence/evidence.service.ts:100:    return this.repository.update(evidenceId, updateData);
+src/modules/evidence/evidence.service.ts:103:  async link(
+src/modules/evidence/evidence.service.ts:105:    evidenceId: string,
+src/modules/evidence/evidence.service.ts:112:    const prueba = await this.repository.findById(evidenceId);
+src/modules/evidence/evidence.service.ts:114:      throw new NotFoundException(`Prueba ${evidenceId} no encontrada`);
+src/modules/evidence/evidence.service.ts:119:      throw new ConflictException('El hecho no pertenece al mismo caso');
+src/modules/evidence/evidence.service.ts:122:    return this.repository.update(evidenceId, {
+src/modules/evidence/evidence.service.ts:123:      hecho_id: hechoId,
+src/modules/evidence/evidence.service.ts:128:  async unlink(
+src/modules/evidence/evidence.service.ts:130:    evidenceId: string,
+src/modules/evidence/evidence.service.ts:136:    const prueba = await this.repository.findById(evidenceId);
+src/modules/evidence/evidence.service.ts:138:      throw new NotFoundException(`Prueba ${evidenceId} no encontrada`);
+src/modules/evidence/evidence.service.ts:141:    return this.repository.update(evidenceId, {
+src/modules/evidence/evidence.service.ts:142:      hecho_id: null,
+src/modules/facts/dto/create-fact.dto.ts:12: * POST /api/v1/cases/:caseId/facts
+src/modules/facts/dto/update-fact.dto.ts:11: * PUT /api/v1/cases/:caseId/facts/:factId
+src/modules/facts/facts.controller.ts:12:import { CreateFactDto } from './dto/create-fact.dto';
+src/modules/facts/facts.controller.ts:13:import { UpdateFactDto } from './dto/update-fact.dto';
+src/modules/facts/facts.controller.ts:21: * POST   /api/v1/cases/:caseId/facts           → Crear hecho
+src/modules/facts/facts.controller.ts:22: * GET    /api/v1/cases/:caseId/facts           → Listar hechos
+src/modules/facts/facts.controller.ts:23: * GET    /api/v1/cases/:caseId/facts/:factId   → Detalle
+src/modules/facts/facts.controller.ts:24: * PUT    /api/v1/cases/:caseId/facts/:factId   → Editar
+src/modules/facts/facts.controller.ts:26:@Controller('cases/:caseId/facts')
+src/modules/facts/facts.controller.ts:35:  async create(
+src/modules/facts/facts.controller.ts:36:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/facts/facts.controller.ts:40:    return this.service.create(caseId, dto, user.sub, user.perfil as PerfilUsuario);
+src/modules/facts/facts.controller.ts:48:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/facts/facts.controller.ts:51:    return this.service.findByCaseId(caseId, user.sub, user.perfil as PerfilUsuario);
+src/modules/facts/facts.controller.ts:59:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/facts/facts.controller.ts:63:    return this.service.findOne(caseId, factId, user.sub, user.perfil as PerfilUsuario);
+src/modules/facts/facts.controller.ts:70:  async update(
+src/modules/facts/facts.controller.ts:71:    @Param('caseId', ParseUUIDPipe) caseId: string,
+src/modules/facts/facts.controller.ts:76:    return this.service.update(caseId, factId, dto, user.sub, user.perfil as PerfilUsuario);
+src/modules/facts/facts.repository.ts:9:  async create(data: Prisma.HechoUncheckedCreateInput): Promise<Hecho> {
+src/modules/facts/facts.repository.ts:10:    return this.prisma.hecho.create({ data });
+src/modules/facts/facts.repository.ts:32:  async update(id: string, data: Prisma.HechoUncheckedUpdateInput): Promise<Hecho> {
+src/modules/facts/facts.repository.ts:33:    return this.prisma.hecho.update({ where: { id }, data });
+src/modules/facts/facts.repository.ts:52:  async getCaseState(casoId: string): Promise<string | null> {
+src/modules/facts/facts.service.ts:5:  ConflictException,
+src/modules/facts/facts.service.ts:9:import { CreateFactDto } from './dto/create-fact.dto';
+src/modules/facts/facts.service.ts:10:import { UpdateFactDto } from './dto/update-fact.dto';
+src/modules/facts/facts.service.ts:22:  async create(
+src/modules/facts/facts.service.ts:33:    return this.repository.create({
+src/modules/facts/facts.service.ts:70:  async update(
+src/modules/facts/facts.service.ts:85:    const updateData: Record<string, unknown> = {
+src/modules/facts/facts.service.ts:89:    if (dto.descripcion !== undefined) updateData.descripcion = dto.descripcion;
+src/modules/facts/facts.service.ts:90:    if (dto.estado_hecho !== undefined) updateData.estado_hecho = dto.estado_hecho;
+src/modules/facts/facts.service.ts:91:    if (dto.fuente !== undefined) updateData.fuente = dto.fuente;
+src/modules/facts/facts.service.ts:92:    if (dto.incidencia_juridica !== undefined) updateData.incidencia_juridica = dto.incidencia_juridica;
+src/modules/facts/facts.service.ts:94:    return this.repository.update(factId, updateData);
+src/modules/facts/facts.service.ts:116:    const estado = await this.repository.getCaseState(casoId);
+src/modules/facts/facts.service.ts:119:      throw new ConflictException(
+src/modules/cases/cases.controller.ts:12:import { CreateCaseDto } from './dto/create-case.dto';
+src/modules/cases/cases.controller.ts:14:import { UpdateCaseDto } from './dto/update-case.dto';
+src/modules/cases/cases.controller.ts:52:  async create(
+src/modules/cases/cases.controller.ts:56:    return this.service.create(dto, userId);
+src/modules/cases/cases.controller.ts:74:  async update(
+src/modules/cases/cases.controller.ts:79:    return this.service.update(id, dto, user.sub, user.perfil as PerfilUsuario);
+src/modules/cases/cases.repository.ts:16:  async create(data: Prisma.CasoCreateInput): Promise<Caso> {
+src/modules/cases/cases.repository.ts:17:    return this.prisma.caso.create({ data });
+src/modules/cases/cases.repository.ts:59:  async update(id: string, data: Prisma.CasoUncheckedUpdateInput): Promise<Caso> {
+src/modules/cases/cases.repository.ts:60:    return this.prisma.caso.update({ where: { id }, data });
+src/modules/cases/cases.service.ts:3:  ConflictException,
+src/modules/cases/cases.service.ts:10:import { CreateCaseDto } from './dto/create-case.dto';
+src/modules/cases/cases.service.ts:11:import { UpdateCaseDto } from './dto/update-case.dto';
+src/modules/cases/cases.service.ts:32:  async create(dto: CreateCaseDto, userId: string): Promise<Caso> {
+src/modules/cases/cases.service.ts:40:      throw new ConflictException(`El radicado ${dto.radicado} ya está registrado en el sistema`);
+src/modules/cases/cases.service.ts:43:    return this.repository.create({
+src/modules/cases/cases.service.ts:68:  async update(
+src/modules/cases/cases.service.ts:78:      throw new ConflictException(
+src/modules/cases/cases.service.ts:83:    const updateData: Record<string, unknown> = {
+src/modules/cases/cases.service.ts:87:    if (dto.despacho !== undefined) updateData.despacho = dto.despacho;
+src/modules/cases/cases.service.ts:88:    if (dto.etapa_procesal !== undefined) updateData.etapa_procesal = dto.etapa_procesal;
+src/modules/cases/cases.service.ts:89:    if (dto.regimen_procesal !== undefined) updateData.regimen_procesal = dto.regimen_procesal;
+src/modules/cases/cases.service.ts:90:    if (dto.proxima_actuacion !== undefined) updateData.proxima_actuacion = dto.proxima_actuacion;
+src/modules/cases/cases.service.ts:92:      updateData.fecha_proxima_actuacion = new Date(dto.fecha_proxima_actuacion);
+src/modules/cases/cases.service.ts:95:      updateData.responsable_proxima_actuacion = dto.responsable_proxima_actuacion;
+src/modules/cases/cases.service.ts:97:    if (dto.observaciones !== undefined) updateData.observaciones = dto.observaciones;
+src/modules/cases/cases.service.ts:98:    if (dto.agravantes !== undefined) updateData.agravantes = dto.agravantes;
+src/modules/cases/cases.service.ts:100:    return this.repository.update(id, updateData);
+src/modules/cases/dto/transition-state.dto.ts:8: * 409: la transición no existe desde el estado actual.
+src/modules/cases/services/caso-estado.service.ts:28:  ConflictException,
+src/modules/cases/services/caso-estado.service.ts:87:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:88:   * @throws ForbiddenException (403) si el perfil no tiene permiso
+src/modules/cases/services/caso-estado.service.ts:89:   * @throws ConflictException (409) si la transición no es válida desde el estado actual
+src/modules/cases/services/caso-estado.service.ts:121:      throw new ConflictException({
+src/modules/cases/services/caso-estado.service.ts:185:      const updated = await tx.caso.update({
+src/modules/cases/services/caso-estado.service.ts:197:      await tx.eventoAuditoria.create({
+src/modules/cases/services/caso-estado.service.ts:209:      return updated;
+src/modules/cases/services/caso-estado.service.ts:224:   * - Si el caso no existe: lanza NotFoundException (404)
+src/modules/cases/services/caso-estado.service.ts:225:   * - Si el estado bloquea escritura: lanza ConflictException (409)
+src/modules/cases/services/caso-estado.service.ts:228:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:229:   * @throws ConflictException (409) si el estado no permite escritura
+src/modules/cases/services/caso-estado.service.ts:247:      throw new ConflictException({
+src/modules/cases/services/caso-estado.service.ts:661:        await tx.checklistBloque.create({
+src/modules/cases/services/caso-estado.service.ts:690:          await tx.checklistItem.create({
+src/modules/cases/services/caso-estado.service.ts:709:      await tx.estrategia.create({
+src/modules/cases/services/caso-estado.service.ts:723:      await tx.explicacionCliente.create({
+src/modules/cases/services/caso-estado.service.ts:737:      await tx.conclusionOperativa.create({
+src/app.module.ts:23:import { EvidenceModule } from './modules/evidence/evidence.module';
+docs/04_api/CONTRATO_API.md:26:- **Formato**: JSON en todas las solicitudes y respuestas.
+docs/04_api/CONTRATO_API.md:40:| Colección — representa múltiples elementos | Plural | `/facts`, `/evidence`, `/risks`, `/subjects` |
+docs/04_api/CONTRATO_API.md:43:Esta convención aplica a todos los subrecursos de `/api/v1/cases/{caseId}/*`.
+docs/04_api/CONTRATO_API.md:48:### Autenticación de solicitudes
+docs/04_api/CONTRATO_API.md:71:| `400`  | Solicitud malformada o con datos inválidos. |
+docs/04_api/CONTRATO_API.md:73:| `403`  | Autenticado pero sin permiso para esta acción. |
+docs/04_api/CONTRATO_API.md:74:| `404`  | Recurso no encontrado. |
+docs/04_api/CONTRATO_API.md:75:| `409`  | Conflicto de estado — la operación es inválida dado el estado actual del recurso. |
+docs/04_api/CONTRATO_API.md:138:- `403` — Usuario desactivado.
+docs/04_api/CONTRATO_API.md:165:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:185:- `409` — Email ya registrado.
+docs/04_api/CONTRATO_API.md:196:- `403` — Sin acceso.
+docs/04_api/CONTRATO_API.md:197:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:206:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:207:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:320:- `403` — Sin permiso para crear casos.
+docs/04_api/CONTRATO_API.md:321:- `409` — El radicado ya está registrado en el sistema.
+docs/04_api/CONTRATO_API.md:325:#### `GET /api/v1/cases/{caseId}`
+docs/04_api/CONTRATO_API.md:346:La ficha básica del caso se consulta oficialmente a través del agregado raíz `GET /api/v1/cases/{caseId}`.
+docs/04_api/CONTRATO_API.md:347:No existe el subrecurso `GET /api/v1/cases/{caseId}/basic-info`.
+docs/04_api/CONTRATO_API.md:351:- `403` — Sin acceso a este caso.
+docs/04_api/CONTRATO_API.md:352:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:356:#### `PUT /api/v1/cases/{caseId}`
+docs/04_api/CONTRATO_API.md:362:La ficha básica del caso se actualiza oficialmente a través del agregado raíz `PUT /api/v1/cases/{caseId}`.
+docs/04_api/CONTRATO_API.md:363:No existe el subrecurso `PUT /api/v1/cases/{caseId}/basic-info`.
+docs/04_api/CONTRATO_API.md:386:- `403` — Sin permiso o no es propietario del caso.
+docs/04_api/CONTRATO_API.md:387:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:388:- `409` — El estado actual no permite edición.
+docs/04_api/CONTRATO_API.md:394:#### `POST /api/v1/cases/{caseId}/transition`
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:410:| `404`  | El caso no existe o no es accesible por el usuario en sesión. |
+docs/04_api/CONTRATO_API.md:411:| `409`  | El estado actual del caso es incompatible con el estado destino solicitado. |
+docs/04_api/CONTRATO_API.md:425:| `PUT` (escritura) | ❌ `409` | ✅ | ❌ `409` | ✅ | ❌ `409` |
+docs/04_api/CONTRATO_API.md:432:Recurso **colección editable**: múltiples hechos por caso, con update parcial.
+docs/04_api/CONTRATO_API.md:439:- `POST /facts` y `PUT /facts/:id` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:480:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:481:| `404` | Caso o hecho no encontrado |
+docs/04_api/CONTRATO_API.md:482:| `409` | El estado actual del caso no permite crear o modificar hechos |
+docs/04_api/CONTRATO_API.md:488:POST   /api/v1/cases/{caseId}/evidence
+docs/04_api/CONTRATO_API.md:489:GET    /api/v1/cases/{caseId}/evidence
+docs/04_api/CONTRATO_API.md:490:GET    /api/v1/cases/{caseId}/evidence/{evidenceId}
+docs/04_api/CONTRATO_API.md:491:PUT    /api/v1/cases/{caseId}/evidence/{evidenceId}
+docs/04_api/CONTRATO_API.md:492:PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/link
+docs/04_api/CONTRATO_API.md:493:PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/unlink
+docs/04_api/CONTRATO_API.md:499:- `POST /evidence` crea una prueba.
+docs/04_api/CONTRATO_API.md:500:- `GET /evidence` lista todas las pruebas del caso.
+docs/04_api/CONTRATO_API.md:501:- `GET /evidence/:id` obtiene detalle de una prueba.
+docs/04_api/CONTRATO_API.md:502:- `PUT /evidence/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+docs/04_api/CONTRATO_API.md:503:- `PATCH /evidence/:id/link` vincula la prueba a un hecho del mismo caso.
+docs/04_api/CONTRATO_API.md:504:- `PATCH /evidence/:id/unlink` desvincula la prueba del hecho asociado.
+docs/04_api/CONTRATO_API.md:508:El campo `hecho_id` se gestiona exclusivamente mediante los endpoints `/link` y `/unlink`, no mediante PUT. El hecho debe pertenecer al mismo caso; intentar vincular a un hecho de otro caso retorna error.
+docs/04_api/CONTRATO_API.md:510:**Nota:** El DTO de creación incluye `hecho_id` como campo opcional, pero el comportamiento validado en runtime es el vínculo/desvínculo por PATCH.
+docs/04_api/CONTRATO_API.md:525:| `hecho_id` | UUID | - | No | (Presente en DTO, usar /link para vincular) |
+docs/04_api/CONTRATO_API.md:527:| `licitud` | enum | - | Sí | Evaluación de licitud |
+docs/04_api/CONTRATO_API.md:528:| `legalidad` | enum | - | Sí | Evaluación de legalidad |
+docs/04_api/CONTRATO_API.md:529:| `suficiencia` | enum | - | Sí | Evaluación de suficiencia |
+docs/04_api/CONTRATO_API.md:530:| `credibilidad` | enum | - | Sí | Evaluación de credibilidad |
+docs/04_api/CONTRATO_API.md:542:| `licitud` | enum | - |
+docs/04_api/CONTRATO_API.md:543:| `legalidad` | enum | - |
+docs/04_api/CONTRATO_API.md:544:| `suficiencia` | enum | - |
+docs/04_api/CONTRATO_API.md:545:| `credibilidad` | enum | - |
+docs/04_api/CONTRATO_API.md:548:**Nota:** `hecho_id` no se puede modificar mediante PUT. Usar `/link` y `/unlink`.
+docs/04_api/CONTRATO_API.md:550:**Campos PATCH /link (LinkEvidenceDto):**
+docs/04_api/CONTRATO_API.md:554:| `hecho_id` | UUID | Sí | ID del hecho al que vincular (debe ser del mismo caso) |
+docs/04_api/CONTRATO_API.md:556:**PATCH /unlink:** No requiere body.
+docs/04_api/CONTRATO_API.md:566:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:567:| `404` | Caso o prueba no encontrado |
+docs/04_api/CONTRATO_API.md:568:| `409` | Conflicto: hecho no pertenece al mismo caso (en /link) |
+docs/04_api/CONTRATO_API.md:573:POST   /api/v1/cases/{caseId}/risks
+docs/04_api/CONTRATO_API.md:574:GET    /api/v1/cases/{caseId}/risks
+docs/04_api/CONTRATO_API.md:575:GET    /api/v1/cases/{caseId}/risks/{riskId}
+docs/04_api/CONTRATO_API.md:576:PUT    /api/v1/cases/{caseId}/risks/{riskId}
+docs/04_api/CONTRATO_API.md:600:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:601:| `404` | Caso o riesgo no encontrado |
+docs/04_api/CONTRATO_API.md:607:GET  /api/v1/cases/{caseId}/strategy
+docs/04_api/CONTRATO_API.md:608:PUT  /api/v1/cases/{caseId}/strategy
+docs/04_api/CONTRATO_API.md:616:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:620:- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:645:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:646:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:647:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:658:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:662:- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:671:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:672:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:673:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:680:GET  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:681:PUT  /api/v1/cases/{caseId}/checklist
+docs/04_api/CONTRATO_API.md:730:| `403` | Estudiante sin acceso al caso o item de otro caso |
+docs/04_api/CONTRATO_API.md:731:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:741:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:745:- `PUT /conclusion` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:754:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:755:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:756:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:762:GET  /api/v1/cases/{caseId}/timeline
+docs/04_api/CONTRATO_API.md:763:POST /api/v1/cases/{caseId}/timeline
+docs/04_api/CONTRATO_API.md:808:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:809:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:816:GET    /api/v1/cases/{caseId}/proceedings
+docs/04_api/CONTRATO_API.md:817:POST   /api/v1/cases/{caseId}/proceedings
+docs/04_api/CONTRATO_API.md:818:GET    /api/v1/cases/{caseId}/proceedings/{proceedingId}
+docs/04_api/CONTRATO_API.md:830:| `404` | Caso o actuación no encontrada |
+docs/04_api/CONTRATO_API.md:840:GET    /api/v1/cases/{caseId}/documents
+docs/04_api/CONTRATO_API.md:841:POST   /api/v1/cases/{caseId}/documents
+docs/04_api/CONTRATO_API.md:842:GET    /api/v1/cases/{caseId}/documents/{documentId}
+docs/04_api/CONTRATO_API.md:843:PUT    /api/v1/cases/{caseId}/documents/{documentId}
+docs/04_api/CONTRATO_API.md:889:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:890:| `404` | Caso o documento no encontrado |
+docs/04_api/CONTRATO_API.md:900:GET /api/v1/cases/{caseId}/subjects
+docs/04_api/CONTRATO_API.md:965:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:966:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:974:POST /api/v1/cases/{caseId}/subjects
+docs/04_api/CONTRATO_API.md:1010:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1011:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1018:GET /api/v1/cases/{caseId}/subjects/{subjectId}
+docs/04_api/CONTRATO_API.md:1026:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1027:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1028:- `404` — Sujeto no encontrado
+docs/04_api/CONTRATO_API.md:1039:#### `GET /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1044:#### `GET /api/v1/cases/{caseId}/review/feedback`
+docs/04_api/CONTRATO_API.md:1050:#### `POST /api/v1/cases/{caseId}/review`
+docs/04_api/CONTRATO_API.md:1077:| `403` | Estudiante sin acceso o perfil insuficiente |
+docs/04_api/CONTRATO_API.md:1078:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1079:| `409` | Caso no esta en estado `pendiente_revision` |
+docs/04_api/CONTRATO_API.md:1084:#### `GET /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1087:#### `POST /api/v1/cases/{caseId}/reports`
+docs/04_api/CONTRATO_API.md:1097:#### `GET /api/v1/cases/{caseId}/reports/{reportId}`
+docs/04_api/CONTRATO_API.md:1108:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1109:| `404` | Caso o informe no encontrado |
+docs/04_api/CONTRATO_API.md:1133:`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+docs/04_api/CONTRATO_API.md:1162:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1163:| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+docs/04_api/CONTRATO_API.md:1164:| `409` | Caso en estado cerrado (no permite consultas IA) |
+docs/04_api/CONTRATO_API.md:1171:#### `GET /api/v1/cases/{caseId}/audit`
+docs/04_api/CONTRATO_API.md:1247:| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+docs/04_api/CONTRATO_API.md:1248:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1292:| E5-22 | 2026-03-28 | Corrección contractual de `basic-info`: se elimina la referencia residual al subrecurso y se explicita que la ficha básica se consulta y actualiza vía `GET/PUT /api/v1/cases/{caseId}`. |
+docs/04_api/CONTRATO_API.md:1294:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
+docs/04_api/CONTRATO_API.md:1295:| 16 | 2026-03-27 | Paginación en `GET /subjects` — breaking change: array → objeto paginado. Comportamiento de página fuera de rango documentado. Unificación de placeholders `{caseId}`. Corrección de convención de subrecursos. |
