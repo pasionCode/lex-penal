@@ -484,14 +484,6 @@ Todos los campos son opcionales. Solo se actualizan los campos presentes en el p
 
 #### 5.2 Pruebas del caso
 
-```
-POST   /api/v1/cases/{caseId}/evidence
-GET    /api/v1/cases/{caseId}/evidence
-GET    /api/v1/cases/{caseId}/evidence/{evidenceId}
-PUT    /api/v1/cases/{caseId}/evidence/{evidenceId}
-PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/link
-PATCH  /api/v1/cases/{caseId}/evidence/{evidenceId}/unlink
-```
 
 Recurso **colección editable sin DELETE**: múltiples pruebas por caso, con capacidad de vincular/desvincular a hechos.
 
@@ -502,12 +494,13 @@ Recurso **colección editable sin DELETE**: múltiples pruebas por caso, con cap
 - `PUT /evidence/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
 - `PATCH /evidence/:id/link` vincula la prueba a un hecho del mismo caso.
 - `PATCH /evidence/:id/unlink` desvincula la prueba del hecho asociado.
+- `POST /evidence`, `PUT /evidence/:id`, `PATCH /link` y `PATCH /unlink` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
 
 **Vínculo con hechos:**
 
-El campo `hecho_id` se gestiona exclusivamente mediante los endpoints `/link` y `/unlink`, no mediante PUT. El hecho debe pertenecer al mismo caso; intentar vincular a un hecho de otro caso retorna error.
+El campo `hecho_id` se gestiona principalmente mediante los endpoints `/link` y `/unlink`, no mediante PUT. El hecho debe pertenecer al mismo caso; intentar vincular a un hecho de otro caso retorna error.
 
-**Nota:** El DTO de creación incluye `hecho_id` como campo opcional, pero el comportamiento validado en runtime es el vínculo/desvínculo por PATCH.
+**Nota:** El DTO de creación incluye `hecho_id` como campo opcional. Si se suministra en `POST`, debe pertenecer al mismo caso; si no, retorna `409`. Para relink/unlink posterior, usar los endpoints PATCH.
 
 **Enums válidos:**
 
@@ -522,7 +515,7 @@ El campo `hecho_id` se gestiona exclusivamente mediante los endpoints `/link` y 
 |-------|------|-----------|-------------|-------------|
 | `descripcion` | string | 2000 | Sí | Descripción de la prueba |
 | `tipo_prueba` | enum | - | Sí | Tipo de prueba |
-| `hecho_id` | UUID | - | No | (Presente en DTO, usar /link para vincular) |
+| `hecho_id` | UUID | - | No | Hecho inicial, si pertenece al mismo caso |
 | `hecho_descripcion_libre` | string | 500 | No | Descripción libre del hecho que soporta |
 | `licitud` | enum | - | Sí | Evaluación de licitud |
 | `legalidad` | enum | - | Sí | Evaluación de legalidad |
@@ -565,8 +558,7 @@ Todos los campos son opcionales. Solo se actualizan los campos presentes en el p
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso o prueba no encontrado |
-| `409` | Conflicto: hecho no pertenece al mismo caso (en /link) |
----
+| `409` | Conflicto: hecho no pertenece al mismo caso o el estado actual no permite escritura |
 
 #### 5.3 Riesgos del caso
 ```
