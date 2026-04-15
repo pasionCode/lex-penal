@@ -736,16 +736,17 @@ Recurso **jerarquico**: estructura fija de bloques con items.
 ---
 
 #### 5.7 Conclusión operativa
-```
-GET  /api/v1/cases/{caseId}/conclusion
-PUT  /api/v1/cases/{caseId}/conclusion
-```
 
 Recurso **singleton**: existe exactamente una conclusión operativa por caso.
 
 **Comportamiento especial:**
-- Si `GET /conclusion` se invoca y no existe aún una conclusión para el caso, el sistema la crea automáticamente y retorna el recurso resultante.
+- Si `GET /conclusion` se invoca y no existe aún una conclusión para el caso:
+  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+- Si `GET /conclusion` se invoca y ya existe la conclusión, retorna el recurso sin importar el estado del caso (200).
 - `PUT /conclusion` actualiza la conclusión existente del caso.
+- Si `PUT /conclusion` se invoca y no existe aún conclusión, el sistema la crea con los datos suministrados.
+- `PUT /conclusion` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
 
 **Respuestas:**
 
@@ -756,6 +757,7 @@ Recurso **singleton**: existe exactamente una conclusión operativa por caso.
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso no encontrado |
+| `409` | El estado actual del caso no permite auto-creación o modificación |
 ---
 
 #### 5.8 Línea de tiempo
