@@ -2,12 +2,18 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { Hecho } from '@prisma/client';
 import { FactsRepository } from './facts.repository';
 import { CreateFactDto } from './dto/create-fact.dto';
 import { UpdateFactDto } from './dto/update-fact.dto';
-import { PerfilUsuario } from '../../types/enums';
+import { PerfilUsuario, EstadoCaso } from '../../types/enums';
+
+const ESTADOS_ESCRITURA_PERMITIDA_FACTS: EstadoCaso[] = [
+  EstadoCaso.EN_ANALISIS,
+  EstadoCaso.DEVUELTO,
+];
 
 @Injectable()
 export class FactsService {
@@ -20,6 +26,7 @@ export class FactsService {
     perfil: PerfilUsuario,
   ): Promise<Hecho> {
     await this.checkCaseAccess(casoId, userId, perfil);
+    await this.checkWritePermission(casoId);
 
     const orden = await this.repository.getNextOrder(casoId);
 
@@ -68,6 +75,7 @@ export class FactsService {
     perfil: PerfilUsuario,
   ): Promise<Hecho> {
     await this.checkCaseAccess(casoId, userId, perfil);
+    await this.checkWritePermission(casoId);
 
     const hecho = await this.repository.findById(factId);
     if (!hecho || hecho.caso_id !== casoId) {
@@ -96,11 +104,21 @@ export class FactsService {
       throw new NotFoundException(`Caso ${casoId} no encontrado`);
     }
 
-    if (perfil === PerfilUsuario.ESTUDIANTE) {
+    if (perfil == PerfilUsuario.ESTUDIANTE) {
       const responsable = await this.repository.getCaseResponsable(casoId);
       if (responsable !== userId) {
         throw new ForbiddenException('Sin acceso a este caso');
       }
+    }
+  }
+
+  private async checkWritePermission(casoId: string): Promise<void> {
+    const estado = await this.repository.getCaseState(casoId);
+
+    if (!estado || !ESTADOS_ESCRITURA_PERMITIDA_FACTS.includes(estado as EstadoCaso)) {
+      throw new ConflictException(
+        `No se permite modificar facts en estado ${estado ?? 'desconocido'}`,
+      );
     }
   }
 }

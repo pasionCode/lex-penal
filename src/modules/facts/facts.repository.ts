@@ -48,4 +48,12 @@ export class FactsRepository {
     });
     return caso?.responsable_id ?? null;
   }
+
+  async getCaseState(casoId: string): Promise<string | null> {
+    const caso = await this.prisma.caso.findUnique({
+      where: { id: casoId },
+      select: { estado_actual: true },
+    });
+    return caso?.estado_actual ?? null;
+  }
 }

@@ -428,12 +428,6 @@ Las herramientas del caso siguen un patrón uniforme:
 
 #### 5.1 Hechos del caso
 
-```
-POST   /api/v1/cases/{caseId}/facts
-GET    /api/v1/cases/{caseId}/facts
-GET    /api/v1/cases/{caseId}/facts/{factId}
-PUT    /api/v1/cases/{caseId}/facts/{factId}
-```
 
 Recurso **colección editable**: múltiples hechos por caso, con update parcial.
 
@@ -442,6 +436,7 @@ Recurso **colección editable**: múltiples hechos por caso, con update parcial.
 - `GET /facts` lista todos los hechos del caso ordenados por `orden`.
 - `GET /facts/:id` obtiene detalle de un hecho.
 - `PUT /facts/:id` actualiza campos presentes en el payload (semántica tipo PATCH).
+- `POST /facts` y `PUT /facts/:id` solo están permitidos en estados `en_analisis` y `devuelto`. En otros estados retorna `409 Conflict`.
 
 **Orden automático:** El campo `orden` es asignado automáticamente en creación y no es editable por el cliente. Cada nuevo hecho recibe el siguiente número de orden disponible.
 
@@ -484,6 +479,7 @@ Todos los campos son opcionales. Solo se actualizan los campos presentes en el p
 | `401` | No autenticado |
 | `403` | Estudiante sin acceso al caso |
 | `404` | Caso o hecho no encontrado |
+| `409` | El estado actual del caso no permite crear o modificar hechos |
 ---
 
 #### 5.2 Pruebas del caso
