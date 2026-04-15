@@ -1,0 +1,6 @@
+{
+  "id": "b88b0c34-4150-4b4f-9fdf-752ec85206d6",
+  "responsable_id": "7b034bdd-b8ac-4fcb-87e4-e626ec6cbb5f",
+  "estado_actual": "en_analisis",
+  "radicado": "E512-1774714346"
+}

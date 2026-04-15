@@ -1,0 +1,454 @@
+=== ESTUDIANTES ACTIVOS ===
+[
+  {
+    "id": "d0c64b32-df19-460e-b44d-17f6083ce55a",
+    "nombre": "Estudiante Prueba",
+    "email": "estudiante@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-23T21:24:34.939Z"
+  },
+  {
+    "id": "b783ccb6-536e-48ec-b891-180ad7ac324b",
+    "nombre": "Usuario 1774669890",
+    "email": "u1774669890@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T03:51:31.786Z"
+  },
+  {
+    "id": "257e2a2b-e6d7-40f2-96ba-64c48287597f",
+    "nombre": "Nombre Actualizado 1774706396",
+    "email": "updated1774706396@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T13:59:58.001Z"
+  },
+  {
+    "id": "841c8d12-d4b5-422e-80b1-652a3278774a",
+    "nombre": "Estudiante 1774706396",
+    "email": "student1774706396@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T14:00:06.984Z"
+  },
+  {
+    "id": "b85ce796-ef0d-49e2-baf2-ec8c3523877b",
+    "nombre": "Usuario E5-08 1774708957",
+    "email": "e508_1774708957@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T14:42:38.873Z"
+  },
+  {
+    "id": "41f89171-fb9c-4743-8580-c3d4e0eca2d4",
+    "nombre": "Usuario E5-08 1774709148",
+    "email": "e508_1774709148@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T14:45:48.272Z"
+  },
+  {
+    "id": "65829718-270d-4578-8050-4bab13a9d234",
+    "nombre": "Estudiante E510 1774711353",
+    "email": "student1774711353@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T15:22:38.303Z"
+  },
+  {
+    "id": "9215261b-ee2c-4010-a794-827e38d2c744",
+    "nombre": "Estudiante E511 1774712880",
+    "email": "student1774712880@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T15:48:04.347Z"
+  },
+  {
+    "id": "cc73a4ee-b675-4191-80a2-48180b2ab9c5",
+    "nombre": "Estudiante E512 1774713698",
+    "email": "student1774713698@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T16:01:43.267Z"
+  },
+  {
+    "id": "e0522406-6f22-4f35-8b9e-73cae1852a56",
+    "nombre": "Estudiante E512 1774714027",
+    "email": "student1774714027@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T16:07:11.502Z"
+  },
+  {
+    "id": "d62540cf-56f7-4a33-926c-c32b1248fd67",
+    "nombre": "Estudiante E512 1774714520",
+    "email": "student1774714520@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T16:15:24.578Z"
+  },
+  {
+    "id": "b83baf65-9546-4324-b893-67cb2d63506f",
+    "nombre": "Estudiante E513 1774715389",
+    "email": "student1774715389@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T16:29:55.267Z"
+  },
+  {
+    "id": "a212f56e-9de2-4053-ba31-a9f220550bab",
+    "nombre": "Estudiante E514 1774716379",
+    "email": "student1774716379@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T16:46:25.709Z"
+  },
+  {
+    "id": "1488c9cd-78ac-4cbc-b7f2-4e0482dc8ef2",
+    "nombre": "Estudiante E515 1774723426",
+    "email": "student1774723426@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T18:43:50.517Z"
+  },
+  {
+    "id": "1fe70eef-46b4-4a0f-ad73-d68dbadb2559",
+    "nombre": "Estudiante E515 1774724210",
+    "email": "student1774724210@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T18:56:54.071Z"
+  },
+  {
+    "id": "4c523c13-e3de-4218-9490-dc2b1cc545cd",
+    "nombre": "Estudiante E515 1774724955",
+    "email": "student1774724955@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T19:09:21.888Z"
+  },
+  {
+    "id": "21c3e9a2-6909-424b-92f9-188dd9870756",
+    "nombre": "Estudiante E515 1774725238",
+    "email": "student1774725238@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T19:14:04.575Z"
+  },
+  {
+    "id": "2a292eae-9464-4857-ab73-454605f034b2",
+    "nombre": "Estudiante E516 1774725892",
+    "email": "student1774725892@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T19:24:56.381Z"
+  },
+  {
+    "id": "a4f8a7cc-8393-4177-9b79-bd69d76f4d6a",
+    "nombre": "Estudiante E517 1774726876",
+    "email": "student1774726876@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T19:41:20.395Z"
+  },
+  {
+    "id": "9676b2f3-902c-4fc4-9075-b6d26d6d4f09",
+    "nombre": "Estudiante E517 1774727111",
+    "email": "student1774727111@lexpenal.local",
+    "perfil": "estudiante",
+    "activo": true,
+    "creado_en": "2026-03-28T19:45:19.282Z"
+  }
+]
+
+=== CASOS ESCRIBIBLES ===
+[
+  {
+    "id": "c9f0c313-1042-42f7-8371-faa89fd84f42",
+    "radicado": "11001600002820260001",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-23T21:03:11.648Z"
+  },
+  {
+    "id": "c931f13c-9251-45a4-b64d-cdc178aa9158",
+    "radicado": "11001600002820260099",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-25T01:29:51.561Z"
+  },
+  {
+    "id": "1e704383-78a9-48bc-8518-21d8ee314d2e",
+    "radicado": "E504-1774662354",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T01:45:56.786Z"
+  },
+  {
+    "id": "45e0927a-578e-4693-8880-2f1e19d08f53",
+    "radicado": "E505-1774664092",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T02:14:54.861Z"
+  },
+  {
+    "id": "0bd2ca1f-d0fc-4c20-9643-82cc53f64c4d",
+    "radicado": "E509-1774710489",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T15:08:10.786Z"
+  },
+  {
+    "id": "69d89866-77a5-4af3-8c25-5600360443dc",
+    "radicado": "E510-1774711353",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T15:22:34.307Z"
+  },
+  {
+    "id": "77a04c54-6e31-4701-b43f-422f8ddf6641",
+    "radicado": "E511-1774712880",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T15:48:01.037Z"
+  },
+  {
+    "id": "f6411356-010d-41db-857f-e985b003d5d1",
+    "radicado": "E512-1774713698",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T16:01:40.045Z"
+  },
+  {
+    "id": "4f3cc154-6b26-45b0-8c13-b77953bba5af",
+    "radicado": "E512-1774714027",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T16:07:08.369Z"
+  },
+  {
+    "id": "b88b0c34-4150-4b4f-9fdf-752ec85206d6",
+    "radicado": "E512-1774714346",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T16:12:27.641Z"
+  },
+  {
+    "id": "835cd1dc-6fa9-4cbd-ba7c-1c1da71f2183",
+    "radicado": "E512-1774714520",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T16:15:21.365Z"
+  },
+  {
+    "id": "d3ab698d-c954-4286-a273-8a597a9b9e04",
+    "radicado": "E513-1774715389",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T16:29:50.798Z"
+  },
+  {
+    "id": "251b3bf6-bac9-465e-9e0c-29d62b70fce5",
+    "radicado": "E514-1774716379",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T16:46:20.226Z"
+  },
+  {
+    "id": "8fa0a392-6c06-41a1-9378-2b0c44e80e06",
+    "radicado": "E515-1774723426",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T18:43:47.670Z"
+  },
+  {
+    "id": "a0ca8236-3d2b-4363-bf89-3652b057920d",
+    "radicado": "E515-1774724210",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T18:56:51.814Z"
+  },
+  {
+    "id": "3c4b95f7-7904-40ef-af61-4196ddce877b",
+    "radicado": "E515B-1774724210",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T18:56:53.165Z"
+  },
+  {
+    "id": "b9bdef6e-d9aa-4401-a817-a9cf1db7f8c5",
+    "radicado": "E515B-1774724955",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T19:09:18.344Z"
+  },
+  {
+    "id": "ae050d2f-a479-414f-9bdd-5b82eef1cbf0",
+    "radicado": "E515B-1774725238",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T19:14:01.160Z"
+  },
+  {
+    "id": "624b62ad-607b-4e53-b1fb-26c2073fb306",
+    "radicado": "E516-1774725892",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T19:24:53.512Z"
+  },
+  {
+    "id": "b73b9133-d763-4c75-8ee0-f73e35362481",
+    "radicado": "E517-1774726876",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T19:41:17.090Z"
+  },
+  {
+    "id": "cf8f2ec1-90eb-47c8-a29f-5a3a02869f30",
+    "radicado": "E517-1774727111",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T19:45:13.723Z"
+  },
+  {
+    "id": "f9704a04-fbe0-4030-b9bb-cdf7ce493432",
+    "radicado": "E518-1774729107",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:18:29.499Z"
+  },
+  {
+    "id": "914d82f5-3695-4f8c-abb3-1adeff76a2eb",
+    "radicado": "E518B-1774729107",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:18:34.309Z"
+  },
+  {
+    "id": "01b992b8-d318-4cf8-a573-29d4250e5c6f",
+    "radicado": "E518-1774729363",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:22:45.453Z"
+  },
+  {
+    "id": "1f0bdbd4-d79e-48ff-9145-8e2b4f33e00e",
+    "radicado": "E518B-1774729363",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:22:50.232Z"
+  },
+  {
+    "id": "596e1547-ffdc-4fa6-b749-74acb60d64ed",
+    "radicado": "E518-1774729959",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:32:41.158Z"
+  },
+  {
+    "id": "6e1771e5-f699-47d2-a48b-4168eb483161",
+    "radicado": "E518B-1774729959",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:32:45.836Z"
+  },
+  {
+    "id": "389df793-8730-469d-bf04-abf03b1c74b3",
+    "radicado": "E519-1774731083",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T20:51:25.327Z"
+  },
+  {
+    "id": "e7391f96-1483-4734-8491-9c2e78478ed2",
+    "radicado": "E520-1774734620",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T21:50:21.727Z"
+  },
+  {
+    "id": "237e5ee0-6110-4356-a021-680adc49aed2",
+    "radicado": "E520B-1774734620",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-28T21:50:26.489Z"
+  },
+  {
+    "id": "d9da17b6-ea70-4be7-a337-ecd333f52f52",
+    "radicado": "E521-1774745723",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T00:55:24.407Z"
+  },
+  {
+    "id": "db9a8359-33b4-4ffc-b449-7b425ad5e77e",
+    "radicado": "E522-1774747740",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T01:29:01.409Z"
+  },
+  {
+    "id": "5d243198-e5db-4e07-ba8e-acaedf01ea85",
+    "radicado": "E522-1774748103",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T01:35:04.751Z"
+  },
+  {
+    "id": "81604869-d91d-4ecb-87a1-23384dd49a57",
+    "radicado": "E522-1774748184",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T01:36:24.887Z"
+  },
+  {
+    "id": "d4ae4c55-c7cc-451f-b406-dd13fc312bf5",
+    "radicado": "E523-1774749512",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T01:58:33.695Z"
+  },
+  {
+    "id": "1e268331-9fb5-4042-b927-38800c118b00",
+    "radicado": "E523B-1774749512",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T01:58:37.819Z"
+  },
+  {
+    "id": "0ec23101-0999-4350-aa67-7ffc950f76ff",
+    "radicado": "E523-1774749842",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T02:04:03.351Z"
+  },
+  {
+    "id": "4e3538e9-400d-48fe-9640-19cbd89fb6da",
+    "radicado": "E523B-1774749842",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T02:04:07.442Z"
+  },
+  {
+    "id": "1a66a7fd-bfdf-450e-a5ef-a3837f010375",
+    "radicado": "E524-1774750740",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T02:19:01.440Z"
+  },
+  {
+    "id": "037a79bf-1c00-46c9-9f5b-ab13adde3cd1",
+    "radicado": "E524-1774752111",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T02:41:52.316Z"
+  },
+  {
+    "id": "8fe7d705-c4a4-4882-9ae5-bfd74aecd62c",
+    "radicado": "E601-1774757850",
+    "responsable_id": "71e47a55-8803-4842-bf3c-c573bf2cc709",
+    "estado_actual": "en_analisis",
+    "creado_en": "2026-03-29T04:17:32.438Z"
+  }
+]
