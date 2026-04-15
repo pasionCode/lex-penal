@@ -1,0 +1,436 @@
+=== FECHA ===
+2026-04-14T19:01:28-05:00
+
+=== CONTRATO CONCLUSION ===
+730-|--------|-------------|
+731-| `200` | Checklist obtenido o actualizado |
+732-| `400` | Item inexistente en payload |
+733-| `401` | No autenticado |
+734-| `403` | Estudiante sin acceso al caso o item de otro caso |
+735-| `404` | Caso no encontrado |
+736----
+737-
+738:#### 5.7 Conclusión operativa
+739-```
+740:GET  /api/v1/cases/{caseId}/conclusion
+741:PUT  /api/v1/cases/{caseId}/conclusion
+742-```
+743-
+744-Recurso **singleton**: existe exactamente una conclusión operativa por caso.
+745-
+746-**Comportamiento especial:**
+747-- Si `GET /conclusion` se invoca y no existe aún una conclusión para el caso, el sistema la crea automáticamente y retorna el recurso resultante.
+748-- `PUT /conclusion` actualiza la conclusión existente del caso.
+749-
+750-**Respuestas:**
+751-
+752-| Código | Descripción |
+753-|--------|-------------|
+754-| `200` | Conclusión obtenida, auto-creada o actualizada |
+755-| `400` | Payload inválido en `PUT` |
+756-| `401` | No autenticado |
+757-| `403` | Estudiante sin acceso al caso |
+758-| `404` | Caso no encontrado |
+759----
+760-
+761-#### 5.8 Línea de tiempo
+762-
+763-```
+764-GET  /api/v1/cases/{caseId}/timeline
+765-POST /api/v1/cases/{caseId}/timeline
+766-```
+767-
+768-Recurso **colección append-only paginada**: múltiples entradas por caso, sin edición ni eliminación.
+769-
+770-**Comportamiento:**
+771-- `GET /timeline` lista entradas con paginación.
+772-- `POST /timeline` crea una entrada con `orden` asignado automáticamente.
+773-- No hay endpoint de detalle individual, PUT ni DELETE.
+774-
+775-**Paginación:**
+776-
+777-La respuesta de GET incluye metadatos de paginación:
+778-
+779-```json
+780-{
+781-  "data": [...],
+782-  "total": 25,
+783-  "page": 1,
+784-  "per_page": 20
+785-}
+786-```
+787-
+788-| Query param | Default | Descripción |
+789-|-------------|---------|-------------|
+790-| `page` | 1 | Página actual |
+791-| `per_page` | 20 | Items por página |
+792-
+793-**Campos POST (CreateTimelineEntryDto):**
+794-
+795-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+796-|-------|------|-----------|-------------|-------------|
+797-| `fecha_evento` | ISO date | - | Sí | Fecha del evento |
+798-| `descripcion` | string | 1000 | Sí | Descripción del evento |
+799-
+800-**Campo `orden`:** Asignado automáticamente por el backend, no editable por cliente. Cada nueva entrada recibe el siguiente número de orden disponible para el caso.
+801-
+802-**Respuestas:**
+803-
+804-| Código | Descripción |
+805-|--------|-------------|
+806-| `200` | Lista paginada obtenida |
+807-| `201` | Entrada creada |
+808-| `400` | Payload inválido (fecha inválida o campo requerido faltante) |
+809-| `401` | No autenticado |
+810-| `403` | Estudiante sin acceso al caso |
+811-| `404` | Caso no encontrado |
+812-
+813----
+814-
+815-#### 5.9 Actuaciones procesales
+816-
+817-```
+818-GET    /api/v1/cases/{caseId}/proceedings
+819-POST   /api/v1/cases/{caseId}/proceedings
+820-GET    /api/v1/cases/{caseId}/proceedings/{proceedingId}
+821-```
+822-
+823-Entidad con **política append-only**. No se permite edición ni eliminación.
+824-
+825-**Respuestas:**
+826-
+827-| Código | Descripción |
+828-|--------|-------------|
+829-| `200` | Lista o detalle de actuaciones |
+830-| `201` | Actuación creada |
+831-| `400` | Payload inválido |
+832-| `404` | Caso o actuación no encontrada |
+833-
+834-> **Nota de implementación (Sprint 13):** Se retiró la exposición de `PUT` y `DELETE`
+835-> para alinear el recurso con la política append-only.
+836-
+837----
+838-
+839-#### 5.10 Documentos del caso
+840-
+841-```
+842-GET    /api/v1/cases/{caseId}/documents
+843-POST   /api/v1/cases/{caseId}/documents
+844-GET    /api/v1/cases/{caseId}/documents/{documentId}
+845-PUT    /api/v1/cases/{caseId}/documents/{documentId}
+846-```
+847-
+848-Recurso **colección con edición limitada**: múltiples documentos por caso, con restricción de mutabilidad.
+849-
+850-**Comportamiento:**
+851-- `GET /documents` lista todos los documentos del caso.
+852-- `POST /documents` registra metadatos de un nuevo documento.
+853-- `GET /documents/:id` obtiene detalle de un documento.
+854-- `PUT /documents/:id` actualiza **solo el campo `descripcion`** (política Sprint 11).
+855-
+856-**Política de inmutabilidad:** Los campos `categoria`, `nombre_original`, `nombre_almacenado`, `ruta`, `mime_type` y `tamanio_bytes` son inmutables después de la creación. Solo `descripcion` es editable vía PUT.
+857-
+858-**Nota:** El recurso implementa solo metadatos, sin subida real de archivos binarios.
+859-
+860-**Campos POST (CreateDocumentDto):**
+861-
+862-| Campo | Tipo | MaxLength | Obligatorio | Descripción |
+863-|-------|------|-----------|-------------|-------------|
+864-| `categoria` | enum | - | Sí | Categoría del documento |
+865-| `nombre_original` | string | 255 | Sí | Nombre original del archivo |
+866-| `nombre_almacenado` | string | 255 | Sí | Nombre almacenado en sistema |
+867-| `ruta` | string | 500 | Sí | Ruta de almacenamiento |
+868-| `mime_type` | string | 100 | Sí | Tipo MIME del archivo |
+869-| `tamanio_bytes` | int | - | Sí | Tamaño en bytes (min 1) |
+870-| `descripcion` | string | 1000 | No | Descripción del documento |
+871-
+872-**Enum `categoria`:**
+873-`acusacion`, `defensa`, `cliente`, `actuacion`, `informe`, `evidencia`, `anexo`, `otro`
+874-
+875-**Campos PUT (UpdateDocumentDto):**
+876-
+877-| Campo | Tipo | MaxLength | Obligatorio |
+878-|-------|------|-----------|-------------|
+879-| `descripcion` | string | 1000 | No |
+880-
+881-**Serialización:** El campo `tamanio_bytes` se persiste como BigInt y se serializa como Number en las respuestas JSON.
+
+=== ARCHIVOS MODULO CONCLUSION ===
+src/modules/conclusion/conclusion.controller.ts
+src/modules/conclusion/conclusion.module.ts
+src/modules/conclusion/conclusion.repository.ts
+src/modules/conclusion/conclusion.service.ts
+src/modules/conclusion/dto/.gitkeep
+src/modules/conclusion/dto/update-conclusion.dto.ts
+
+=== REFERENCIAS CONCLUSION ===
+src/modules/conclusion/conclusion.controller.ts:10:import { ConclusionService } from './conclusion.service';
+src/modules/conclusion/conclusion.controller.ts:11:import { UpdateConclusionDto } from './dto/update-conclusion.dto';
+src/modules/conclusion/conclusion.controller.ts:19: * GET  /api/v1/cases/:caseId/conclusion
+src/modules/conclusion/conclusion.controller.ts:20: * PUT  /api/v1/cases/:caseId/conclusion
+src/modules/conclusion/conclusion.controller.ts:22:@Controller('cases/:caseId/conclusion')
+src/modules/conclusion/conclusion.module.ts:2:import { ConclusionController } from './conclusion.controller';
+src/modules/conclusion/conclusion.module.ts:3:import { ConclusionService } from './conclusion.service';
+src/modules/conclusion/conclusion.module.ts:4:import { ConclusionRepository } from './conclusion.repository';
+src/modules/conclusion/conclusion.repository.ts:10:    return this.prisma.conclusionOperativa.findUnique({
+src/modules/conclusion/conclusion.repository.ts:16:    return this.prisma.conclusionOperativa.create({ data });
+src/modules/conclusion/conclusion.repository.ts:20:    return this.prisma.conclusionOperativa.update({
+src/modules/conclusion/conclusion.service.ts:7:import { ConclusionRepository } from './conclusion.repository';
+src/modules/conclusion/conclusion.service.ts:8:import { UpdateConclusionDto } from './dto/update-conclusion.dto';
+src/modules/conclusion/conclusion.service.ts:22:    let conclusion = await this.repository.findByCaseId(casoId);
+src/modules/conclusion/conclusion.service.ts:24:    if (!conclusion) {
+src/modules/conclusion/conclusion.service.ts:25:      conclusion = await this.repository.create({
+src/modules/conclusion/conclusion.service.ts:31:    return conclusion;
+src/modules/conclusion/conclusion.service.ts:42:    let conclusion = await this.repository.findByCaseId(casoId);
+src/modules/conclusion/conclusion.service.ts:44:    if (!conclusion) {
+src/modules/conclusion/dto/update-conclusion.dto.ts:5: * PUT /api/v1/cases/:caseId/conclusion
+src/modules/cases/cases.controller.ts:28: * Reglas de estado (ADR-003, R08, R09):
+src/modules/cases/cases.controller.ts:48:   * US-06: Crea un caso nuevo en estado borrador.
+src/modules/cases/cases.controller.ts:83:   * US-09: Transiciona el estado del caso.
+src/modules/cases/cases.controller.ts:93:      dto.estado_destino,
+src/modules/cases/cases.module.ts:5:import { CasoEstadoService } from './services/caso-estado.service';
+src/modules/cases/cases.service.ts:3:  ConflictException,
+src/modules/cases/cases.service.ts:14:import { CasoEstadoService } from './services/caso-estado.service';
+src/modules/cases/cases.service.ts:40:      throw new ConflictException(`El radicado ${dto.radicado} ya está registrado en el sistema`);
+src/modules/cases/cases.service.ts:51:      estado_actual: EstadoCaso.BORRADOR,
+src/modules/cases/cases.service.ts:76:    const estadosEditables = [EstadoCaso.EN_ANALISIS, EstadoCaso.DEVUELTO];
+src/modules/cases/cases.service.ts:77:    if (!estadosEditables.includes(caso.estado_actual as EstadoCaso)) {
+src/modules/cases/cases.service.ts:78:      throw new ConflictException(
+src/modules/cases/cases.service.ts:79:        `El caso en estado "${caso.estado_actual}" no permite edicion`,
+src/modules/cases/cases.service.ts:104:   * US-09: Transiciona el estado del caso.
+src/modules/cases/cases.service.ts:114:   *    - Bootstrap de estructura en borrador→en_analisis
+src/modules/cases/cases.service.ts:115:   *    - Validación de revisión vigente compatible en devuelto/aprobado_supervisor
+src/modules/cases/cases.service.ts:120:    estadoDestino: EstadoCaso,
+src/modules/cases/cases.service.ts:131:      estadoDestino,
+src/modules/cases/constants/caso-estado.constants.ts:2: * Constantes para la máquina de estados del caso.
+src/modules/cases/constants/caso-estado.constants.ts:3: * Fuente canónica: ADR-003-maquina-de-estados-del-caso.md
+src/modules/cases/constants/caso-estado.constants.ts:9: * Cada clave es un estado origen, cada valor es un array de estados destino válidos.
+src/modules/cases/constants/caso-estado.constants.ts:23: * Formato: 'estado_origen→estado_destino': [perfiles permitidos]
+src/modules/cases/constants/caso-estado.constants.ts:26:  'borrador→en_analisis': [
+src/modules/cases/constants/caso-estado.constants.ts:31:  'en_analisis→pendiente_revision': [
+src/modules/cases/constants/caso-estado.constants.ts:36:  'pendiente_revision→devuelto': [
+src/modules/cases/constants/caso-estado.constants.ts:44:  'devuelto→en_analisis': [
+src/modules/cases/constants/caso-estado.constants.ts:49:  'aprobado_supervisor→listo_para_cliente': [
+src/modules/cases/constants/caso-estado.constants.ts:53:  'listo_para_cliente→cerrado': [
+src/modules/cases/constants/caso-estado.constants.ts:61: * Regla: solo estados de trabajo activo permiten edición.
+src/modules/cases/constants/caso-estado.constants.ts:84: * Se generan automáticamente al activar un caso (R08).
+src/modules/cases/dto/create-case.dto.ts:15: * Campos obligatorios alineados con guarda borrador→en_analisis (ADR-003).
+src/modules/cases/dto/transition-state.dto.ts:5: * DTO de transición de estado.
+src/modules/cases/dto/transition-state.dto.ts:8: * 409: la transición no existe desde el estado actual.
+src/modules/cases/dto/transition-state.dto.ts:13:    message: `estado_destino debe ser uno de: ${Object.values(EstadoCaso).join(', ')}`,
+src/modules/cases/dto/transition-state.dto.ts:15:  estado_destino!: EstadoCaso;
+src/modules/cases/dto/update-case.dto.ts:13: * Solo permitido en estados: en_analisis, devuelto.
+src/modules/cases/dto/update-case.dto.ts:15: * - estado_actual, responsable_id, creado_por, creado_en, cliente_id, radicado, delito_imputado
+src/modules/cases/services/caso-estado.service.ts:2: * CasoEstadoService — Servicio de transiciones de estado del caso.
+src/modules/cases/services/caso-estado.service.ts:5: * - ADR-003: Máquina de estados del caso
+src/modules/cases/services/caso-estado.service.ts:10: * Este servicio es el ÚNICO punto de modificación del campo estado_actual.
+src/modules/cases/services/caso-estado.service.ts:11: * Ningún otro servicio puede modificar el estado del caso directamente.
+src/modules/cases/services/caso-estado.service.ts:21: * En transiciones pendiente_revision → devuelto/aprobado_supervisor:
+src/modules/cases/services/caso-estado.service.ts:28:  ConflictException,
+src/modules/cases/services/caso-estado.service.ts:43:} from '../constants/caso-estado.constants';
+src/modules/cases/services/caso-estado.service.ts:60:  estadoActual: EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:61:  estadoSolicitado: EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:67:  estadoActual: EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:84:   * Ejecuta una transición de estado.
+src/modules/cases/services/caso-estado.service.ts:87:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:88:   * @throws ForbiddenException (403) si el perfil no tiene permiso
+src/modules/cases/services/caso-estado.service.ts:89:   * @throws ConflictException (409) si la transición no es válida desde el estado actual
+src/modules/cases/services/caso-estado.service.ts:94:    estadoDestino: EstadoCaso,
+src/modules/cases/services/caso-estado.service.ts:99:    // 1. Obtener caso con estado actual
+src/modules/cases/services/caso-estado.service.ts:104:        estado_actual: true,
+src/modules/cases/services/caso-estado.service.ts:116:    const estadoActual = caso.estado_actual as EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:119:    const transicionesValidas = TRANSICIONES_VALIDAS[estadoActual] || [];
+src/modules/cases/services/caso-estado.service.ts:120:    if (!transicionesValidas.includes(estadoDestino)) {
+src/modules/cases/services/caso-estado.service.ts:121:      throw new ConflictException({
+src/modules/cases/services/caso-estado.service.ts:123:        estadoActual,
+src/modules/cases/services/caso-estado.service.ts:124:        estadoSolicitado: estadoDestino,
+src/modules/cases/services/caso-estado.service.ts:126:        mensaje: `No se puede transicionar de "${estadoActual}" a "${estadoDestino}"`,
+src/modules/cases/services/caso-estado.service.ts:131:    const clave = claveTransicion(estadoActual, estadoDestino);
+src/modules/cases/services/caso-estado.service.ts:147:      estadoActual,
+src/modules/cases/services/caso-estado.service.ts:148:      estadoDestino,
+src/modules/cases/services/caso-estado.service.ts:155:        estadoActual,
+src/modules/cases/services/caso-estado.service.ts:156:        estadoSolicitado: estadoDestino,
+src/modules/cases/services/caso-estado.service.ts:163:      // 5a. Si es borrador→en_analisis: generar estructura base (R08)
+src/modules/cases/services/caso-estado.service.ts:165:        estadoActual === EstadoCaso.BORRADOR &&
+src/modules/cases/services/caso-estado.service.ts:166:        estadoDestino === EstadoCaso.EN_ANALISIS
+src/modules/cases/services/caso-estado.service.ts:171:          (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
+src/modules/cases/services/caso-estado.service.ts:172:            estadoDestino === EstadoCaso.DEVUELTO) ||
+src/modules/cases/services/caso-estado.service.ts:173:          (estadoActual === EstadoCaso.PENDIENTE_REVISION &&
+src/modules/cases/services/caso-estado.service.ts:174:            estadoDestino === EstadoCaso.APROBADO_SUPERVISOR)
+src/modules/cases/services/caso-estado.service.ts:179:            estadoDestino,
+src/modules/cases/services/caso-estado.service.ts:188:          estado_anterior: estadoActual,
+src/modules/cases/services/caso-estado.service.ts:189:          estado_actual: estadoDestino,
+src/modules/cases/services/caso-estado.service.ts:190:          fecha_cambio_estado: new Date(),
+src/modules/cases/services/caso-estado.service.ts:191:          usuario_cambio_estado: usuarioId,
+src/modules/cases/services/caso-estado.service.ts:202:          estado_origen: estadoActual,
+src/modules/cases/services/caso-estado.service.ts:203:          estado_destino: estadoDestino,
+src/modules/cases/services/caso-estado.service.ts:224:   * - Si el caso no existe: lanza NotFoundException (404)
+src/modules/cases/services/caso-estado.service.ts:225:   * - Si el estado bloquea escritura: lanza ConflictException (409)
+src/modules/cases/services/caso-estado.service.ts:228:   * @throws NotFoundException (404) si el caso no existe
+src/modules/cases/services/caso-estado.service.ts:229:   * @throws ConflictException (409) si el estado no permite escritura
+src/modules/cases/services/caso-estado.service.ts:234:      select: { estado_actual: true },
+src/modules/cases/services/caso-estado.service.ts:245:    const estadoActual = caso.estado_actual as EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:246:    if (ESTADOS_ESCRITURA_BLOQUEADA.includes(estadoActual)) {
+src/modules/cases/services/caso-estado.service.ts:247:      throw new ConflictException({
+src/modules/cases/services/caso-estado.service.ts:249:        estadoActual,
+src/modules/cases/services/caso-estado.service.ts:250:        mensaje: `El caso en estado "${estadoActual}" no permite modificaciones.`,
+src/modules/cases/services/caso-estado.service.ts:269:      select: { estado_actual: true },
+src/modules/cases/services/caso-estado.service.ts:276:    const estadoActual = caso.estado_actual as EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:277:    const transicionesValidas = TRANSICIONES_VALIDAS[estadoActual] || [];
+src/modules/cases/services/caso-estado.service.ts:281:      const clave = claveTransicion(estadoActual, destino);
+src/modules/cases/services/caso-estado.service.ts:297:    estadoDestino: EstadoCaso,
+src/modules/cases/services/caso-estado.service.ts:302:      select: { estado_actual: true },
+src/modules/cases/services/caso-estado.service.ts:309:    const estadoActual = caso.estado_actual as EstadoCaso;
+src/modules/cases/services/caso-estado.service.ts:310:    return this.verificarGuardas(casoId, estadoActual, estadoDestino, metadata);
+src/modules/cases/services/caso-estado.service.ts:323:    estadoOrigen: EstadoCaso,
+src/modules/cases/services/caso-estado.service.ts:324:    estadoDestino: EstadoCaso,
+src/modules/cases/services/caso-estado.service.ts:329:    switch (`${estadoOrigen}→${estadoDestino}`) {
+src/modules/cases/services/caso-estado.service.ts:330:      case 'borrador→en_analisis':
+src/modules/cases/services/caso-estado.service.ts:334:      case 'en_analisis→pendiente_revision':
+src/modules/cases/services/caso-estado.service.ts:338:      case 'pendiente_revision→devuelto':
+src/modules/cases/services/caso-estado.service.ts:346:      case 'devuelto→en_analisis':
+src/modules/cases/services/caso-estado.service.ts:350:      case 'aprobado_supervisor→listo_para_cliente':
+src/modules/cases/services/caso-estado.service.ts:354:      case 'listo_para_cliente→cerrado':
+src/modules/cases/services/caso-estado.service.ts:370:   * Guarda: borrador → en_analisis
+src/modules/cases/services/caso-estado.service.ts:402:   * Guarda: en_analisis → pendiente_revision
+src/modules/cases/services/caso-estado.service.ts:447:   * Guarda: observaciones requeridas (devuelto, aprobado_supervisor)
+src/modules/cases/services/caso-estado.service.ts:476:   * Guarda: devuelto → en_analisis
+src/modules/cases/services/caso-estado.service.ts:479:   * Nota: Si el caso está en estado devuelto, debe existir
+src/modules/cases/services/caso-estado.service.ts:494:        'Error de integridad: caso en estado devuelto sin revisión registrada.',
+src/modules/cases/services/caso-estado.service.ts:500:   * Guarda: aprobado_supervisor → listo_para_cliente
+src/modules/cases/services/caso-estado.service.ts:510:    const conclusion = await this.prisma.conclusionOperativa.findUnique({
+src/modules/cases/services/caso-estado.service.ts:521:    if (!conclusion) {
+src/modules/cases/services/caso-estado.service.ts:525:      if (!conclusion.hechos_sintesis) {
+src/modules/cases/services/caso-estado.service.ts:528:      if (!conclusion.fortalezas_acusacion) {
+src/modules/cases/services/caso-estado.service.ts:531:      if (!conclusion.rangos_pena) {
+src/modules/cases/services/caso-estado.service.ts:534:      if (!conclusion.opcion_a) {
+src/modules/cases/services/caso-estado.service.ts:537:      if (!conclusion.recomendacion) {
+src/modules/cases/services/caso-estado.service.ts:559:   * Guarda: listo_para_cliente → cerrado
+src/modules/cases/services/caso-estado.service.ts:591:    estadoDestino: EstadoCaso,
+src/modules/cases/services/caso-estado.service.ts:594:      estadoDestino !== EstadoCaso.DEVUELTO &&
+src/modules/cases/services/caso-estado.service.ts:595:      estadoDestino !== EstadoCaso.APROBADO_SUPERVISOR
+src/modules/cases/services/caso-estado.service.ts:621:      estadoDestino === EstadoCaso.APROBADO_SUPERVISOR ? 'aprobado' : 'devuelto';
+src/modules/cases/services/caso-estado.service.ts:637:   * Se ejecuta en transición borrador → en_analisis.
+src/modules/cases/services/caso-estado.service.ts:647:   * - conclusion_operativa (registro vacío)
+src/modules/cases/services/caso-estado.service.ts:731:    // 5. Crear conclusion_operativa vacía (solo si no existe)
+src/modules/cases/services/caso-estado.service.ts:732:    const conclusionExiste = await tx.conclusionOperativa.findUnique({
+src/modules/cases/services/caso-estado.service.ts:736:    if (!conclusionExiste) {
+src/modules/cases/services/caso-estado.service.ts:737:      await tx.conclusionOperativa.create({
+src/app.module.ts:29:import { ConclusionModule } from './modules/conclusion/conclusion.module';
+docs/04_api/CONTRATO_API.md:7:- `docs/00_gobierno/adrs/ADR-003-maquina-de-estados-del-caso.md`
+docs/04_api/CONTRATO_API.md:41:| Documento único — representa exactamente un documento por caso | Singular o kebab-case descriptivo | `/strategy`, `/client-briefing`, `/checklist`, `/conclusion`, `/review` |
+docs/04_api/CONTRATO_API.md:73:| `403`  | Autenticado pero sin permiso para esta acción. |
+docs/04_api/CONTRATO_API.md:74:| `404`  | Recurso no encontrado. |
+docs/04_api/CONTRATO_API.md:75:| `409`  | Conflicto de estado — la operación es inválida dado el estado actual del recurso. |
+docs/04_api/CONTRATO_API.md:97:transiciones de estado.
+docs/04_api/CONTRATO_API.md:138:- `403` — Usuario desactivado.
+docs/04_api/CONTRATO_API.md:160:- `activo` — filtra por estado (`true`, `false`).
+docs/04_api/CONTRATO_API.md:165:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:185:- `409` — Email ya registrado.
+docs/04_api/CONTRATO_API.md:196:- `403` — Sin acceso.
+docs/04_api/CONTRATO_API.md:197:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:206:- `403` — Sin permiso.
+docs/04_api/CONTRATO_API.md:207:- `404` — No encontrado.
+docs/04_api/CONTRATO_API.md:241:- `409` — Ya existe un cliente con ese tipo y número de documento.
+docs/04_api/CONTRATO_API.md:262:- `estado` — filtra por estado del caso.
+docs/04_api/CONTRATO_API.md:275:      "estado_actual": "en_analisis",
+docs/04_api/CONTRATO_API.md:292:Crea un caso nuevo en estado `borrador`.
+docs/04_api/CONTRATO_API.md:320:- `403` — Sin permiso para crear casos.
+docs/04_api/CONTRATO_API.md:321:- `409` — El radicado ya está registrado en el sistema.
+docs/04_api/CONTRATO_API.md:326:Retorna el caso completo con metadatos del estado actual y la ficha básica editable del caso.
+docs/04_api/CONTRATO_API.md:335:  "estado_actual": "en_analisis",
+docs/04_api/CONTRATO_API.md:351:- `403` — Sin acceso a este caso.
+docs/04_api/CONTRATO_API.md:352:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:379:`estado_actual`, `responsable_id`, `creado_por`, `creado_en`, `cliente_id`, `radicado`, `delito_imputado`.
+docs/04_api/CONTRATO_API.md:381:**Restricción de estado:** Solo disponible en estados `en_analisis` y `devuelto`.
+docs/04_api/CONTRATO_API.md:386:- `403` — Sin permiso o no es propietario del caso.
+docs/04_api/CONTRATO_API.md:387:- `404` — Caso no encontrado.
+docs/04_api/CONTRATO_API.md:388:- `409` — El estado actual no permite edición.
+docs/04_api/CONTRATO_API.md:392:### 4.1 Transición de estado del caso
+docs/04_api/CONTRATO_API.md:395:Solicita una transición de estado del caso.
+docs/04_api/CONTRATO_API.md:400:  "estado_destino": "pendiente_revision"
+docs/04_api/CONTRATO_API.md:408:| `200`  | Transición aplicada. Retorna el caso con su nuevo `estado_actual`. |
+docs/04_api/CONTRATO_API.md:409:| `403`  | El perfil del usuario no tiene permiso para esta transición. |
+docs/04_api/CONTRATO_API.md:410:| `404`  | El caso no existe o no es accesible por el usuario en sesión. |
+docs/04_api/CONTRATO_API.md:411:| `409`  | El estado actual del caso es incompatible con el estado destino solicitado. |
+docs/04_api/CONTRATO_API.md:420:**Comportamiento por estado del caso**
+docs/04_api/CONTRATO_API.md:422:| Operación | `borrador` | `en_analisis` | `pendiente_revision` | `devuelto` | `aprobado_supervisor` / `listo_para_cliente` / `cerrado` |
+docs/04_api/CONTRATO_API.md:425:| `PUT` (escritura) | ❌ `409` | ✅ | ❌ `409` | ✅ | ❌ `409` |
+docs/04_api/CONTRATO_API.md:441:- `POST /facts` crea un hecho con `orden` asignado automáticamente.
+docs/04_api/CONTRATO_API.md:446:**Orden automático:** El campo `orden` es asignado automáticamente en creación y no es editable por el cliente. Cada nuevo hecho recibe el siguiente número de orden disponible.
+docs/04_api/CONTRATO_API.md:453:| `estado_hecho` | enum | - | Sí | Estado probatorio del hecho |
+docs/04_api/CONTRATO_API.md:464:| `estado_hecho` | enum | - | No |
+docs/04_api/CONTRATO_API.md:472:| `estado_hecho` | `acreditado`, `referido`, `discutido` |
+docs/04_api/CONTRATO_API.md:475:**Dependencia funcional:** Al menos 1 hecho registrado es requisito para la transición `en_analisis → pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones.
+docs/04_api/CONTRATO_API.md:485:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:486:| `404` | Caso o hecho no encontrado |
+docs/04_api/CONTRATO_API.md:570:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:571:| `404` | Caso o prueba no encontrado |
+docs/04_api/CONTRATO_API.md:572:| `409` | Conflicto: hecho no pertenece al mismo caso (en /link) |
+docs/04_api/CONTRATO_API.md:592:| `estado_mitigacion` | `pendiente`, `en_curso`, `mitigado`, `aceptado` |
+docs/04_api/CONTRATO_API.md:604:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:605:| `404` | Caso o riesgo no encontrado |
+docs/04_api/CONTRATO_API.md:619:  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+docs/04_api/CONTRATO_API.md:620:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:621:- Si `GET /strategy` se invoca y ya existe la estrategia, retorna el recurso sin importar el estado del caso (200).
+docs/04_api/CONTRATO_API.md:624:- `PUT /strategy` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:640:**Dependencia funcional:** El campo `linea_principal` es obligatorio para la transición `en_analisis -> pendiente_revision`. Esta validación se ejecuta en el servicio de transiciones, no en este endpoint.
+docs/04_api/CONTRATO_API.md:646:| `200` | Estrategia obtenida, auto-creada o actualizada correctamente |
+docs/04_api/CONTRATO_API.md:649:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:650:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:651:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:661:  - Si el estado del caso permite escritura (`en_analisis`, `devuelto`, `listo_para_cliente`), el sistema la crea automáticamente y retorna el recurso resultante (200).
+docs/04_api/CONTRATO_API.md:662:  - Si el estado del caso no permite escritura, retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:663:- Si `GET /client-briefing` se invoca y ya existe la explicación, retorna el recurso sin importar el estado del caso (200).
+docs/04_api/CONTRATO_API.md:666:- `PUT /client-briefing` solo está permitido en estados `en_analisis`, `devuelto` y `listo_para_cliente`. En otros estados retorna `409 Conflict`.
+docs/04_api/CONTRATO_API.md:672:| `200` | Explicación obtenida, auto-creada o actualizada |
+docs/04_api/CONTRATO_API.md:675:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:676:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:677:| `409` | El estado actual del caso no permite auto-creación o modificación |
+docs/04_api/CONTRATO_API.md:690:**Bootstrap:** El checklist se crea automaticamente al activar el caso (transicion `borrador -> en_analisis`). No se auto-crea en `GET`.
+docs/04_api/CONTRATO_API.md:725:**Recalculo automatico:** Al actualizar items, `bloque.completado` se recalcula como `true` solo si todos sus items estan marcados.
+docs/04_api/CONTRATO_API.md:734:| `403` | Estudiante sin acceso al caso o item de otro caso |
+docs/04_api/CONTRATO_API.md:735:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:740:GET  /api/v1/cases/{caseId}/conclusion
+docs/04_api/CONTRATO_API.md:741:PUT  /api/v1/cases/{caseId}/conclusion
+docs/04_api/CONTRATO_API.md:747:- Si `GET /conclusion` se invoca y no existe aún una conclusión para el caso, el sistema la crea automáticamente y retorna el recurso resultante.
+docs/04_api/CONTRATO_API.md:748:- `PUT /conclusion` actualiza la conclusión existente del caso.
+docs/04_api/CONTRATO_API.md:754:| `200` | Conclusión obtenida, auto-creada o actualizada |
+docs/04_api/CONTRATO_API.md:757:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:758:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:772:- `POST /timeline` crea una entrada con `orden` asignado automáticamente.
+docs/04_api/CONTRATO_API.md:800:**Campo `orden`:** Asignado automáticamente por el backend, no editable por cliente. Cada nueva entrada recibe el siguiente número de orden disponible para el caso.
+docs/04_api/CONTRATO_API.md:810:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:811:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:832:| `404` | Caso o actuación no encontrada |
+docs/04_api/CONTRATO_API.md:891:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:892:| `404` | Caso o documento no encontrado |
+docs/04_api/CONTRATO_API.md:967:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:968:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1012:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1013:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1028:- `403` — Estudiante sin acceso al caso
+docs/04_api/CONTRATO_API.md:1029:- `404` — Caso no encontrado
+docs/04_api/CONTRATO_API.md:1030:- `404` — Sujeto no encontrado
+docs/04_api/CONTRATO_API.md:1057:- Solo cuando el caso esta en estado `pendiente_revision`
+docs/04_api/CONTRATO_API.md:1068:| `resultado` | enum | `aprobado` o `devuelto` |
+docs/04_api/CONTRATO_API.md:1079:| `403` | Estudiante sin acceso o perfil insuficiente |
+docs/04_api/CONTRATO_API.md:1080:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1081:| `409` | Caso no esta en estado `pendiente_revision` |
+docs/04_api/CONTRATO_API.md:1092:**Tipos disponibles:** `resumen_ejecutivo`, `conclusion_operativa`, `control_calidad`,
+docs/04_api/CONTRATO_API.md:1110:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1111:| `404` | Caso o informe no encontrado |
+docs/04_api/CONTRATO_API.md:1135:`basic_info`, `facts`, `evidence`, `risks`, `strategy`, `client_briefing`, `checklist`, `conclusion`
+docs/04_api/CONTRATO_API.md:1164:| `403` | Estudiante sin acceso al caso |
+docs/04_api/CONTRATO_API.md:1165:| `404` | Caso no encontrado (cuando `caso_id` tiene formato válido pero no existe) |
+docs/04_api/CONTRATO_API.md:1166:| `409` | Caso en estado cerrado (no permite consultas IA) |
+docs/04_api/CONTRATO_API.md:1187:`transicion_estado`, `informe_generado`, `revision_supervisor`, `login`, `logout`, `eliminacion_caso`, `ia_query`
+docs/04_api/CONTRATO_API.md:1211:| `estado_origen` | string? | Estado anterior (solo transiciones) |
+docs/04_api/CONTRATO_API.md:1212:| `estado_destino` | string? | Estado nuevo (solo transiciones) |
+docs/04_api/CONTRATO_API.md:1224:      "tipo": "transicion_estado",
+docs/04_api/CONTRATO_API.md:1225:      "descripcion": "Transición de estado del caso",
+docs/04_api/CONTRATO_API.md:1231:      "estado_origen": "borrador",
+docs/04_api/CONTRATO_API.md:1232:      "estado_destino": "en_analisis",
+docs/04_api/CONTRATO_API.md:1249:| `403` | Perfil estudiante (acceso restringido a supervisores y administradores) |
+docs/04_api/CONTRATO_API.md:1250:| `404` | Caso no encontrado |
+docs/04_api/CONTRATO_API.md:1296:| 22 | 2026-03-27 | Consolidación contractual de `POST /subjects` y `GET /subjects/{subjectId}`. Validación real de create, detail, 404 por caso inexistente, 404 por sujeto inexistente y protección contra fuga entre casos. |
